@@ -1,0 +1,125 @@
+export const mockVehicles = [
+  {
+    id: 1,
+    placa: 'ABC-123',
+    modelo: 'Chevrolet Spark 2022',
+    lat: 4.7110,
+    lng: -74.0721,
+    speed: 45,
+    status: 'activo',
+    heading: 180,
+    conductor: 'Carlos Mendoza',
+    combustible: 85,
+    kilometraje: 45230,
+    ultimaActualizacion: '2024-01-15T10:30:00Z'
+  },
+  {
+    id: 2,
+    placa: 'DEF-456',
+    modelo: 'Renault Logan 2021',
+    lat: 4.6097,
+    lng: -74.0817,
+    speed: 0,
+    status: 'estacionado',
+    heading: 90,
+    conductor: 'María García',
+    combustible: 40,
+    kilometraje: 67890,
+    ultimaActualizacion: '2024-01-15T10:25:00Z'
+  },
+  {
+    id: 3,
+    placa: 'GHI-789',
+    modelo: 'Toyota Corolla 2023',
+    lat: 4.6486,
+    lng: -74.0572,
+    speed: 60,
+    status: 'activo',
+    heading: 45,
+    conductor: 'Luis Rodríguez',
+    combustible: 92,
+    kilometraje: 23456,
+    ultimaActualizacion: '2024-01-15T10:35:00Z'
+  },
+  {
+    id: 4,
+    placa: 'JKL-012',
+    modelo: 'Nissan Versa 2022',
+    lat: 4.7297,
+    lng: -74.0840,
+    speed: 30,
+    status: 'mantenimiento',
+    heading: 270,
+    conductor: 'Ana Martínez',
+    combustible: 15,
+    kilometraje: 78901,
+    ultimaActualizacion: '2024-01-15T10:20:00Z'
+  },
+  {
+    id: 5,
+    placa: 'MNO-345',
+    modelo: 'Kia Rio 2021',
+    lat: 4.5981,
+    lng: -74.0758,
+    speed: 55,
+    status: 'activo',
+    heading: 135,
+    conductor: 'Diego López',
+    combustible: 70,
+    kilometraje: 56234,
+    ultimaActualizacion: '2024-01-15T10:40:00Z'
+  }
+];
+
+export const mockDrivers = [
+  {
+    id: 1,
+    nombre: 'Carlos Mendoza',
+    cedula: '12345678',
+    telefono: '3001234567',
+    email: 'carlos@email.com',
+    estado: 'activo',
+    vehiculoAsignado: 'ABC-123',
+    licenciaVencimiento: '2025-06-15'
+  },
+  {
+    id: 2,
+    nombre: 'María García',
+    cedula: '87654321',
+    telefono: '3109876543',
+    email: 'maria@email.com',
+    estado: 'disponible',
+    vehiculoAsignado: 'DEF-456',
+    licenciaVencimiento: '2024-12-20'
+  },
+  {
+    id: 3,
+    nombre: 'Luis Rodríguez',
+    cedula: '11223344',
+    telefono: '3201122334',
+    email: 'luis@email.com',
+    estado: 'activo',
+    vehiculoAsignado: 'GHI-789',
+    licenciaVencimiento: '2025-03-10'
+  },
+  {
+    id: 4,
+    nombre: 'Ana Martínez',
+    cedula: '44332211',
+    telefono: '3154433221',
+    email: 'ana@email.com',
+    estado: 'inactivo',
+    vehiculoAsignado: 'JKL-012',
+    licenciaVencimiento: '2024-08-25'
+  },
+  {
+    id: 5,
+    nombre: 'Diego López',
+    cedula: '55667788',
+    telefono: '3185566778',
+    email: 'diego@email.com',
+    estado: 'activo',
+    vehiculoAsignado: 'MNO-345',
+    licenciaVencimiento: '2025-11-30'
+  }
+];
