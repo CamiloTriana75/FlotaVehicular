@@ -17,7 +17,7 @@ const LoginPage = ({ onLogin }) => {
     try {
       const result = await auth.signIn(email, password);
       const { data, error } = auth.isMockMode ? result : result;
-      
+
       if (error) {
         setError(error.message);
       } else {
@@ -44,7 +44,10 @@ const LoginPage = ({ onLogin }) => {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700"
+            >
               Email
             </label>
             <div className="mt-1 relative">
@@ -62,7 +65,10 @@ const LoginPage = ({ onLogin }) => {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700"
+            >
               Contraseña
             </label>
             <div className="mt-1 relative">
@@ -96,8 +102,13 @@ const LoginPage = ({ onLogin }) => {
 
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
           <p className="text-xs text-blue-800">
-            <strong>Modo Demo:</strong> Usa cualquier email y contraseña para acceder
-            {auth.isMockMode && <span className="block mt-1">🔧 Funcionando en modo mock (sin Supabase)</span>}
+            <strong>Modo Demo:</strong> Usa cualquier email y contraseña para
+            acceder
+            {auth.isMockMode && (
+              <span className="block mt-1">
+                🔧 Funcionando en modo mock (sin Supabase)
+              </span>
+            )}
           </p>
         </div>
       </div>

@@ -15,15 +15,15 @@ const VehicleForm = ({ vehicle, onSave, onCancel }) => {
 
   const validateForm = () => {
     const newErrors = {};
-    
+
     if (!formData.placa.trim()) {
       newErrors.placa = 'La placa es obligatoria';
     }
-    
+
     if (!formData.modelo.trim()) {
       newErrors.modelo = 'El modelo es obligatorio';
     }
-    
+
     if (!formData.conductor.trim()) {
       newErrors.conductor = 'El conductor es obligatorio';
     }
@@ -35,30 +35,30 @@ const VehicleForm = ({ vehicle, onSave, onCancel }) => {
     if (formData.kilometraje < 0) {
       newErrors.kilometraje = 'El kilometraje no puede ser negativo';
     }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     if (validateForm()) {
       onSave({ ...vehicle, ...formData });
     }
   };
 
   const handleChange = (field, value) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
-    
+
     // Limpiar error del campo cuando se modifica
     if (errors[field]) {
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        [field]: ''
+        [field]: '',
       }));
     }
   };
@@ -144,7 +144,9 @@ const VehicleForm = ({ vehicle, onSave, onCancel }) => {
           min="0"
           max="100"
           value={formData.combustible}
-          onChange={(e) => handleChange('combustible', parseInt(e.target.value) || 0)}
+          onChange={(e) =>
+            handleChange('combustible', parseInt(e.target.value) || 0)
+          }
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
             errors.combustible ? 'border-red-500' : 'border-gray-300'
           }`}
@@ -162,7 +164,9 @@ const VehicleForm = ({ vehicle, onSave, onCancel }) => {
           type="number"
           min="0"
           value={formData.kilometraje}
-          onChange={(e) => handleChange('kilometraje', parseInt(e.target.value) || 0)}
+          onChange={(e) =>
+            handleChange('kilometraje', parseInt(e.target.value) || 0)
+          }
           className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
             errors.kilometraje ? 'border-red-500' : 'border-gray-300'
           }`}
