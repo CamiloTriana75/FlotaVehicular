@@ -315,11 +315,7 @@ npm run test:coverage
 - **Conventional Commits** para mensajes
 - **Tests** para nuevas funcionalidades
 
-## 📞 Soporte
 
-- **Issues**: [GitHub Issues](https://github.com/tu-usuario/FlotaVehicular-1/issues)
-- **Discusiones**: [GitHub Discussions](https://github.com/tu-usuario/FlotaVehicular-1/discussions)
-- **Email**: soporte@fleetmanager.com
 
 ## 📄 Licencia
 
@@ -327,4 +323,3 @@ Este proyecto está bajo la Licencia MIT. Ver [LICENSE](LICENSE) para más detal
 
 ---
 
-**Desarrollado con ❤️ para la gestión eficiente de flotas vehiculares**
