@@ -9,43 +9,48 @@ const VehiclesList = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
 
-  const filteredVehicles = mockVehicles.filter(vehicle => 
-    vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    vehicle.conductor.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredVehicles = mockVehicles.filter(
+    (vehicle) =>
+      vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      vehicle.conductor.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const columns = [
     {
       header: 'Placa',
       accessor: 'placa',
-      cell: (value) => <span className="font-mono font-medium">{value}</span>
+      cell: (value) => <span className="font-mono font-medium">{value}</span>,
     },
     {
       header: 'Modelo',
-      accessor: 'modelo'
+      accessor: 'modelo',
     },
     {
       header: 'Conductor',
-      accessor: 'conductor'
+      accessor: 'conductor',
     },
     {
       header: 'Estado',
       accessor: 'status',
       cell: (value) => (
-        <span className={`px-2 py-1 text-xs rounded-full ${
-          value === 'activo' ? 'bg-green-100 text-green-800' :
-          value === 'estacionado' ? 'bg-yellow-100 text-yellow-800' :
-          'bg-red-100 text-red-800'
-        }`}>
+        <span
+          className={`px-2 py-1 text-xs rounded-full ${
+            value === 'activo'
+              ? 'bg-green-100 text-green-800'
+              : value === 'estacionado'
+                ? 'bg-yellow-100 text-yellow-800'
+                : 'bg-red-100 text-red-800'
+          }`}
+        >
           {value}
         </span>
-      )
+      ),
     },
     {
       header: 'Velocidad',
       accessor: 'speed',
-      cell: (value) => `${value} km/h`
+      cell: (value) => `${value} km/h`,
     },
     {
       header: 'Combustible',
@@ -55,14 +60,18 @@ const VehiclesList = () => {
           <div className="w-16 bg-gray-200 rounded-full h-2 mr-2">
             <div
               className={`h-2 rounded-full ${
-                value > 50 ? 'bg-green-500' : value > 20 ? 'bg-yellow-500' : 'bg-red-500'
+                value > 50
+                  ? 'bg-green-500'
+                  : value > 20
+                    ? 'bg-yellow-500'
+                    : 'bg-red-500'
               }`}
               style={{ width: `${value}%` }}
             />
           </div>
           <span className="text-sm">{value}%</span>
         </div>
-      )
+      ),
     },
     {
       header: 'Acciones',
@@ -75,8 +84,8 @@ const VehiclesList = () => {
           <Eye className="h-4 w-4 mr-1" />
           Ver
         </button>
-      )
-    }
+      ),
+    },
   ];
 
   return (
@@ -91,7 +100,9 @@ const VehiclesList = () => {
         </div>
         <div className="text-right">
           <p className="text-sm text-gray-500">Total de vehículos</p>
-          <p className="text-2xl font-bold text-blue-600">{mockVehicles.length}</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {mockVehicles.length}
+          </p>
         </div>
       </div>
 
@@ -109,7 +120,7 @@ const VehiclesList = () => {
           </div>
         </div>
 
-        <Table 
+        <Table
           columns={columns}
           data={filteredVehicles}
           emptyMessage="No se encontraron vehículos"

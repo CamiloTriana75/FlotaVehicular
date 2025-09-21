@@ -1,12 +1,12 @@
 import React from 'react';
 
-const Table = ({ columns, data, emptyMessage = "No hay datos disponibles" }) => {
+const Table = ({
+  columns,
+  data,
+  emptyMessage = 'No hay datos disponibles',
+}) => {
   if (!data || data.length === 0) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        {emptyMessage}
-      </div>
-    );
+    return <div className="text-center py-8 text-gray-500">{emptyMessage}</div>;
   }
 
   return (
@@ -28,11 +28,13 @@ const Table = ({ columns, data, emptyMessage = "No hay datos disponibles" }) => 
           {data.map((row, rowIndex) => (
             <tr key={rowIndex} className="hover:bg-gray-50">
               {columns.map((column, colIndex) => (
-                <td key={colIndex} className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {column.cell 
+                <td
+                  key={colIndex}
+                  className="px-6 py-4 whitespace-nowrap text-sm text-gray-900"
+                >
+                  {column.cell
                     ? column.cell(row[column.accessor], row, rowIndex)
-                    : row[column.accessor]
-                  }
+                    : row[column.accessor]}
                 </td>
               ))}
             </tr>

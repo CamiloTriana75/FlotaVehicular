@@ -6,16 +6,23 @@ import 'leaflet/dist/leaflet.css';
 // Fix para los iconos de Leaflet en Vite
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  iconRetinaUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
 // Crear iconos personalizados para diferentes estados
 const createCustomIcon = (status) => {
-  const color = status === 'activo' ? '#10b981' : 
-               status === 'estacionado' ? '#f59e0b' : '#ef4444';
-  
+  const color =
+    status === 'activo'
+      ? '#10b981'
+      : status === 'estacionado'
+        ? '#f59e0b'
+        : '#ef4444';
+
   return L.divIcon({
     className: 'custom-marker',
     html: `
@@ -29,11 +36,15 @@ const createCustomIcon = (status) => {
       "></div>
     `,
     iconSize: [20, 20],
-    iconAnchor: [10, 10]
+    iconAnchor: [10, 10],
   });
 };
 
-const MapViewer = ({ vehicles = [], center = [4.7110, -74.0721], zoom = 11 }) => {
+const MapViewer = ({
+  vehicles = [],
+  center = [4.711, -74.0721],
+  zoom = 11,
+}) => {
   const getDirectionText = (heading) => {
     const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
     const index = Math.round(heading / 45) % 8;
@@ -41,16 +52,16 @@ const MapViewer = ({ vehicles = [], center = [4.7110, -74.0721], zoom = 11 }) =>
   };
 
   return (
-    <MapContainer 
-      center={center} 
-      zoom={zoom} 
+    <MapContainer
+      center={center}
+      zoom={zoom}
       style={{ height: '100%', width: '100%', borderRadius: '8px' }}
     >
       <TileLayer
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      
+
       {vehicles.map((vehicle) => (
         <Marker
           key={vehicle.id}
@@ -61,17 +72,32 @@ const MapViewer = ({ vehicles = [], center = [4.7110, -74.0721], zoom = 11 }) =>
             <div className="p-2 min-w-[200px]">
               <h3 className="font-bold text-lg mb-2">{vehicle.placa}</h3>
               <div className="space-y-1 text-sm">
-                <p><strong>Modelo:</strong> {vehicle.modelo}</p>
-                <p><strong>Conductor:</strong> {vehicle.conductor}</p>
-                <p><strong>Velocidad:</strong> {vehicle.speed} km/h</p>
-                <p><strong>Dirección:</strong> {getDirectionText(vehicle.heading)}</p>
-                <p><strong>Combustible:</strong> {vehicle.combustible}%</p>
+                <p>
+                  <strong>Modelo:</strong> {vehicle.modelo}
+                </p>
+                <p>
+                  <strong>Conductor:</strong> {vehicle.conductor}
+                </p>
+                <p>
+                  <strong>Velocidad:</strong> {vehicle.speed} km/h
+                </p>
+                <p>
+                  <strong>Dirección:</strong>{' '}
+                  {getDirectionText(vehicle.heading)}
+                </p>
+                <p>
+                  <strong>Combustible:</strong> {vehicle.combustible}%
+                </p>
                 <div className="mt-2">
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    vehicle.status === 'activo' ? 'bg-green-100 text-green-800' :
-                    vehicle.status === 'estacionado' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
+                  <span
+                    className={`px-2 py-1 text-xs rounded-full ${
+                      vehicle.status === 'activo'
+                        ? 'bg-green-100 text-green-800'
+                        : vehicle.status === 'estacionado'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : 'bg-red-100 text-red-800'
+                    }`}
+                  >
                     {vehicle.status}
                   </span>
                 </div>

@@ -7,10 +7,11 @@ import { Search, Users, Phone, Mail, Calendar } from 'lucide-react';
 const DriversList = () => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredDrivers = mockDrivers.filter(driver =>
-    driver.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    driver.cedula.includes(searchTerm) ||
-    driver.vehiculoAsignado.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredDrivers = mockDrivers.filter(
+    (driver) =>
+      driver.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      driver.cedula.includes(searchTerm) ||
+      driver.vehiculoAsignado.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const columns = [
@@ -22,7 +23,7 @@ const DriversList = () => {
           <p className="font-medium">{value}</p>
           <p className="text-xs text-gray-500">CC: {row.cedula}</p>
         </div>
-      )
+      ),
     },
     {
       header: 'Contacto',
@@ -38,20 +39,24 @@ const DriversList = () => {
             {row.email}
           </div>
         </div>
-      )
+      ),
     },
     {
       header: 'Estado',
       accessor: 'estado',
       cell: (value) => (
-        <span className={`px-2 py-1 text-xs rounded-full ${
-          value === 'activo' ? 'bg-green-100 text-green-800' :
-          value === 'disponible' ? 'bg-blue-100 text-blue-800' :
-          'bg-gray-100 text-gray-800'
-        }`}>
+        <span
+          className={`px-2 py-1 text-xs rounded-full ${
+            value === 'activo'
+              ? 'bg-green-100 text-green-800'
+              : value === 'disponible'
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-gray-100 text-gray-800'
+          }`}
+        >
           {value}
         </span>
-      )
+      ),
     },
     {
       header: 'Vehículo Asignado',
@@ -60,7 +65,7 @@ const DriversList = () => {
         <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
           {value}
         </span>
-      )
+      ),
     },
     {
       header: 'Licencia',
@@ -70,11 +75,13 @@ const DriversList = () => {
         const hoy = new Date();
         const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
         const proximoVencimiento = diasRestantes <= 30;
-        
+
         return (
           <div className="flex items-center">
             <Calendar className="h-3 w-3 mr-1" />
-            <span className={`text-sm ${proximoVencimiento ? 'text-red-600' : ''}`}>
+            <span
+              className={`text-sm ${proximoVencimiento ? 'text-red-600' : ''}`}
+            >
               {fecha.toLocaleDateString('es-CO')}
             </span>
             {proximoVencimiento && (
@@ -82,8 +89,8 @@ const DriversList = () => {
             )}
           </div>
         );
-      }
-    }
+      },
+    },
   ];
 
   return (
@@ -98,7 +105,9 @@ const DriversList = () => {
         </div>
         <div className="text-right">
           <p className="text-sm text-gray-500">Total de conductores</p>
-          <p className="text-2xl font-bold text-blue-600">{mockDrivers.length}</p>
+          <p className="text-2xl font-bold text-blue-600">
+            {mockDrivers.length}
+          </p>
         </div>
       </div>
 
@@ -112,12 +121,12 @@ const DriversList = () => {
             <div className="ml-4">
               <p className="text-sm text-gray-600">Conductores Activos</p>
               <p className="text-2xl font-bold text-green-600">
-                {mockDrivers.filter(d => d.estado === 'activo').length}
+                {mockDrivers.filter((d) => d.estado === 'activo').length}
               </p>
             </div>
           </div>
         </Card>
-        
+
         <Card className="p-6">
           <div className="flex items-center">
             <div className="p-3 bg-blue-100 rounded-full">
@@ -126,12 +135,12 @@ const DriversList = () => {
             <div className="ml-4">
               <p className="text-sm text-gray-600">Disponibles</p>
               <p className="text-2xl font-bold text-blue-600">
-                {mockDrivers.filter(d => d.estado === 'disponible').length}
+                {mockDrivers.filter((d) => d.estado === 'disponible').length}
               </p>
             </div>
           </div>
         </Card>
-        
+
         <Card className="p-6">
           <div className="flex items-center">
             <div className="p-3 bg-red-100 rounded-full">
@@ -140,12 +149,16 @@ const DriversList = () => {
             <div className="ml-4">
               <p className="text-sm text-gray-600">Licencias por Vencer</p>
               <p className="text-2xl font-bold text-red-600">
-                {mockDrivers.filter(d => {
-                  const fecha = new Date(d.licenciaVencimiento);
-                  const hoy = new Date();
-                  const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
-                  return diasRestantes <= 30;
-                }).length}
+                {
+                  mockDrivers.filter((d) => {
+                    const fecha = new Date(d.licenciaVencimiento);
+                    const hoy = new Date();
+                    const diasRestantes = Math.ceil(
+                      (fecha - hoy) / (1000 * 60 * 60 * 24)
+                    );
+                    return diasRestantes <= 30;
+                  }).length
+                }
               </p>
             </div>
           </div>
@@ -166,7 +179,7 @@ const DriversList = () => {
           </div>
         </div>
 
-        <Table 
+        <Table
           columns={columns}
           data={filteredDrivers}
           emptyMessage="No se encontraron conductores"

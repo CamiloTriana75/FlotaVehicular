@@ -4,21 +4,31 @@ import { mockVehicles } from '../data/mockVehicles';
 import Card from '../components/Card';
 import MapViewer from '../components/MapViewer';
 import VehicleForm from '../components/VehicleForm';
-import { ArrowLeft, MapPin, Gauge, Fuel, Calendar, User, Edit, Save, X } from 'lucide-react';
+import {
+  ArrowLeft,
+  MapPin,
+  Gauge,
+  Fuel,
+  Calendar,
+  User,
+  Edit,
+  Save,
+  X,
+} from 'lucide-react';
 
 const VehicleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [vehicleData, setVehicleData] = useState(
-    mockVehicles.find(v => v.id === parseInt(id))
+    mockVehicles.find((v) => v.id === parseInt(id))
   );
 
   if (!vehicleData) {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">Vehículo no encontrado</p>
-        <button 
+        <button
           onClick={() => navigate('/vehiculos')}
           className="mt-4 text-blue-600 hover:underline"
         >
@@ -34,11 +44,31 @@ const VehicleDetail = () => {
   };
 
   const historialActividad = [
-    { fecha: '2024-01-15 10:30', evento: 'Inicio de ruta', ubicacion: 'Base Central' },
-    { fecha: '2024-01-15 09:15', evento: 'Carga de combustible', ubicacion: 'Estación Shell Zona Rosa' },
-    { fecha: '2024-01-15 08:00', evento: 'Inspección pre-operacional', ubicacion: 'Base Central' },
-    { fecha: '2024-01-14 17:30', evento: 'Fin de jornada', ubicacion: 'Base Central' },
-    { fecha: '2024-01-14 16:45', evento: 'Entrega completada', ubicacion: 'Cliente Zona Norte' },
+    {
+      fecha: '2024-01-15 10:30',
+      evento: 'Inicio de ruta',
+      ubicacion: 'Base Central',
+    },
+    {
+      fecha: '2024-01-15 09:15',
+      evento: 'Carga de combustible',
+      ubicacion: 'Estación Shell Zona Rosa',
+    },
+    {
+      fecha: '2024-01-15 08:00',
+      evento: 'Inspección pre-operacional',
+      ubicacion: 'Base Central',
+    },
+    {
+      fecha: '2024-01-14 17:30',
+      evento: 'Fin de jornada',
+      ubicacion: 'Base Central',
+    },
+    {
+      fecha: '2024-01-14 16:45',
+      evento: 'Entrega completada',
+      ubicacion: 'Cliente Zona Norte',
+    },
   ];
 
   return (
@@ -58,7 +88,7 @@ const VehicleDetail = () => {
             <p className="text-gray-600">{vehicleData.modelo}</p>
           </div>
         </div>
-        
+
         <div className="flex space-x-3">
           {!isEditing ? (
             <button
@@ -85,7 +115,7 @@ const VehicleDetail = () => {
         <div className="lg:col-span-1 space-y-6">
           <Card className="p-6">
             <h2 className="text-xl font-semibold mb-4">Información General</h2>
-            
+
             {isEditing ? (
               <VehicleForm
                 vehicle={vehicleData}
@@ -98,10 +128,12 @@ const VehicleDetail = () => {
                   <MapPin className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
                     <p className="text-sm text-gray-600">Ubicación actual</p>
-                    <p className="font-medium">{vehicleData.lat.toFixed(4)}, {vehicleData.lng.toFixed(4)}</p>
+                    <p className="font-medium">
+                      {vehicleData.lat.toFixed(4)}, {vehicleData.lng.toFixed(4)}
+                    </p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center">
                   <Gauge className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
@@ -109,7 +141,7 @@ const VehicleDetail = () => {
                     <p className="font-medium">{vehicleData.speed} km/h</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center">
                   <Fuel className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
@@ -118,17 +150,22 @@ const VehicleDetail = () => {
                       <div className="w-20 bg-gray-200 rounded-full h-2 mr-2">
                         <div
                           className={`h-2 rounded-full ${
-                            vehicleData.combustible > 50 ? 'bg-green-500' : 
-                            vehicleData.combustible > 20 ? 'bg-yellow-500' : 'bg-red-500'
+                            vehicleData.combustible > 50
+                              ? 'bg-green-500'
+                              : vehicleData.combustible > 20
+                                ? 'bg-yellow-500'
+                                : 'bg-red-500'
                           }`}
                           style={{ width: `${vehicleData.combustible}%` }}
                         />
                       </div>
-                      <span className="font-medium">{vehicleData.combustible}%</span>
+                      <span className="font-medium">
+                        {vehicleData.combustible}%
+                      </span>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center">
                   <User className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
@@ -136,31 +173,41 @@ const VehicleDetail = () => {
                     <p className="font-medium">{vehicleData.conductor}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 text-gray-400 mr-3" />
                   <div>
-                    <p className="text-sm text-gray-600">Última actualización</p>
+                    <p className="text-sm text-gray-600">
+                      Última actualización
+                    </p>
                     <p className="font-medium">
-                      {new Date(vehicleData.ultimaActualizacion).toLocaleString('es-CO')}
+                      {new Date(vehicleData.ultimaActualizacion).toLocaleString(
+                        'es-CO'
+                      )}
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="pt-4 border-t">
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-gray-600">Estado</span>
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      vehicleData.status === 'activo' ? 'bg-green-100 text-green-800' :
-                      vehicleData.status === 'estacionado' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 text-xs rounded-full ${
+                        vehicleData.status === 'activo'
+                          ? 'bg-green-100 text-green-800'
+                          : vehicleData.status === 'estacionado'
+                            ? 'bg-yellow-100 text-yellow-800'
+                            : 'bg-red-100 text-red-800'
+                      }`}
+                    >
                       {vehicleData.status}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Kilometraje</span>
-                    <span className="font-medium">{vehicleData.kilometraje.toLocaleString()} km</span>
+                    <span className="font-medium">
+                      {vehicleData.kilometraje.toLocaleString()} km
+                    </span>
                   </div>
                 </div>
               </div>
@@ -169,10 +216,15 @@ const VehicleDetail = () => {
 
           {/* Historial de Actividad */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">Historial de Actividad</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Historial de Actividad
+            </h2>
             <div className="space-y-3">
               {historialActividad.map((item, index) => (
-                <div key={index} className="border-l-2 border-blue-200 pl-4 pb-3">
+                <div
+                  key={index}
+                  className="border-l-2 border-blue-200 pl-4 pb-3"
+                >
                   <p className="font-medium text-sm">{item.evento}</p>
                   <p className="text-xs text-gray-600">{item.fecha}</p>
                   <p className="text-xs text-gray-500">{item.ubicacion}</p>
@@ -185,9 +237,11 @@ const VehicleDetail = () => {
         {/* Mapa */}
         <div className="lg:col-span-2">
           <Card className="p-6 h-full">
-            <h2 className="text-xl font-semibold mb-4">Ubicación en Tiempo Real</h2>
+            <h2 className="text-xl font-semibold mb-4">
+              Ubicación en Tiempo Real
+            </h2>
             <div className="h-96">
-              <MapViewer 
+              <MapViewer
                 vehicles={[vehicleData]}
                 center={[vehicleData.lat, vehicleData.lng]}
                 zoom={13}
