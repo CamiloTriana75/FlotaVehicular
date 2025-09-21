@@ -119,15 +119,10 @@ tests/
 4. Desplegar automáticamente
 
 ## Checklist para Clase 9
-
-- [x] Diagrama de casos de uso subido
-- [x] Diagrama entidad-relación creado  
-- [x] Diagrama de clases diseñado
 - [x] Schema SQL implementado
 - [ ] Rama main creada
 - [ ] Rama develop creada
 - [ ] Pull Request de ejemplo
-- [ ] Asignar a Juan Camilo para configuración final de GitHub y CI
 
 ## Contribución
 
