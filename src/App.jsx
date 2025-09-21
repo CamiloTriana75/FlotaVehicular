@@ -1,12 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import NavBar from './components/NavBar';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
-import VehiclesList from './pages/VehiclesList';
-import VehicleDetail from './pages/VehicleDetail';
-import DriversList from './pages/DriversList';
-import Docs from './pages/Docs';
 import { useAuth } from './lib/supabaseClient';
 
 function App() {
@@ -23,10 +23,13 @@ function App() {
     setIsAuthenticated(false);
     localStorage.removeItem('mockUser');
     if (auth.isMockMode) {
-      // Limpiar cualquier estado adicional en modo mock
       console.log('Sesión cerrada en modo mock');
     }
   };
+
+  // Debug: Mostrar estado de autenticación
+  console.log('App render - isAuthenticated:', isAuthenticated);
+  console.log('App render - auth.isMockMode:', auth.isMockMode);
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} />;
@@ -35,17 +38,25 @@ function App() {
   return (
     <Router>
       <div className="min-h-screen bg-gray-50">
-        <NavBar onLogout={handleLogout} isMockMode={auth.isMockMode} />
-        <main className="container mx-auto px-4 py-8">
+        <div className="p-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-900">FleetManager</h1>
+            <p className="text-gray-600">
+              Sistema de Gestión de Flota Vehicular
+            </p>
+            <button
+              onClick={handleLogout}
+              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+            >
+              Cerrar Sesión
+            </button>
+          </div>
+
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/vehiculos" element={<VehiclesList />} />
-            <Route path="/vehiculos/:id" element={<VehicleDetail />} />
-            <Route path="/conductores" element={<DriversList />} />
-            <Route path="/documentos" element={<Docs />} />
           </Routes>
-        </main>
+        </div>
       </div>
     </Router>
   );

@@ -1,6 +1,15 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Truck, Menu, X, LayoutDashboard, Car, Users, FileText, LogOut } from 'lucide-react';
+import {
+  Truck,
+  Menu,
+  X,
+  LayoutDashboard,
+  Car,
+  Users,
+  FileText,
+  LogOut,
+} from 'lucide-react';
 
 const NavBar = ({ onLogout, isMockMode = false }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,9 +32,13 @@ const NavBar = ({ onLogout, isMockMode = false }) => {
           <Link to="/dashboard" className="flex items-center space-x-2">
             <Truck className="h-8 w-8 text-blue-600" />
             <div className="flex flex-col">
-              <span className="text-xl font-bold text-gray-900">FlotaManager</span>
+              <span className="text-xl font-bold text-gray-900">
+                FlotaManager
+              </span>
               {isMockMode && (
-                <span className="text-xs text-orange-600 font-medium">Modo Demo</span>
+                <span className="text-xs text-orange-600 font-medium">
+                  Modo Demo
+                </span>
               )}
             </div>
           </Link>
@@ -49,7 +62,7 @@ const NavBar = ({ onLogout, isMockMode = false }) => {
                 </Link>
               );
             })}
-            
+
             <button
               onClick={onLogout}
               className="flex items-center space-x-2 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -65,7 +78,11 @@ const NavBar = ({ onLogout, isMockMode = false }) => {
               onClick={() => setIsOpen(!isOpen)}
               className="p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100"
             >
-              {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              {isOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
             </button>
           </div>
         </div>
@@ -92,7 +109,7 @@ const NavBar = ({ onLogout, isMockMode = false }) => {
                   </Link>
                 );
               })}
-              
+
               <button
                 onClick={() => {
                   setIsOpen(false);
