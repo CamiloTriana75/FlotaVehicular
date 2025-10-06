@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../components/Card';
 import {
-  Settings,
+  Settings as SettingsIcon,
   User,
   Shield,
   Bell,
@@ -21,7 +21,7 @@ const Settings = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const tabs = [
-    { id: 'general', name: 'General', icon: Settings },
+    { id: 'general', name: 'General', icon: SettingsIcon },
     { id: 'users', name: 'Usuarios', icon: User },
     { id: 'security', name: 'Seguridad', icon: Shield },
     { id: 'notifications', name: 'Notificaciones', icon: Bell },
