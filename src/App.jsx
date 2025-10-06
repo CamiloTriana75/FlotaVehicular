@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   BrowserRouter as Router,
   Routes,
@@ -7,13 +7,24 @@ import {
 } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
 import Dashboard from './pages/Dashboard';
+import VehiclesList from './pages/VehiclesList';
+import DriversList from './pages/DriversList';
+import Maintenance from './pages/Maintenance';
+import Reports from './pages/Reports';
+import Settings from './pages/Settings';
+import VehicleDetail from './pages/VehicleDetail';
+import Alerts from './pages/Alerts';
+import RoutesPage from './pages/Routes';
+import Sidebar from './components/Sidebar';
+import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
 
 function App() {
   const auth = useAuth();
-  const [isAuthenticated, setIsAuthenticated] = React.useState(() => {
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
     return localStorage.getItem('mockUser') !== null;
   });
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleLogin = () => {
     setIsAuthenticated(true);
@@ -37,25 +48,31 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50">
-        <div className="p-6">
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900">FleetManager</h1>
-            <p className="text-gray-600">
-              Sistema de Gestión de Flota Vehicular
-            </p>
-            <button
-              onClick={handleLogout}
-              className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-            >
-              Cerrar Sesión
-            </button>
-          </div>
-
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-          </Routes>
+      <div className="min-h-screen bg-gray-50 flex">
+        <Sidebar
+          isOpen={isSidebarOpen}
+          onClose={() => setIsSidebarOpen(false)}
+        />
+        <div className="flex-1 flex flex-col min-w-0">
+          <TopBar
+            onMenuClick={() => setIsSidebarOpen(true)}
+            onLogout={handleLogout}
+            isMockMode={auth.isMockMode}
+          />
+          <main className="p-6">
+            <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/vehiculos" element={<VehiclesList />} />
+              <Route path="/vehiculos/:id" element={<VehicleDetail />} />
+              <Route path="/conductores" element={<DriversList />} />
+              <Route path="/mantenimiento" element={<Maintenance />} />
+              <Route path="/reportes" element={<Reports />} />
+              <Route path="/configuracion" element={<Settings />} />
+              <Route path="/alertas" element={<Alerts />} />
+              <Route path="/rutas" element={<RoutesPage />} />
+            </Routes>
+          </main>
         </div>
       </div>
     </Router>
