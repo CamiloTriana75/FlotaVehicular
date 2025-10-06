@@ -104,6 +104,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onClose}
+          role="button"
+          aria-label="Cerrar menú"
         />
       )}
 
@@ -129,6 +131,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           <button
             onClick={onClose}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Cerrar menú"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>

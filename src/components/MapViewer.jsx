@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -40,6 +40,84 @@ const createCustomIcon = (status) => {
   });
 };
 
+const RecenterButton = ({ center }) => {
+  const map = useMap();
+  return (
+    <button
+      aria-label="Centrar mapa"
+      onClick={() => map.setView(center, map.getZoom())}
+      style={{
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        zIndex: 1000,
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: 8,
+        padding: '6px 10px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+      }}
+    >
+      Centrar
+    </button>
+  );
+};
+
+const Legend = () => (
+  <div
+    aria-label="Leyenda de estados"
+    style={{
+      position: 'absolute',
+      bottom: 10,
+      right: 10,
+      zIndex: 1000,
+      background: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 12,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          background: '#10b981',
+          borderRadius: '50%',
+          marginRight: 6,
+        }}
+      />{' '}
+      Activo
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          background: '#f59e0b',
+          borderRadius: '50%',
+          marginRight: 6,
+        }}
+      />{' '}
+      Estacionado
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          background: '#ef4444',
+          borderRadius: '50%',
+          marginRight: 6,
+        }}
+      />{' '}
+      Mantenimiento
+    </div>
+  </div>
+);
+
 const MapViewer = ({
   vehicles = [],
   center = [4.711, -74.0721],
@@ -61,6 +139,8 @@ const MapViewer = ({
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      <RecenterButton center={center} />
+      <Legend />
 
       {vehicles.map((vehicle) => (
         <Marker
