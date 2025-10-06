@@ -10,6 +10,7 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 - [Estructura del Proyecto](#-estructura-del-proyecto)
 - [Scripts Disponibles](#-scripts-disponibles)
 - [Estrategia de Branching](#-estrategia-de-branching)
+- [Guía de Pull Requests](docs/PULL_REQUEST_GUIDE.md)
 - [Base de Datos](#-base-de-datos)
 - [Contribución](#-contribución)
 
@@ -315,11 +316,8 @@ npm run test:coverage
 - **Conventional Commits** para mensajes
 - **Tests** para nuevas funcionalidades
 
-
-
 ## 📄 Licencia
 
 Este proyecto está bajo la Licencia MIT. Ver [LICENSE](LICENSE) para más detalles.
 
 ---
-
