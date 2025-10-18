@@ -25,10 +25,11 @@ jobs:
             console.log(`Processing PR #${pr.number}: ${pr.title}`);
             
             // Extract issue numbers from PR body and title
-            const issuePattern = /#(\d+)|closes\s+#(\d+)|fixes\s+#(\d+)|resolves\s+#(\d+)/gi;
+            // Detects: #123, closes #123, fixes #123, resolves #123, and common typos
+            const issuePattern = /#(\d+)|(?:clo(?:se|ses|sing|sed)|fix(?:es|ed|ing)?|resolve[sd]?|cloes|close)\s*#(\d+)/gi;
             const text = `${pr.title} ${pr.body || ''}`;
             const matches = [...text.matchAll(issuePattern)];
-            const issueNumbers = [...new Set(matches.map(m => m[1] || m[2] || m[3] || m[4]).filter(Boolean))];
+            const issueNumbers = [...new Set(matches.map(m => m[1] || m[2]).filter(Boolean))];
             
             console.log(`Found ${issueNumbers.length} linked issue(s): ${issueNumbers.join(', ')}`);
             
@@ -80,12 +81,6 @@ jobs:
                 });
                 
                 console.log(`Processing issue #${issueNumber}: ${issue.title}`);
-                
-                // Find issue card in project
-                const { data: cards } = await github.rest.projects.listCards({
-                  column_id: inReviewColumn.id,
-                  per_page: 100
-                });
                 
                 // Check all columns to find the issue card
                 let issueCard = null;
