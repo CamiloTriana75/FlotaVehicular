@@ -4,6 +4,12 @@ on:
   pull_request:
     types: [opened, ready_for_review]
 
+permissions:
+  contents: read
+  issues: write
+  pull-requests: read
+  repository-projects: write
+
 jobs:
   move-to-in-review:
     runs-on: ubuntu-latest
@@ -25,7 +31,6 @@ jobs:
             console.log(`Processing PR #${pr.number}: ${pr.title}`);
             
             // Extract issue numbers from PR body and title
-            // Detects: #123, closes #123, fixes #123, resolves #123, and common typos
             const issuePattern = /#(\d+)|(?:clo(?:se|ses|sing|sed)|fix(?:es|ed|ing)?|resolve[sd]?|cloes|close)\s*#(\d+)/gi;
             const text = `${pr.title} ${pr.body || ''}`;
             const matches = [...text.matchAll(issuePattern)];
@@ -38,100 +43,176 @@ jobs:
               return;
             }
             
-            // Get project information
-            const { data: projects } = await github.rest.projects.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'open'
+            // Get repository info
+            const repoOwner = context.repo.owner;
+            const repoName = context.repo.repo;
+            
+            // GraphQL query to get projects v2 for the repository
+            const projectsQuery = `
+              query($owner: String!, $repo: String!) {
+                repository(owner: $owner, name: $repo) {
+                  projectsV2(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                    nodes {
+                      id
+                      title
+                      number
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const projectsResult = await github.graphql(projectsQuery, {
+              owner: repoOwner,
+              repo: repoName
             });
             
+            const projects = projectsResult.repository.projectsV2.nodes;
+            
             if (projects.length === 0) {
-              console.log('No projects found in repository');
+              console.log('No Projects v2 found in repository');
               return;
             }
             
             const project = projects[0];
-            console.log(`Using project: ${project.name}`);
+            console.log(`Using project: ${project.title} (ID: ${project.id})`);
             
-            // Get project columns
-            const { data: columns } = await github.rest.projects.listColumns({
-              project_id: project.id
+            // Get project fields (including status field)
+            const fieldsQuery = `
+              query($projectId: ID!) {
+                node(id: $projectId) {
+                  ... on ProjectV2 {
+                    fields(first: 20) {
+                      nodes {
+                        ... on ProjectV2SingleSelectField {
+                          id
+                          name
+                          options {
+                            id
+                            name
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            `;
+            
+            const fieldsResult = await github.graphql(fieldsQuery, {
+              projectId: project.id
             });
             
-            const inReviewColumn = columns.find(col => 
-              col.name.toLowerCase().includes('review') || 
-              col.name.toLowerCase().includes('in review')
+            // Find the Status field
+            const statusField = fieldsResult.node.fields.nodes.find(
+              field => field.name && field.name.toLowerCase() === 'status'
             );
             
-            if (!inReviewColumn) {
-              console.log('No "In Review" column found');
+            if (!statusField) {
+              console.log('No Status field found in project');
               return;
             }
             
-            console.log(`Target column: ${inReviewColumn.name}`);
+            console.log(`Found Status field (ID: ${statusField.id})`);
+            
+            // Find "In Review" option
+            const inReviewOption = statusField.options.find(
+              opt => opt.name.toLowerCase().includes('review')
+            );
+            
+            if (!inReviewOption) {
+              console.log('No "In Review" status option found');
+              console.log('Available options:', statusField.options.map(o => o.name).join(', '));
+              return;
+            }
+            
+            console.log(`Target status: ${inReviewOption.name} (ID: ${inReviewOption.id})`);
             
             // Process each linked issue
             for (const issueNumber of issueNumbers) {
               try {
-                // Get issue details
-                const { data: issue } = await github.rest.issues.get({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
+                console.log(`Processing issue #${issueNumber}...`);
+                
+                // Get issue node ID
+                const issue = await github.rest.issues.get({
+                  owner: repoOwner,
+                  repo: repoName,
                   issue_number: parseInt(issueNumber)
                 });
                 
-                console.log(`Processing issue #${issueNumber}: ${issue.title}`);
-                
-                // Check all columns to find the issue card
-                let issueCard = null;
-                for (const column of columns) {
-                  const { data: columnCards } = await github.rest.projects.listCards({
-                    column_id: column.id,
-                    per_page: 100
-                  });
-                  
-                  issueCard = columnCards.find(card => 
-                    card.content_url && card.content_url.includes(`/issues/${issueNumber}`)
-                  );
-                  
-                  if (issueCard) {
-                    console.log(`Found card in column: ${column.name}`);
-                    break;
+                // Find the item in the project
+                const itemQuery = `
+                  query($projectId: ID!, $issueNumber: Int!) {
+                    repository(owner: "${repoOwner}", name: "${repoName}") {
+                      issue(number: $issueNumber) {
+                        projectItems(first: 10) {
+                          nodes {
+                            id
+                            project {
+                              id
+                              title
+                            }
+                          }
+                        }
+                      }
+                    }
                   }
+                `;
+                
+                const itemResult = await github.graphql(itemQuery, {
+                  projectId: project.id,
+                  issueNumber: parseInt(issueNumber)
+                });
+                
+                const projectItem = itemResult.repository.issue.projectItems.nodes.find(
+                  item => item.project.id === project.id
+                );
+                
+                if (!projectItem) {
+                  console.log(`Issue #${issueNumber} is not in project ${project.title}, skipping...`);
+                  continue;
                 }
                 
-                if (issueCard) {
-                  // Move card to In Review
-                  await github.rest.projects.moveCard({
-                    card_id: issueCard.id,
-                    position: 'top',
-                    column_id: inReviewColumn.id
-                  });
-                  
-                  console.log(`✅ Moved issue #${issueNumber} to In Review`);
-                  
-                  // Add comment to issue
-                  await github.rest.issues.createComment({
-                    owner: context.repo.owner,
-                    repo: context.repo.repo,
-                    issue_number: parseInt(issueNumber),
-                    body: `🔄 This issue has been automatically moved to **In Review** because PR #${pr.number} was opened.\n\n[View Pull Request](${pr.html_url})`
-                  });
-                } else {
-                  console.log(`⚠️ Card not found for issue #${issueNumber}`);
-                  
-                  // Create new card in In Review
-                  await github.rest.projects.createCard({
-                    column_id: inReviewColumn.id,
-                    content_id: issue.id,
-                    content_type: 'Issue'
-                  });
-                  
-                  console.log(`✅ Created new card for issue #${issueNumber} in In Review`);
-                }
+                console.log(`Found issue #${issueNumber} in project (Item ID: ${projectItem.id})`);
+                
+                // Update the status field
+                const updateMutation = `
+                  mutation($projectId: ID!, $itemId: ID!, $fieldId: ID!, $value: ProjectV2FieldValue!) {
+                    updateProjectV2ItemFieldValue(input: {
+                      projectId: $projectId
+                      itemId: $itemId
+                      fieldId: $fieldId
+                      value: $value
+                    }) {
+                      projectV2Item {
+                        id
+                      }
+                    }
+                  }
+                `;
+                
+                await github.graphql(updateMutation, {
+                  projectId: project.id,
+                  itemId: projectItem.id,
+                  fieldId: statusField.id,
+                  value: {
+                    singleSelectOptionId: inReviewOption.id
+                  }
+                });
+                
+                console.log(`✅ Moved issue #${issueNumber} to "${inReviewOption.name}"`);
+                
+                // Add comment to issue
+                await github.rest.issues.createComment({
+                  owner: repoOwner,
+                  repo: repoName,
+                  issue_number: parseInt(issueNumber),
+                  body: `🔄 This issue has been automatically moved to **${inReviewOption.name}** because PR #${pr.number} was opened.\n\n[View Pull Request](${pr.html_url})`
+                });
                 
               } catch (error) {
                 console.error(`❌ Error processing issue #${issueNumber}:`, error.message);
+                console.error(error);
               }
             }
             
