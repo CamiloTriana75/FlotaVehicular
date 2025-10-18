@@ -206,18 +206,16 @@ jobs:
                   issue_number: parseInt(issueNumber)
                 });
                 
-                // Find the item in the project
+                // Find the item in the project and get the issue node id
                 const itemQuery = `
-                  query($projectId: ID!, $issueNumber: Int!) {
+                  query($issueNumber: Int!) {
                     repository(owner: "${repoOwner}", name: "${repoName}") {
                       issue(number: $issueNumber) {
-                        projectItems(first: 10) {
+                        id
+                        projectItems(first: 20) {
                           nodes {
                             id
-                            project {
-                              id
-                              title
-                            }
+                            project { id title }
                           }
                         }
                       }
@@ -226,17 +224,30 @@ jobs:
                 `;
                 
                 const itemResult = await github.graphql(itemQuery, {
-                  projectId: project.id,
                   issueNumber: parseInt(issueNumber)
                 });
                 
-                const projectItem = itemResult.repository.issue.projectItems.nodes.find(
+                const issueNodeId = itemResult.repository.issue?.id;
+                let projectItem = itemResult.repository.issue?.projectItems.nodes.find(
                   item => item.project.id === project.id
                 );
                 
                 if (!projectItem) {
-                  console.log(`Issue #${issueNumber} is not in project ${project.title}, skipping...`);
-                  continue;
+                  console.log(`Issue #${issueNumber} is not in project ${project.title}, adding it...`);
+                  // Add the issue to the project
+                  const addItemMutation = `
+                    mutation($projectId: ID!, $contentId: ID!) {
+                      addProjectV2ItemById(input: { projectId: $projectId, contentId: $contentId }) {
+                        item { id }
+                      }
+                    }
+                  `;
+                  const addItemResult = await github.graphql(addItemMutation, {
+                    projectId: project.id,
+                    contentId: issueNodeId
+                  });
+                  projectItem = addItemResult.addProjectV2ItemById.item;
+                  console.log(`✅ Added issue #${issueNumber} to project. Item ID: ${projectItem.id}`);
                 }
                 
                 console.log(`Found issue #${issueNumber} in project (Item ID: ${projectItem.id})`);
