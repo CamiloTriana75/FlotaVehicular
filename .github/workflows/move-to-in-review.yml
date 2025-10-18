@@ -47,34 +47,100 @@ jobs:
             const repoOwner = context.repo.owner;
             const repoName = context.repo.repo;
             
-            // GraphQL query to get projects v2 for the repository
-            const projectsQuery = `
-              query($owner: String!, $repo: String!) {
-                repository(owner: $owner, name: $repo) {
-                  projectsV2(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
-                    nodes {
-                      id
-                      title
-                      number
+            // GraphQL query to get ALL projects that include this issue
+            // This searches user/org projects and repository projects
+            console.log('Searching for projects...');
+            
+            let project = null;
+            let projects = [];
+            
+            // Try to get user/org projects first (most common for Projects v2)
+            try {
+              const userProjectsQuery = `
+                query($login: String!) {
+                  user(login: $login) {
+                    projectsV2(first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                      nodes {
+                        id
+                        title
+                        number
+                      }
                     }
                   }
                 }
+              `;
+              
+              const userProjectsResult = await github.graphql(userProjectsQuery, {
+                login: repoOwner
+              });
+              
+              projects = userProjectsResult.user?.projectsV2?.nodes || [];
+              console.log(`Found ${projects.length} user projects`);
+            } catch (error) {
+              console.log('Not a user account, trying organization...');
+              
+              // Try organization projects
+              try {
+                const orgProjectsQuery = `
+                  query($login: String!) {
+                    organization(login: $login) {
+                      projectsV2(first: 20, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                        nodes {
+                          id
+                          title
+                          number
+                        }
+                      }
+                    }
+                  }
+                `;
+                
+                const orgProjectsResult = await github.graphql(orgProjectsQuery, {
+                  login: repoOwner
+                });
+                
+                projects = orgProjectsResult.organization?.projectsV2?.nodes || [];
+                console.log(`Found ${projects.length} organization projects`);
+              } catch (orgError) {
+                console.log('Failed to get organization projects:', orgError.message);
               }
-            `;
+            }
             
-            const projectsResult = await github.graphql(projectsQuery, {
-              owner: repoOwner,
-              repo: repoName
-            });
-            
-            const projects = projectsResult.repository.projectsV2.nodes;
+            // Also try repository-level projects
+            try {
+              const repoProjectsQuery = `
+                query($owner: String!, $repo: String!) {
+                  repository(owner: $owner, name: $repo) {
+                    projectsV2(first: 10, orderBy: {field: UPDATED_AT, direction: DESC}) {
+                      nodes {
+                        id
+                        title
+                        number
+                      }
+                    }
+                  }
+                }
+              `;
+              
+              const repoProjectsResult = await github.graphql(repoProjectsQuery, {
+                owner: repoOwner,
+                repo: repoName
+              });
+              
+              const repoProjects = repoProjectsResult.repository?.projectsV2?.nodes || [];
+              console.log(`Found ${repoProjects.length} repository projects`);
+              projects = [...projects, ...repoProjects];
+            } catch (repoError) {
+              console.log('Failed to get repository projects:', repoError.message);
+            }
             
             if (projects.length === 0) {
-              console.log('No Projects v2 found in repository');
+              console.log('No Projects v2 found');
               return;
             }
             
-            const project = projects[0];
+            // Use the first project (most recently updated)
+            project = projects[0];
             console.log(`Using project: ${project.title} (ID: ${project.id})`);
             
             // Get project fields (including status field)
