@@ -1,0 +1,143 @@
+name: Auto Move to In Review
+
+on:
+  pull_request:
+    types: [opened, ready_for_review]
+
+jobs:
+  move-to-in-review:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Move linked issues to In Review
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const pr = context.payload.pull_request;
+            
+            // Skip if PR is draft
+            if (pr.draft) {
+              console.log('PR is draft, skipping...');
+              return;
+            }
+            
+            console.log(`Processing PR #${pr.number}: ${pr.title}`);
+            
+            // Extract issue numbers from PR body and title
+            const issuePattern = /#(\d+)|closes\s+#(\d+)|fixes\s+#(\d+)|resolves\s+#(\d+)/gi;
+            const text = `${pr.title} ${pr.body || ''}`;
+            const matches = [...text.matchAll(issuePattern)];
+            const issueNumbers = [...new Set(matches.map(m => m[1] || m[2] || m[3] || m[4]).filter(Boolean))];
+            
+            console.log(`Found ${issueNumbers.length} linked issue(s): ${issueNumbers.join(', ')}`);
+            
+            if (issueNumbers.length === 0) {
+              console.log('No linked issues found');
+              return;
+            }
+            
+            // Get project information
+            const { data: projects } = await github.rest.projects.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open'
+            });
+            
+            if (projects.length === 0) {
+              console.log('No projects found in repository');
+              return;
+            }
+            
+            const project = projects[0];
+            console.log(`Using project: ${project.name}`);
+            
+            // Get project columns
+            const { data: columns } = await github.rest.projects.listColumns({
+              project_id: project.id
+            });
+            
+            const inReviewColumn = columns.find(col => 
+              col.name.toLowerCase().includes('review') || 
+              col.name.toLowerCase().includes('in review')
+            );
+            
+            if (!inReviewColumn) {
+              console.log('No "In Review" column found');
+              return;
+            }
+            
+            console.log(`Target column: ${inReviewColumn.name}`);
+            
+            // Process each linked issue
+            for (const issueNumber of issueNumbers) {
+              try {
+                // Get issue details
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: parseInt(issueNumber)
+                });
+                
+                console.log(`Processing issue #${issueNumber}: ${issue.title}`);
+                
+                // Find issue card in project
+                const { data: cards } = await github.rest.projects.listCards({
+                  column_id: inReviewColumn.id,
+                  per_page: 100
+                });
+                
+                // Check all columns to find the issue card
+                let issueCard = null;
+                for (const column of columns) {
+                  const { data: columnCards } = await github.rest.projects.listCards({
+                    column_id: column.id,
+                    per_page: 100
+                  });
+                  
+                  issueCard = columnCards.find(card => 
+                    card.content_url && card.content_url.includes(`/issues/${issueNumber}`)
+                  );
+                  
+                  if (issueCard) {
+                    console.log(`Found card in column: ${column.name}`);
+                    break;
+                  }
+                }
+                
+                if (issueCard) {
+                  // Move card to In Review
+                  await github.rest.projects.moveCard({
+                    card_id: issueCard.id,
+                    position: 'top',
+                    column_id: inReviewColumn.id
+                  });
+                  
+                  console.log(`✅ Moved issue #${issueNumber} to In Review`);
+                  
+                  // Add comment to issue
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: parseInt(issueNumber),
+                    body: `🔄 This issue has been automatically moved to **In Review** because PR #${pr.number} was opened.\n\n[View Pull Request](${pr.html_url})`
+                  });
+                } else {
+                  console.log(`⚠️ Card not found for issue #${issueNumber}`);
+                  
+                  // Create new card in In Review
+                  await github.rest.projects.createCard({
+                    column_id: inReviewColumn.id,
+                    content_id: issue.id,
+                    content_type: 'Issue'
+                  });
+                  
+                  console.log(`✅ Created new card for issue #${issueNumber} in In Review`);
+                }
+                
+              } catch (error) {
+                console.error(`❌ Error processing issue #${issueNumber}:`, error.message);
+              }
+            }
+            
+            console.log('✨ Automation completed successfully');
