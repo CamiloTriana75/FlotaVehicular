@@ -17,10 +17,36 @@ jobs:
     steps:
       - name: Move linked issues to In Review
         uses: actions/github-script@v7
+        env:
+          PROJECT_TOKEN: ${{ secrets.PROJECT_TOKEN }}
         with:
-          github-token: ${{ secrets.PROJECT_TOKEN || secrets.GITHUB_TOKEN }}
+          # Importante: usar siempre GITHUB_TOKEN para operaciones en proyectos del repositorio.
+          # Usaremos PROJECT_TOKEN (PAT) únicamente para consultar proyectos a nivel usuario/organización.
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const pr = context.payload.pull_request;
+            const PAT = process.env.PROJECT_TOKEN;
+            
+            // Pequeño helper para llamar GraphQL con un token específico (por ejemplo, el PAT)
+            async function gqlWith(token, query, variables) {
+              const res = await fetch('https://api.github.com/graphql', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                  'Content-Type': 'application/json',
+                  'Accept': 'application/vnd.github+json'
+                },
+                body: JSON.stringify({ query, variables })
+              });
+              const data = await res.json();
+              if (data.errors && data.errors.length) {
+                const msg = data.errors.map(e => e.message).join(' | ');
+                const err = new Error(msg);
+                err.response = data;
+                throw err;
+              }
+              return data.data;
+            }
             
             // Skip if PR is draft
             if (pr.draft) {
@@ -70,9 +96,10 @@ jobs:
                 }
               `;
               
-              const userProjectsResult = await github.graphql(userProjectsQuery, {
-                login: repoOwner
-              });
+              // Para proyectos a nivel usuario se requiere PAT con alcance de Projects.
+              const userProjectsResult = PAT
+                ? await gqlWith(PAT, userProjectsQuery, { login: repoOwner })
+                : { user: null };
               
               projects = userProjectsResult.user?.projectsV2?.nodes || [];
               console.log(`Found ${projects.length} user projects`);
@@ -95,9 +122,10 @@ jobs:
                   }
                 `;
                 
-                const orgProjectsResult = await github.graphql(orgProjectsQuery, {
-                  login: repoOwner
-                });
+                // Para proyectos a nivel organización también se requiere PAT.
+                const orgProjectsResult = PAT
+                  ? await gqlWith(PAT, orgProjectsQuery, { login: repoOwner })
+                  : { organization: null };
                 
                 projects = orgProjectsResult.organization?.projectsV2?.nodes || [];
                 console.log(`Found ${projects.length} organization projects`);
