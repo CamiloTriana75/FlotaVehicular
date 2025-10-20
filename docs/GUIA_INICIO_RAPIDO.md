@@ -5,16 +5,19 @@
 He realizado las siguientes correcciones:
 
 ### 1. **main.tsx** ✅
+
 - Cambiado el import del AppProvider a ruta directa
 - Eliminada extensión .jsx del import de App
 
 ### 2. **tsconfig.app.json** ✅
+
 - Agregado `"allowJs": true` para permitir archivos JavaScript
 - Agregado `"resolveJsonModule": true`
 - Ajustado strict mode para evitar errores con archivos .js
 - Los errores de TypeScript que ves son solo porque faltan las dependencias
 
 ### 3. **Creado src/types/store.d.ts** ✅
+
 - Declaraciones de tipos para el store
 - Permite que TypeScript reconozca los módulos JavaScript
 
@@ -29,6 +32,7 @@ npm install
 ```
 
 Esto instalará:
+
 - React 18
 - React DOM
 - React Router
@@ -74,16 +78,21 @@ npm run build
 ## 🐛 Solución de Problemas
 
 ### Error: "Cannot find module 'react'"
+
 **Solución**: Ejecuta `npm install`
 
 ### Error: "Vite not found"
+
 **Solución**: Ejecuta `npm install`
 
 ### Error de TypeScript en archivos .js
+
 **Solución**: Ya está configurado en `tsconfig.app.json` con `allowJs: true`
 
 ### Puerto 5173 ya en uso
-**Solución**: 
+
+**Solución**:
+
 ```powershell
 # Detener el proceso en el puerto
 npx kill-port 5173
@@ -158,11 +167,11 @@ import { useVehicles } from './hooks';
 
 const MiComponente = () => {
   // Usar el hook personalizado
-  const { 
-    vehicles,      // Lista de vehículos
-    loading,       // Estado de carga
-    addVehicle,    // Función para agregar
-    updateVehicle  // Función para actualizar
+  const {
+    vehicles, // Lista de vehículos
+    loading, // Estado de carga
+    addVehicle, // Función para agregar
+    updateVehicle, // Función para actualizar
   } = useVehicles();
 
   const handleAdd = () => {
@@ -172,7 +181,7 @@ const MiComponente = () => {
       model: 'Hilux',
       year: 2023,
       type: 'camión',
-      status: 'activo'
+      status: 'activo',
     });
   };
 
@@ -182,7 +191,7 @@ const MiComponente = () => {
     <div>
       <h1>Vehículos: {vehicles.length}</h1>
       <button onClick={handleAdd}>Agregar Vehículo</button>
-      {vehicles.map(v => (
+      {vehicles.map((v) => (
         <div key={v.id}>
           {v.plate} - {v.brand} {v.model}
         </div>
@@ -199,6 +208,7 @@ export default MiComponente;
 ## 📊 Estado del Proyecto
 
 ### ✅ Completado
+
 - [x] Arquitectura unidireccional implementada
 - [x] Custom hooks creados
 - [x] Entidades de dominio
@@ -209,6 +219,7 @@ export default MiComponente;
 - [x] TypeScript configurado para .js/.jsx
 
 ### ⏭️ Próximo Paso
+
 1. **Ejecutar**: `npm install`
 2. **Iniciar**: `npm run dev`
 3. **Abrir**: `http://localhost:5173`
@@ -218,6 +229,7 @@ export default MiComponente;
 ## 💡 Tips
 
 ### Desarrollo
+
 ```powershell
 # Servidor de desarrollo con hot-reload
 npm run dev
@@ -227,6 +239,7 @@ npm run dev
 ```
 
 ### Producción
+
 ```powershell
 # Build optimizado
 npm run build
@@ -236,6 +249,7 @@ npm run preview
 ```
 
 ### Calidad de Código
+
 ```powershell
 # Linter
 npm run lint
@@ -253,7 +267,7 @@ npm run format
 - **Contribuir**: Ver `docs/CONTRIBUTING.md`
 - **Estilo de Código**: Ver `docs/CODE_STYLE.md`
 - **Diagramas**: Ver `docs/diagrams/`
-- **Changelog**: Ver `CHANGELOG_ARCHITECTURE.md`
+- **Changelog**: Ver [CHANGELOG_ARCHITECTURE.md](CHANGELOG_ARCHITECTURE.md)
 
 ---
 

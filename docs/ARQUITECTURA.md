@@ -108,6 +108,7 @@ src/
 ```
 
 **Características**:
+
 - Sin lógica de negocio
 - Solo presentación y manejo de eventos
 - Reciben datos vía props o hooks
@@ -127,6 +128,7 @@ src/
 ```
 
 **Características**:
+
 - Hooks personalizados encapsulan lógica
 - Store maneja estado global
 - Actions son objetos planos
@@ -143,6 +145,7 @@ src/core/
 ```
 
 **Características**:
+
 - Independiente de React
 - Lógica de negocio pura
 - Entidades con métodos de negocio
@@ -178,11 +181,11 @@ dispatch({ type: 'ADD_VEHICLE', payload: vehicle });
 // Encapsular lógica reutilizable
 export const useVehicles = () => {
   const { state, dispatch } = useAppContext();
-  
+
   const addVehicle = (vehicle) => {
     dispatch(addVehicleAction(vehicle));
   };
-  
+
   return { vehicles: state.vehicles, addVehicle };
 };
 ```
@@ -201,9 +204,7 @@ export const useVehicles = () => {
 ### 4. Render Props / Children Pattern
 
 ```javascript
-<DataProvider>
-  {(data) => <DisplayData data={data} />}
-</DataProvider>
+<DataProvider>{(data) => <DisplayData data={data} />}</DataProvider>
 ```
 
 ### 5. HOC (Higher Order Components)
@@ -212,7 +213,11 @@ export const useVehicles = () => {
 const withAuth = (Component) => {
   return (props) => {
     const { isAuthenticated } = useAuth();
-    return isAuthenticated ? <Component {...props} /> : <Redirect to="/login" />;
+    return isAuthenticated ? (
+      <Component {...props} />
+    ) : (
+      <Redirect to="/login" />
+    );
   };
 };
 ```
@@ -222,11 +227,13 @@ const withAuth = (Component) => {
 ### Estado Local vs Global
 
 **Estado Local** (useState):
+
 - Datos específicos de un componente
 - No se comparten entre componentes
 - Ejemplo: estado de un formulario, modal abierto/cerrado
 
 **Estado Global** (Context + useReducer):
+
 - Datos compartidos por múltiples componentes
 - Persiste entre navegación
 - Ejemplo: usuario autenticado, lista de vehículos
@@ -270,7 +277,7 @@ state.vehicles.push(newVehicle);
 // ✅ Correcto
 return {
   ...state,
-  vehicles: [...state.vehicles, newVehicle]
+  vehicles: [...state.vehicles, newVehicle],
 };
 ```
 
