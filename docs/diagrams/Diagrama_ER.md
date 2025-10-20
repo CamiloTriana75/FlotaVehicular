@@ -233,5 +233,5 @@ Cada tabla implementa **Row Level Security** en Supabase para:
 ## Referencias
 
 - Ver esquema completo: `supabase/migrations/`
-- Documentación de arquitectura: `docs/ARCHITECTURE.md`
+- Documentación de arquitectura: `docs/ARQUITECTURA.md`
 - Infraestructura: `docs/INFRASTRUCTURE.md`
