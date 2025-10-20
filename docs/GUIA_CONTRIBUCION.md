@@ -43,23 +43,29 @@ Si encuentras un bug:
 
 ```markdown
 ## Descripción del Bug
+
 [Descripción clara del problema]
 
 ## Pasos para Reproducir
+
 1. Ir a '...'
 2. Click en '...'
 3. Ver error
 
 ## Comportamiento Esperado
+
 [Qué debería pasar]
 
 ## Comportamiento Actual
+
 [Qué pasa realmente]
 
 ## Screenshots
+
 [Si aplica]
 
 ## Entorno
+
 - OS: [ej. Windows 11]
 - Navegador: [ej. Chrome 120]
 - Versión: [ej. 1.0.0]
@@ -162,14 +168,15 @@ git push origin feature/nombre-descriptivo
 
 ### Tipos de Branches
 
-| Tipo | Prefijo | Descripción | Base |
-|------|---------|-------------|------|
+| Tipo    | Prefijo    | Descripción         | Base      |
+| ------- | ---------- | ------------------- | --------- |
 | Feature | `feature/` | Nueva funcionalidad | `develop` |
-| Bugfix | `bugfix/` | Corrección de bug | `develop` |
-| Hotfix | `hotfix/` | Corrección urgente | `main` |
-| Release | `release/` | Preparar release | `develop` |
+| Bugfix  | `bugfix/`  | Corrección de bug   | `develop` |
+| Hotfix  | `hotfix/`  | Corrección urgente  | `main`    |
+| Release | `release/` | Preparar release    | `develop` |
 
 **Ejemplos:**
+
 - `feature/add-vehicle-tracking`
 - `bugfix/fix-login-validation`
 - `hotfix/critical-security-patch`
@@ -189,7 +196,7 @@ git push origin feature/nombre-descriptivo
 // ✅ Buenas prácticas
 
 // 1. Nombres descriptivos
-const activeVehicles = vehicles.filter(v => v.status === 'active');
+const activeVehicles = vehicles.filter((v) => v.status === 'active');
 
 // 2. Funciones pequeñas y con una sola responsabilidad
 const calculateFuelAverage = (vehicles) => {
@@ -204,7 +211,7 @@ const { id, name, status } = driver;
 const message = `Vehicle ${plate} has low fuel: ${fuel}%`;
 
 // 5. Arrow functions para callbacks
-vehicles.map(vehicle => vehicle.plate);
+vehicles.map((vehicle) => vehicle.plate);
 
 // 6. Async/await sobre Promises
 const fetchData = async () => {
@@ -221,7 +228,7 @@ const fetchData = async () => {
 // ❌ Evitar
 
 // 1. Variables no descriptivas
-const x = vehicles.filter(v => v.status === 'active');
+const x = vehicles.filter((v) => v.status === 'active');
 
 // 2. Funciones largas
 const doEverything = () => {
@@ -229,9 +236,9 @@ const doEverything = () => {
 };
 
 // 3. Callbacks anidados (callback hell)
-getData(function(a) {
-  getMoreData(a, function(b) {
-    getMoreData(b, function(c) {
+getData(function (a) {
+  getMoreData(a, function (b) {
+    getMoreData(b, function (c) {
       // ...
     });
   });
@@ -254,15 +261,17 @@ vehicles.push(newVehicle); // En reducers
  */
 export const VehicleCard = ({ vehicle, onSelect }) => {
   const { plate, brand, model, status } = vehicle;
-  
+
   const handleClick = () => {
     onSelect(vehicle.id);
   };
-  
+
   return (
     <div className="vehicle-card" onClick={handleClick}>
       <h3>{plate}</h3>
-      <p>{brand} {model}</p>
+      <p>
+        {brand} {model}
+      </p>
       <span className={`status-${status}`}>{status}</span>
     </div>
   );
@@ -280,11 +289,14 @@ export const VehicleCard = ({ vehicle, onSelect }) => {
  */
 export const useVehicles = () => {
   const { state, dispatch } = useAppContext();
-  
-  const addVehicle = useCallback((vehicle) => {
-    dispatch(addVehicleAction(vehicle));
-  }, [dispatch]);
-  
+
+  const addVehicle = useCallback(
+    (vehicle) => {
+      dispatch(addVehicleAction(vehicle));
+    },
+    [dispatch]
+  );
+
   return {
     vehicles: state.vehicles.vehicles,
     loading: state.vehicles.loading,
@@ -330,16 +342,16 @@ Usamos [Conventional Commits](https://www.conventionalcommits.org/) para mensaje
 
 ### Tipos de Commit
 
-| Tipo | Descripción | Ejemplo |
-|------|-------------|---------|
-| `feat` | Nueva funcionalidad | `feat(vehicles): add vehicle tracking` |
-| `fix` | Corrección de bug | `fix(auth): resolve login validation` |
-| `docs` | Cambios en documentación | `docs(readme): update installation steps` |
-| `style` | Formato de código | `style(components): format with prettier` |
-| `refactor` | Refactorización | `refactor(hooks): simplify useVehicles` |
-| `test` | Tests | `test(utils): add formatDate tests` |
-| `chore` | Tareas de mantenimiento | `chore(deps): update dependencies` |
-| `perf` | Mejoras de performance | `perf(dashboard): optimize KPI calculation` |
+| Tipo       | Descripción              | Ejemplo                                     |
+| ---------- | ------------------------ | ------------------------------------------- |
+| `feat`     | Nueva funcionalidad      | `feat(vehicles): add vehicle tracking`      |
+| `fix`      | Corrección de bug        | `fix(auth): resolve login validation`       |
+| `docs`     | Cambios en documentación | `docs(readme): update installation steps`   |
+| `style`    | Formato de código        | `style(components): format with prettier`   |
+| `refactor` | Refactorización          | `refactor(hooks): simplify useVehicles`     |
+| `test`     | Tests                    | `test(utils): add formatDate tests`         |
+| `chore`    | Tareas de mantenimiento  | `chore(deps): update dependencies`          |
+| `perf`     | Mejoras de performance   | `perf(dashboard): optimize KPI calculation` |
 
 ### Ejemplos
 
@@ -383,18 +395,22 @@ npm run commit
 
 ```markdown
 ## Descripción
+
 [Descripción clara de los cambios]
 
 ## Tipo de Cambio
+
 - [ ] Bug fix (cambio que corrige un issue)
 - [ ] Nueva feature (cambio que agrega funcionalidad)
 - [ ] Breaking change (cambio que rompe compatibilidad)
 - [ ] Documentación
 
 ## ¿Cómo se ha probado?
+
 [Describe las pruebas realizadas]
 
 ## Checklist
+
 - [ ] Mi código sigue el style guide del proyecto
 - [ ] He realizado una auto-revisión de mi código
 - [ ] He comentado mi código, especialmente en áreas difíciles
@@ -405,9 +421,11 @@ npm run commit
 - [ ] Cambios dependientes han sido mergeados
 
 ## Screenshots (si aplica)
+
 [Capturas de pantalla]
 
 ## Issues relacionados
+
 Closes #[número]
 ```
 
@@ -457,7 +475,7 @@ describe('formatDate', () => {
     const formatted = formatDate(date, 'DD/MM/YYYY');
     expect(formatted).toBe('15/01/2025');
   });
-  
+
   it('should handle invalid dates', () => {
     expect(() => formatDate('invalid')).toThrow();
   });
