@@ -85,7 +85,7 @@ Los nuevos commits se sumarán automáticamente a la PR abierta.
 
 - Tras aprobación y checks verdes, merge a `develop`.
 - Con `Closes #<numero>` en el título o descripción, la issue se cierra automáticamente.
-- Si tu PR referencia la issue (por ejemplo `#32`), el workflow del repo la moverá a "In review" al abrir la PR.
+- Si tu PR referencia una issue (por ejemplo `#32`), por ahora el movimiento en el tablero del proyecto es manual. Recuerda actualizar el estado a "In review" cuando abras la PR.
 
 ## 7) Hotfix directo a main (solo emergencias)
 

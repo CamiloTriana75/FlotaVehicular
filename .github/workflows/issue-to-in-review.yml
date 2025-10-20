@@ -1,125 +1,14 @@
-name: Mover issues a "In review" al abrir PR
+name: DISABLED - Mover issues a "In review" (removed)
 
 on:
-  pull_request:
-    types: [opened, reopened, ready_for_review]
-
-permissions:
-  contents: read
-  pull-requests: read
-  issues: read
-  projects: write
+  push:
+    branches-ignore:
+      - '**'
 
 jobs:
-  move-linked-issues:
-    name: Mover issues vinculadas a columna "In review"
+  noop:
     runs-on: ubuntu-latest
     steps:
-      - name: Extraer issues vinculadas y mover a "In review"
-        uses: actions/github-script@v7
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const pr = context.payload.pull_request;
-            if (!pr) {
-              core.info('No hay pull_request en el contexto.');
-              return;
-            }
-
-            // 1) Detectar issues vinculadas por referencia tipo #123 en título/cuerpo de la PR
-            const text = `${pr.title}\n\n${pr.body || ''}`;
-            const issueNumbers = Array.from(new Set((text.match(/#(\d+)/g) || []).map(m => parseInt(m.slice(1), 10))));
-
-            if (issueNumbers.length === 0) {
-              core.info('No se detectaron issues referenciadas en la PR.');
-              return;
-            }
-
-            core.info(`Issues detectadas: ${issueNumbers.join(', ')}`);
-
-            // 2) Obtener proyectos clásicos del repositorio
-            const { owner, repo } = context.repo;
-
-            // Nota: API de Projects clásica
-            // Ver: https://docs.github.com/en/rest/projects/projects?apiVersion=2022-11-28#list-repository-projects
-            const projects = await github.paginate(github.rest.projects.listForRepo, {
-              owner,
-              repo,
-              state: 'open',
-              per_page: 100,
-              mediaType: { previews: ['inertia'] },
-            });
-
-            if (!projects || projects.length === 0) {
-              core.info('No se encontraron proyectos clásicos en el repositorio.');
-              return;
-            }
-
-            // 3) Para cada proyecto, buscar columna objetivo "In review"
-            for (const issueNumber of issueNumbers) {
-              let moved = false;
-
-              for (const project of projects) {
-                const columns = await github.paginate(github.rest.projects.listColumns, {
-                  project_id: project.id,
-                  per_page: 100,
-                  mediaType: { previews: ['inertia'] },
-                });
-
-                // Buscar columna destino (case-insensitive)
-                const targetColumn = columns.find(c => String(c.name).toLowerCase() === 'in review');
-                if (!targetColumn) {
-                  core.info(`Proyecto "${project.name}": no existe columna "In review".`);
-                  continue;
-                }
-
-                // Recolectar tarjetas del proyecto para localizar la tarjeta de la issue
-                // Recorremos todas las columnas para encontrar la tarjeta de la issue
-                let foundCard = null;
-                for (const col of columns) {
-                  const cards = await github.paginate(github.rest.projects.listCards, {
-                    column_id: col.id,
-                    per_page: 100,
-                    mediaType: { previews: ['inertia'] },
-                  });
-
-                  for (const card of cards) {
-                    if (card.content_url && card.content_url.endsWith(`/issues/${issueNumber}`)) {
-                      foundCard = { card, currentColumnId: col.id };
-                      break;
-                    }
-                  }
-                  if (foundCard) break;
-                }
-
-                if (!foundCard) {
-                  core.info(`Proyecto "${project.name}": la issue #${issueNumber} no tiene tarjeta en este proyecto.`);
-                  continue;
-                }
-
-                if (foundCard.currentColumnId === targetColumn.id) {
-                  core.info(`Proyecto "${project.name}": la issue #${issueNumber} ya está en "In review".`);
-                  moved = true;
-                  continue;
-                }
-
-                // 4) Mover la tarjeta a la columna destino
-                await github.rest.projects.moveCard({
-                  card_id: foundCard.card.id,
-                  position: 'top',
-                  column_id: targetColumn.id,
-                  mediaType: { previews: ['inertia'] },
-                });
-
-                core.info(`Proyecto "${project.name}": issue #${issueNumber} movida a "In review".`);
-                moved = true;
-              }
-
-              if (!moved) {
-                core.warning(`No se pudo mover la issue #${issueNumber}. Verifique que exista una tarjeta en un proyecto clásico y la columna "In review".`);
-              }
-            }
-
-            core.info('Proceso finalizado.');
+      - run: echo "Workflow deshabilitado"
 
 
