@@ -28,11 +28,13 @@ Esta guía establece las convenciones y estándares de código para el proyecto 
 
 ```javascript
 // ✅ DO: Código claro y expresivo
-const activeVehicles = vehicles.filter(vehicle => vehicle.status === 'active');
+const activeVehicles = vehicles.filter(
+  (vehicle) => vehicle.status === 'active'
+);
 const averageFuel = calculateAverageFuel(activeVehicles);
 
 // ❌ DON'T: Código críptico
-const av = vhs.filter(v => v.s === 'a');
+const av = vhs.filter((v) => v.s === 'a');
 const af = av.reduce((s, v) => s + v.f, 0) / av.length;
 ```
 
@@ -79,9 +81,9 @@ async function fetchVehicles() {
 }
 
 // ❌ Evitar callbacks anidados (callback hell)
-getVehicles(function(vehicles) {
-  getDrivers(function(drivers) {
-    assignDrivers(vehicles, drivers, function(result) {
+getVehicles(function (vehicles) {
+  getDrivers(function (drivers) {
+    assignDrivers(vehicles, drivers, function (result) {
       // Too deep!
     });
   });
@@ -135,7 +137,7 @@ const allVehicles = [...activeVehicles, ...inactiveVehicles];
 
 // ✅ Rest parameters
 const filterVehicles = (...statuses) => {
-  return vehicles.filter(v => statuses.includes(v.status));
+  return vehicles.filter((v) => statuses.includes(v.status));
 };
 ```
 
@@ -143,15 +145,15 @@ const filterVehicles = (...statuses) => {
 
 ```javascript
 // ✅ Usar métodos de array modernos
-const activeVehicles = vehicles.filter(v => v.status === 'active');
-const plates = vehicles.map(v => v.plate);
-const hasLowFuel = vehicles.some(v => v.fuel < 20);
-const allFueled = vehicles.every(v => v.fuel > 50);
+const activeVehicles = vehicles.filter((v) => v.status === 'active');
+const plates = vehicles.map((v) => v.plate);
+const hasLowFuel = vehicles.some((v) => v.fuel < 20);
+const allFueled = vehicles.every((v) => v.fuel > 50);
 const total = vehicles.reduce((sum, v) => sum + v.fuel, 0);
 
 // ✅ Encontrar elementos
-const vehicle = vehicles.find(v => v.id === vehicleId);
-const index = vehicles.findIndex(v => v.plate === plate);
+const vehicle = vehicles.find((v) => v.id === vehicleId);
+const index = vehicles.findIndex((v) => v.plate === plate);
 
 // ❌ NO modificar arrays directamente en reducers
 state.vehicles.push(newVehicle); // ❌
@@ -165,13 +167,17 @@ return { ...state, vehicles: [...state.vehicles, newVehicle] }; // ✅
 const key = 'status';
 const vehicle = {
   [key]: 'active',
-  [`${key}Updated`]: Date.now()
+  [`${key}Updated`]: Date.now(),
 };
 
 // ✅ Method shorthand
 const vehicleService = {
-  getAll() { /* ... */ },
-  getById(id) { /* ... */ }
+  getAll() {
+    /* ... */
+  },
+  getById(id) {
+    /* ... */
+  },
 };
 
 // ✅ Object shorthand
@@ -190,15 +196,17 @@ import React from 'react';
 
 export const VehicleCard = ({ vehicle, onSelect }) => {
   const { plate, brand, model, status } = vehicle;
-  
+
   const handleClick = () => {
     onSelect(vehicle.id);
   };
-  
+
   return (
     <div className="vehicle-card" onClick={handleClick}>
       <h3>{plate}</h3>
-      <p>{brand} {model}</p>
+      <p>
+        {brand} {model}
+      </p>
       <Badge status={status} />
     </div>
   );
@@ -216,10 +224,7 @@ class VehicleCard extends React.Component {
 // ✅ Destructuring de props
 const Button = ({ text, onClick, variant = 'primary' }) => {
   return (
-    <button 
-      onClick={onClick}
-      className={`btn btn-${variant}`}
-    >
+    <button onClick={onClick} className={`btn btn-${variant}`}>
       {text}
     </button>
   );
@@ -229,13 +234,11 @@ const Button = ({ text, onClick, variant = 'primary' }) => {
 Button.propTypes = {
   text: PropTypes.string.isRequired,
   onClick: PropTypes.func.isRequired,
-  variant: PropTypes.oneOf(['primary', 'secondary'])
+  variant: PropTypes.oneOf(['primary', 'secondary']),
 };
 
 // ✅ Spread props con cuidado
-const Button = ({ text, ...rest }) => (
-  <button {...rest}>{text}</button>
-);
+const Button = ({ text, ...rest }) => <button {...rest}>{text}</button>;
 ```
 
 ### Hooks
@@ -245,32 +248,32 @@ const Button = ({ text, ...rest }) => (
 const MyComponent = () => {
   // 1. Context
   const { state, dispatch } = useAppContext();
-  
+
   // 2. State hooks
   const [isOpen, setIsOpen] = useState(false);
   const [data, setData] = useState(null);
-  
+
   // 3. Refs
   const inputRef = useRef(null);
-  
+
   // 4. Custom hooks
   const { vehicles } = useVehicles();
   const { user } = useAuth();
-  
+
   // 5. Effects
   useEffect(() => {
     fetchData();
   }, []);
-  
+
   // 6. Callbacks y memoización
   const handleClick = useCallback(() => {
     setIsOpen(true);
   }, []);
-  
+
   const expensiveValue = useMemo(() => {
     return calculateExpensive(data);
   }, [data]);
-  
+
   // 7. Render
   return <div>...</div>;
 };
@@ -285,30 +288,37 @@ if (condition) {
 
 ```jsx
 // ✅ Renderizado condicional claro
-{isLoading && <Spinner />}
-{error && <ErrorMessage error={error} />}
-{!isLoading && !error && <Content data={data} />}
+{
+  isLoading && <Spinner />;
+}
+{
+  error && <ErrorMessage error={error} />;
+}
+{
+  !isLoading && !error && <Content data={data} />;
+}
 
 // ✅ Operador ternario para dos opciones
-{isAuthenticated ? <Dashboard /> : <LoginPage />}
+{
+  isAuthenticated ? <Dashboard /> : <LoginPage />;
+}
 
 // ✅ Componente separado para lógica compleja
 const VehicleStatus = ({ vehicle }) => {
   if (vehicle.status === 'active') {
     return <ActiveBadge />;
   }
-  
+
   if (vehicle.status === 'maintenance') {
     return <MaintenanceBadge />;
   }
-  
+
   return <InactiveBadge />;
 };
 
 // ❌ Evitar ternarios anidados complejos
-{condition1 ? 
-  (condition2 ? <A /> : <B />) : 
-  (condition3 ? <C /> : <D />)
+{
+  condition1 ? condition2 ? <A /> : <B /> : condition3 ? <C /> : <D />;
 } // ❌ Difícil de leer
 ```
 
@@ -316,17 +326,21 @@ const VehicleStatus = ({ vehicle }) => {
 
 ```jsx
 // ✅ Key prop única y estable
-{vehicles.map(vehicle => (
-  <VehicleCard 
-    key={vehicle.id}  // ✅ Usar ID único
-    vehicle={vehicle} 
-  />
-))}
+{
+  vehicles.map((vehicle) => (
+    <VehicleCard
+      key={vehicle.id} // ✅ Usar ID único
+      vehicle={vehicle}
+    />
+  ));
+}
 
 // ❌ NO usar index como key si el orden puede cambiar
-{vehicles.map((vehicle, index) => (
-  <VehicleCard key={index} vehicle={vehicle} /> // ❌
-))}
+{
+  vehicles.map((vehicle, index) => (
+    <VehicleCard key={index} vehicle={vehicle} /> // ❌
+  ));
+}
 ```
 
 ### Event Handlers
@@ -375,7 +389,7 @@ const cardClasses = "bg-white rounded-lg shadow-md p-4 hover:shadow-lg transitio
 
 // ✅ Clases condicionales con template literals
 const buttonClasses = `
-  btn 
+  btn
   ${variant === 'primary' ? 'btn-primary' : 'btn-secondary'}
   ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}
 `;
@@ -417,8 +431,8 @@ function calculateTotal() {}
 const getUserName = () => {};
 
 // ❌ NO usar snake_case ni PascalCase
-const vehicle_count = 10;  // ❌
-const VehicleCount = 10;   // ❌
+const vehicle_count = 10; // ❌
+const VehicleCount = 10; // ❌
 ```
 
 ### Componentes
@@ -429,8 +443,8 @@ const VehicleCard = () => {};
 const DashboardLayout = () => {};
 
 // ✅ Nombres descriptivos
-const UserProfileHeader = () => {};  // ✅
-const UPH = () => {};                // ❌ Abreviaciones poco claras
+const UserProfileHeader = () => {}; // ✅
+const UPH = () => {}; // ❌ Abreviaciones poco claras
 ```
 
 ### Constantes
@@ -442,7 +456,7 @@ const API_BASE_URL = 'https://api.example.com';
 const VEHICLE_STATUS = {
   ACTIVE: 'active',
   MAINTENANCE: 'maintenance',
-  PARKED: 'parked'
+  PARKED: 'parked',
 };
 ```
 
@@ -475,7 +489,7 @@ const useAuth = () => {};
 const useLocalStorage = () => {};
 
 // ❌ NO olvidar el prefijo 'use'
-const vehicles = () => {};  // ❌ No es claro que es un hook
+const vehicles = () => {}; // ❌ No es claro que es un hook
 ```
 
 ## File Organization
@@ -533,18 +547,13 @@ import Button from '@/components/Button';
 import Card from '@/components/Card';
 
 // ✅ Named imports en orden alfabético
-import { 
-  calculateAverage,
-  formatCurrency,
-  generateId,
-  sortBy 
-} from '../utils';
+import { calculateAverage, formatCurrency, generateId, sortBy } from '../utils';
 
 // ❌ Evitar imports relativos profundos
-import { utils } from '../../../shared/utils';  // ❌
+import { utils } from '../../../shared/utils'; // ❌
 
 // ✅ Usar alias de path
-import { utils } from '@/shared/utils';  // ✅
+import { utils } from '@/shared/utils'; // ✅
 ```
 
 ## Comments & Documentation
@@ -557,7 +566,7 @@ import { utils } from '@/shared/utils';  // ✅
  * @param {Array<Vehicle>} vehicles - Array de objetos vehículo
  * @returns {number} Promedio de combustible (0-100)
  * @throws {Error} Si el array está vacío
- * 
+ *
  * @example
  * const avg = calculateFuelAverage(vehicles);
  * console.log(avg); // 75.5
@@ -566,7 +575,7 @@ export const calculateFuelAverage = (vehicles) => {
   if (vehicles.length === 0) {
     throw new Error('Vehicle array cannot be empty');
   }
-  
+
   const total = vehicles.reduce((sum, v) => sum + v.fuel, 0);
   return total / vehicles.length;
 };
@@ -602,18 +611,18 @@ const maintenanceCost = calculateMaintenanceCost(vehicle);
 ```jsx
 /**
  * Componente de tarjeta de vehículo
- * 
+ *
  * Muestra información básica de un vehículo con opción de selección
- * 
+ *
  * @component
  * @param {Object} props
  * @param {Vehicle} props.vehicle - Objeto de vehículo
  * @param {Function} props.onSelect - Callback al seleccionar (recibe vehicleId)
  * @param {boolean} [props.showDetails=false] - Si se muestran detalles adicionales
- * 
+ *
  * @example
- * <VehicleCard 
- *   vehicle={vehicle} 
+ * <VehicleCard
+ *   vehicle={vehicle}
  *   onSelect={(id) => navigate(`/vehicles/${id}`)}
  *   showDetails={true}
  * />
@@ -665,11 +674,11 @@ function updateVehicle(vehicleId, updates) {
   if (!vehicleId) {
     throw new Error('Vehicle ID is required');
   }
-  
+
   if (!updates || Object.keys(updates).length === 0) {
     throw new Error('Updates object cannot be empty');
   }
-  
+
   // Lógica principal
   const vehicle = findVehicle(vehicleId);
   return { ...vehicle, ...updates };
@@ -684,16 +693,19 @@ function updateVehicle(vehicleId, updates) {
 // ✅ useMemo para cálculos costosos
 const expensiveValue = useMemo(() => {
   return vehicles
-    .filter(v => v.status === 'active')
-    .map(v => calculateComplexMetrics(v))
+    .filter((v) => v.status === 'active')
+    .map((v) => calculateComplexMetrics(v))
     .reduce((sum, metrics) => sum + metrics.total, 0);
 }, [vehicles]);
 
 // ✅ useCallback para funciones pasadas como props
-const handleVehicleSelect = useCallback((vehicleId) => {
-  dispatch(selectVehicle(vehicleId));
-  navigate(`/vehicles/${vehicleId}`);
-}, [dispatch, navigate]);
+const handleVehicleSelect = useCallback(
+  (vehicleId) => {
+    dispatch(selectVehicle(vehicleId));
+    navigate(`/vehicles/${vehicleId}`);
+  },
+  [dispatch, navigate]
+);
 
 // ✅ React.memo para componentes que no cambian frecuentemente
 export const VehicleCard = React.memo(({ vehicle, onSelect }) => {

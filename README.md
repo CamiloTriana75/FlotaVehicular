@@ -186,9 +186,9 @@ FlotaVehicular/### Capas de la Aplicación
 
 │ ├── GUIA_COMPLETA_COLABORACION.md ← EMPIEZA AQUÍ│ ├── reducers/ # Reducers puros
 
-│ ├── ARCHITECTURE.md│ ├── context/ # React Context
+│ ├── ARQUITECTURA.md│ ├── context/ # React Context
 
-│ ├── CODE_STYLE.md│ └── types.js # Action types
+│ ├── ESTILO_CODIGO.md│ └── types.js # Action types
 
 │ └── diagrams/ # Diagramas UML│
 
@@ -270,17 +270,17 @@ npm run commit       # Commit con Commitizen (asistente)- **Custom Hooks** - Ló
 
 | **[Guía de Colaboración](docs/GUIA_COMPLETA_COLABORACION.md)** | 👈 **EMPIEZA AQUÍ** - Tu primera tarea |- **Prettier** - Formateador de código
 
-| [Architecture](docs/ARCHITECTURE.md) | Entender la estructura del código |- **Vitest** - Framework de testing
+| [Arquitectura](docs/ARQUITECTURA.md) | Entender la estructura del código |- **Vitest** - Framework de testing
 
-| [Code Style](docs/CODE_STYLE.md) | Antes de escribir código |- **Git** - Control de versiones
+| [Estilo de Código](docs/ESTILO_CODIGO.md) | Antes de escribir código |- **Git** - Control de versiones
 
-| [Development](docs/DEVELOPMENT.md) | Configuración avanzada |- **GitHub** - Repositorio y CI/CD
+| [Desarrollo](docs/DESARROLLO.md) | Configuración avanzada |- **GitHub** - Repositorio y CI/CD
 
-| [Branching Strategy](docs/BRANCHING_STRATEGY.md) | Gestión de ramas y workflow |- **Commitlint** - Validación de commits
+| [Estrategia de Ramas](docs/ESTRATEGIA_RAMAS.md) | Gestión de ramas y workflow |- **Commitlint** - Validación de commits
 
-| [Pull Request Guide](docs/PULL_REQUEST_GUIDE.md) | Antes de crear un PR |
+| [Guía de Pull Request](docs/GUIA_PULL_REQUEST.md) | Antes de crear un PR |
 
-| [Contributing](docs/CONTRIBUTING.md) | Guía completa de contribución |## ⚙️ Configuración del Entorno
+| [Guía de Contribución](docs/GUIA_CONTRIBUCION.md) | Guía completa de contribución |## ⚙️ Configuración del Entorno
 
 ### Diagramas### Prerrequisitos
 
@@ -392,15 +392,15 @@ feat:     Nueva funcionalidad├── 📁 docs/                           # �
 
 fix:      Corrección de bug│   ├── 📁 diagrams/                   # Diagramas UML y técnicos
 
-docs:     Cambios en documentación│   ├── 📄 ARCHITECTURE.md             # Arquitectura detallada
+docs:     Cambios en documentación│   ├── 📄 ARQUITECTURA.md             # Arquitectura detallada
 
-style:    Cambios de formato│   ├── 📄 CONTRIBUTING.md             # Guía de contribución
+style:    Cambios de formato│   ├── 📄 GUIA_CONTRIBUCION.md             # Guía de contribución
 
-refactor: Mejora de código sin cambiar función│   ├── 📄 CODE_STYLE.md              # Convenciones de código
+refactor: Mejora de código sin cambiar función│   ├── 📄 ESTILO_CODIGO.md              # Convenciones de código
 
 test:     Agregar o modificar tests│   ├── 📄 DEPLOYMENT.md              # Guía de despliegue
 
-```│   └── 📄 DEVELOPMENT.md             # Guía de desarrollo
+```│   └── 📄 DESARROLLO.md             # Guía de desarrollo
 
 │
 
@@ -560,7 +560,7 @@ Este proyecto es desarrollado por estudiantes como trabajo académico.│   │ 
 
 **Documentación técnica:**│   ├── 📁 migrations/                # Migraciones de BD
 
-- [ARCHITECTURE.md](docs/ARCHITECTURE.md)│   └── config.toml                   # Configuración
+- [ARQUITECTURA.md](docs/ARQUITECTURA.md)│   └── config.toml                   # Configuración
 
 - [Diagramas UML](docs/diagrams/)│
 
@@ -854,13 +854,13 @@ npm run test:coverage
 
 1. 📖 **[Guía Rápida del Equipo](docs/GUIA_RAPIDA_EQUIPO.md)** - Todo lo que necesitas saber para empezar (sin experiencia previa en Git)
 2. 📋 **[Índice de Documentación](docs/README.md)** - Navegación completa de toda la documentación
-3. ⚙️ **[Guía de Desarrollo](docs/DEVELOPMENT.md)** - Setup del entorno y herramientas
+3. ⚙️ **[Guía de Desarrollo](docs/DESARROLLO.md)** - Setup del entorno y herramientas
 
 ### 📖 Documentación por Categoría
 
 #### Arquitectura y Diseño
 
-- **[ARCHITECTURE.md](docs/ARCHITECTURE.md)** - Arquitectura del sistema (Flux pattern, capas)
+- **[ARQUITECTURA.md](docs/ARQUITECTURA.md)** - Arquitectura del sistema (Flux pattern, capas)
 - **[Diagrama de Arquitectura](docs/diagrams/Arquitectura_Sistema.md)** - Visualización de la arquitectura
 - **[Diagrama ER](docs/diagrams/Diagrama_ER.md)** - Modelo de base de datos
 - **[Casos de Uso](docs/diagrams/Diagrama_Casos_Uso.md)** - Diagramas de casos de uso
@@ -868,13 +868,13 @@ npm run test:coverage
 #### Desarrollo Día a Día
 
 - **[Guía Rápida](docs/GUIA_RAPIDA_EQUIPO.md)** - Para trabajar sin conocimientos previos de Git
-- **[Estrategia de Ramas](docs/BRANCHING_STRATEGY.md)** - Cómo crear y nombrar ramas
-- **[Guía de Pull Requests](docs/PULL_REQUEST_GUIDE.md)** - Cómo crear PRs correctamente
-- **[Estilo de Código](docs/CODE_STYLE.md)** - Convenciones y mejores prácticas
+- **[Estrategia de Ramas](docs/ESTRATEGIA_RAMAS.md)** - Cómo crear y nombrar ramas
+- **[Guía de Pull Requests](docs/GUIA_PULL_REQUEST.md)** - Cómo crear PRs correctamente
+- **[Estilo de Código](docs/ESTILO_CODIGO.md)** - Convenciones y mejores prácticas
 
 #### Contribución y Colaboración
 
-- **[CONTRIBUTING.md](docs/CONTRIBUTING.md)** - Guía completa de contribución
+- **[Guía de Contribución](docs/GUIA_CONTRIBUCION.md)** - Guía completa de contribución
 - **[Planificación de Sprints](docs/SPRINT_PLANNING.md)** - Gestión de sprints y metodología
 - **[Etiquetas de GitHub](docs/GITHUB_LABELS.md)** - Sistema de organización de issues
 

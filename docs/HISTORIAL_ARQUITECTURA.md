@@ -32,6 +32,7 @@ src/store/
 ```
 
 **Características:**
+
 - ✅ Flujo unidireccional de datos
 - ✅ Estado inmutable
 - ✅ Single source of truth
@@ -51,6 +52,7 @@ src/hooks/
 ```
 
 **Funcionalidades:**
+
 - ✅ Separación de lógica de UI
 - ✅ Reutilización de código
 - ✅ API consistente
@@ -78,6 +80,7 @@ src/
 Se crearon guías profesionales para el equipo:
 
 #### **docs/ARCHITECTURE.md**
+
 - Explicación detallada de la arquitectura
 - Principios de diseño (SOLID, DRY, KISS)
 - Patrones implementados
@@ -85,6 +88,7 @@ Se crearon guías profesionales para el equipo:
 - Ejemplos de código
 
 #### **docs/CONTRIBUTING.md**
+
 - Guía de contribución paso a paso
 - Flujo de trabajo con GitFlow
 - Proceso de Pull Requests
@@ -92,6 +96,7 @@ Se crearon guías profesionales para el equipo:
 - Testing requirements
 
 #### **docs/CODE_STYLE.md**
+
 - Convenciones de JavaScript/TypeScript
 - Estándares de React & JSX
 - Guía de Tailwind CSS
@@ -99,6 +104,7 @@ Se crearon guías profesionales para el equipo:
 - Mejores prácticas
 
 #### **docs/DEPLOYMENT.md**
+
 - Guía de despliegue completa
 - Configuración para Vercel, Netlify, Railway
 - Setup de Supabase
@@ -110,6 +116,7 @@ Se crearon guías profesionales para el equipo:
 Se crearon diagramas profesionales usando Mermaid:
 
 #### **docs/diagrams/Arquitectura_Sistema.md**
+
 1. **Arquitectura General** - Vista de alto nivel de capas
 2. **Flujo Unidireccional** - Secuencia de datos Flux
 3. **Componentes** - Árbol de componentes React
@@ -122,6 +129,7 @@ Se crearon diagramas profesionales usando Mermaid:
 10. **Custom Hooks** - Estructura de hooks
 
 #### **docs/diagrams/Diagrama_Casos_Uso.md**
+
 - Casos de uso generales del sistema
 - Casos de uso por módulo
 - Secuencias detalladas
@@ -144,12 +152,14 @@ Se actualizó completamente el README con:
 Se crearon clases de entidad con lógica de negocio:
 
 **src/core/entities/Vehicle.js**
+
 - Clase Vehicle con métodos de negocio
 - Validaciones de estado
 - Métodos helper (isActive, needsMaintenance, etc.)
 - Documentación JSDoc completa
 
 **src/core/entities/Driver.js**
+
 - Clase Driver con métodos de negocio
 - Gestión de asignación de vehículos
 - Validaciones de disponibilidad
@@ -158,6 +168,7 @@ Se crearon clases de entidad con lógica de negocio:
 ### 8. 🔧 Utilidades Compartidas
 
 **src/shared/constants/index.js**
+
 - Estados de vehículos y conductores
 - Tipos de alertas
 - Rutas de navegación
@@ -166,6 +177,7 @@ Se crearon clases de entidad con lógica de negocio:
 - Mensajes de error
 
 **src/shared/utils/index.js**
+
 - formatCurrency
 - formatDate
 - generateId
@@ -225,6 +237,7 @@ Se crearon clases de entidad con lógica de negocio:
 ### Cómo Empezar
 
 1. **Lee la documentación**
+
    ```bash
    docs/ARCHITECTURE.md    # Entiende la arquitectura
    docs/CONTRIBUTING.md    # Aprende a contribuir
@@ -232,6 +245,7 @@ Se crearon clases de entidad con lógica de negocio:
    ```
 
 2. **Revisa los diagramas**
+
    ```bash
    docs/diagrams/Arquitectura_Sistema.md
    docs/diagrams/Diagrama_Casos_Uso.md
@@ -247,15 +261,17 @@ Se crearon clases de entidad con lógica de negocio:
 ### Flujo de Trabajo
 
 1. **Crear feature branch**
+
    ```bash
    git checkout develop
    git checkout -b feature/mi-feature
    ```
 
 2. **Usar el estado global**
+
    ```javascript
    import { useVehicles } from '@/hooks';
-   
+
    const { vehicles, addVehicle, updateVehicle } = useVehicles();
    ```
 
@@ -293,21 +309,21 @@ import { useVehicles } from '@/hooks';
 // 2. Usar en componente
 const MyComponent = () => {
   const { vehicles, addVehicle, loading } = useVehicles();
-  
+
   const handleAdd = () => {
     addVehicle({
       plate: 'ABC123',
       brand: 'Toyota',
       model: 'Hilux',
-      year: 2023
+      year: 2023,
     });
   };
-  
+
   if (loading) return <Spinner />;
-  
+
   return (
     <div>
-      {vehicles.map(v => (
+      {vehicles.map((v) => (
         <VehicleCard key={v.id} vehicle={v} />
       ))}
       <button onClick={handleAdd}>Agregar</button>
@@ -323,6 +339,7 @@ Los componentes actuales (Dashboard, VehiclesList, etc.) pueden ser migrados gra
 ### Testing
 
 Escribir tests para:
+
 - Reducers (funciones puras, fáciles de testear)
 - Custom hooks (con React Testing Library)
 - Utilidades (tests unitarios simples)
@@ -332,6 +349,7 @@ Escribir tests para:
 ## 📊 Resumen de Archivos Creados
 
 ### Arquitectura (10 archivos)
+
 - `src/store/types.js`
 - `src/store/reducers/authReducer.js`
 - `src/store/reducers/vehicleReducer.js`
@@ -344,31 +362,37 @@ Escribir tests para:
 - `src/store/index.js`
 
 ### Hooks (4 archivos)
+
 - `src/hooks/useAuth.js`
 - `src/hooks/useVehicles.js`
 - `src/hooks/useDrivers.js`
 - `src/hooks/index.js`
 
 ### Core (3 archivos)
+
 - `src/core/entities/Vehicle.js`
 - `src/core/entities/Driver.js`
 - `src/core/entities/index.js`
 
 ### Shared (2 archivos)
+
 - `src/shared/constants/index.js`
 - `src/shared/utils/index.js`
 
 ### Documentación (4 archivos)
+
 - `docs/ARCHITECTURE.md`
 - `docs/CONTRIBUTING.md`
 - `docs/CODE_STYLE.md`
 - `docs/DEPLOYMENT.md`
 
 ### Diagramas (2 archivos)
+
 - `docs/diagrams/Arquitectura_Sistema.md`
 - `docs/diagrams/Diagrama_Casos_Uso.md`
 
 ### Actualizados (2 archivos)
+
 - `README.md`
 - `src/main.tsx`
 
@@ -379,6 +403,7 @@ Escribir tests para:
 ## 🎯 Beneficios de la Nueva Arquitectura
 
 ### Para el Desarrollo
+
 - ✅ Código más organizado y mantenible
 - ✅ Lógica separada de la UI
 - ✅ Reutilización de código con hooks
@@ -386,6 +411,7 @@ Escribir tests para:
 - ✅ Debugging simplificado
 
 ### Para el Equipo
+
 - ✅ Onboarding más rápido con documentación
 - ✅ Estándares claros de código
 - ✅ Menos conflictos en Git
@@ -393,6 +419,7 @@ Escribir tests para:
 - ✅ Colaboración mejorada
 
 ### Para el Producto
+
 - ✅ Escalabilidad para nuevas features
 - ✅ Performance optimizada
 - ✅ Menos bugs por estado predecible
