@@ -1,4 +1,4 @@
-# 🚗 FleetManager - Sistema de Gestión de Flota Vehicular# 🚗 FleetManager - Sistema de Gestión de Flota Vehicular
+# 🚗 FleetManager - Sistema de Gestión de Flota Vehicular
 
 Sistema integral para la gestión, monitoreo y optimización de flota vehicular con tracking en tiempo real.Sistema integral para la gestión, monitoreo y optimización de flota vehicular con tracking en tiempo real, planificación de rutas, control de combustible y mantenimiento predictivo.
 
