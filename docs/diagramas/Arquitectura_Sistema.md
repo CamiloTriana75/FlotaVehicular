@@ -10,22 +10,23 @@ graph TB
         UI[Interface de Usuario<br/>React Components]
         Pages[Páginas/Vistas]
     end
-    
+
     subgraph "Capa de Aplicación"
         Hooks[Custom Hooks<br/>useAuth, useVehicles, useDrivers]
         Store[Estado Global<br/>Context + Reducers]
     end
-    
+    .
+
     subgraph "Capa de Dominio"
         Entities[Entidades<br/>Vehicle, Driver]
         UseCases[Casos de Uso<br/>Lógica de Negocio]
     end
-    
+
     subgraph "Capa de Infraestructura"
         API[Supabase Client]
         DB[(PostgreSQL<br/>Database)]
     end
-    
+
     UI --> Hooks
     Pages --> Hooks
     Hooks --> Store
@@ -33,7 +34,7 @@ graph TB
     UseCases --> Entities
     UseCases --> API
     API --> DB
-    
+
     style UI fill:#61DAFB
     style Store fill:#764ABC
     style Entities fill:#FF6B6B
@@ -51,7 +52,7 @@ sequenceDiagram
     participant D as Dispatch
     participant R as Reducer
     participant S as Store
-    
+
     U->>V: Interacción (click, input)
     V->>H: Llama función del hook
     H->>A: Crea acción
@@ -69,12 +70,12 @@ sequenceDiagram
 ```mermaid
 graph TB
     App[App.jsx]
-    
+
     subgraph "Layout"
         TopBar[TopBar]
         Sidebar[Sidebar]
     end
-    
+
     subgraph "Páginas"
         Dashboard[Dashboard]
         VehiclesList[VehiclesList]
@@ -86,14 +87,14 @@ graph TB
         Reports[Reports]
         Settings[Settings]
     end
-    
+
     subgraph "Componentes Compartidos"
         Card[Card]
         Table[Table]
         MapViewer[MapViewer]
         VehicleForm[VehicleForm]
     end
-    
+
     App --> TopBar
     App --> Sidebar
     App --> Dashboard
@@ -105,14 +106,14 @@ graph TB
     App --> Alerts
     App --> Reports
     App --> Settings
-    
+
     Dashboard --> Card
     VehiclesList --> Table
     VehiclesList --> Card
     VehicleDetail --> MapViewer
     VehicleDetail --> VehicleForm
     Routes --> MapViewer
-    
+
     style App fill:#61DAFB
     style Dashboard fill:#4CAF50
     style Card fill:#FFC107
@@ -129,7 +130,7 @@ erDiagram
     DRIVERS ||--o{ ROUTES : drives
     VEHICLES ||--o{ ALERTS : generates
     DRIVERS ||--o{ ALERTS : generates
-    
+
     VEHICLES {
         string id PK
         string plate UK
@@ -144,7 +145,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     DRIVERS {
         string id PK
         string name
@@ -157,7 +158,7 @@ erDiagram
         timestamp created_at
         timestamp updated_at
     }
-    
+
     LOCATIONS {
         string id PK
         string vehicle_id FK
@@ -167,7 +168,7 @@ erDiagram
         float heading
         timestamp recorded_at
     }
-    
+
     MAINTENANCE {
         string id PK
         string vehicle_id FK
@@ -178,7 +179,7 @@ erDiagram
         string status
         decimal cost
     }
-    
+
     ROUTES {
         string id PK
         string vehicle_id FK
@@ -191,7 +192,7 @@ erDiagram
         timestamp start_time
         timestamp end_time
     }
-    
+
     ALERTS {
         string id PK
         string type
@@ -209,17 +210,17 @@ erDiagram
 ```mermaid
 stateDiagram-v2
     [*] --> NoAutenticado
-    
+
     NoAutenticado --> Autenticando : login(email, password)
     Autenticando --> Autenticado : Success
     Autenticando --> NoAutenticado : Error
-    
+
     Autenticado --> Dashboard : Redirect
     Dashboard --> Autenticado : Navegación
-    
+
     Autenticado --> CerrandoSesion : logout()
     CerrandoSesion --> NoAutenticado : Success
-    
+
     NoAutenticado --> LoginPage : Mostrar
     LoginPage --> NoAutenticado : Render
 ```
@@ -233,7 +234,7 @@ graph LR
         Manager[Manager]
         Operator[Operador]
     end
-    
+
     subgraph "Casos de Uso - Vehículos"
         UC1[Registrar Vehículo]
         UC2[Actualizar Vehículo]
@@ -242,31 +243,31 @@ graph LR
         UC5[Rastrear Ubicación]
         UC6[Monitorear Combustible]
     end
-    
+
     subgraph "Casos de Uso - Conductores"
         UC7[Registrar Conductor]
         UC8[Asignar Vehículo]
         UC9[Consultar Conductores]
         UC10[Gestionar Horarios]
     end
-    
+
     subgraph "Casos de Uso - Mantenimiento"
         UC11[Programar Mantenimiento]
         UC12[Registrar Mantenimiento]
         UC13[Generar Alertas]
     end
-    
+
     subgraph "Casos de Uso - Reportes"
         UC14[Generar Reporte]
         UC15[Exportar Datos]
         UC16[Visualizar KPIs]
     end
-    
+
     Admin --> UC1
     Admin --> UC2
     Admin --> UC3
     Admin --> UC7
-    
+
     Manager --> UC4
     Manager --> UC5
     Manager --> UC6
@@ -274,7 +275,7 @@ graph LR
     Manager --> UC11
     Manager --> UC14
     Manager --> UC16
-    
+
     Operator --> UC4
     Operator --> UC5
     Operator --> UC8
@@ -287,20 +288,20 @@ graph LR
 ```mermaid
 stateDiagram-v2
     [*] --> Registrado
-    
+
     Registrado --> Estacionado : Inicializar
     Estacionado --> Activo : Asignar conductor
     Activo --> Estacionado : Finalizar viaje
-    
+
     Activo --> Mantenimiento : Detectar problema
     Estacionado --> Mantenimiento : Mantenimiento programado
-    
+
     Mantenimiento --> Estacionado : Reparación completada
-    
+
     Estacionado --> Inactivo : Dar de baja
     Activo --> Inactivo : Dar de baja
     Mantenimiento --> Inactivo : Dar de baja
-    
+
     Inactivo --> [*]
 ```
 
@@ -310,40 +311,40 @@ stateDiagram-v2
 graph TB
     subgraph "Store Global"
         Context[AppContext<br/>React.Context]
-        
+
         subgraph "Estado"
             Auth[auth state]
             Vehicles[vehicles state]
             Drivers[drivers state]
         end
-        
+
         subgraph "Reducers"
             AuthR[authReducer]
             VehiclesR[vehicleReducer]
             DriversR[driverReducer]
             RootR[rootReducer]
         end
-        
+
         subgraph "Actions"
             AuthA[authActions]
             VehiclesA[vehicleActions]
             DriversA[driverActions]
         end
     end
-    
+
     Context --> RootR
     RootR --> AuthR
     RootR --> VehiclesR
     RootR --> DriversR
-    
+
     AuthR --> Auth
     VehiclesR --> Vehicles
     DriversR --> Drivers
-    
+
     AuthA --> AuthR
     VehiclesA --> VehiclesR
     DriversA --> DriversR
-    
+
     style Context fill:#764ABC
     style Auth fill:#FF6B6B
     style Vehicles fill:#4CAF50
@@ -362,21 +363,21 @@ sequenceDiagram
     participant S as Store/Context
     participant API as Supabase API
     participant DB as Database
-    
+
     U->>P: Click "Agregar Vehículo"
     P->>P: Mostrar formulario
     U->>P: Llenar formulario y enviar
-    
+
     P->>H: addVehicle(vehicleData)
     H->>A: Crea ADD_VEHICLE action
     A->>R: Dispatch action
-    
+
     alt Validación exitosa
         R->>R: Valida datos
         R->>S: Actualiza estado (optimistic update)
         S->>P: Notifica cambio
         P->>U: Muestra vehículo agregado
-        
+
         H->>API: POST /vehicles
         API->>DB: INSERT vehicle
         DB->>API: Success
@@ -398,14 +399,14 @@ graph TB
         useVehicles[useVehicles]
         useDrivers[useDrivers]
     end
-    
+
     subgraph "Funcionalidades useAuth"
         login[login]
         logout[logout]
         user[user state]
         isAuth[isAuthenticated]
     end
-    
+
     subgraph "Funcionalidades useVehicles"
         addV[addVehicle]
         updateV[updateVehicle]
@@ -414,7 +415,7 @@ graph TB
         getV[getVehicleById]
         statsV[getVehicleStats]
     end
-    
+
     subgraph "Funcionalidades useDrivers"
         addD[addDriver]
         updateD[updateDriver]
@@ -423,26 +424,26 @@ graph TB
         activeD[getActiveDrivers]
         statsD[getDriverStats]
     end
-    
+
     useAuth --> login
     useAuth --> logout
     useAuth --> user
     useAuth --> isAuth
-    
+
     useVehicles --> addV
     useVehicles --> updateV
     useVehicles --> deleteV
     useVehicles --> filterV
     useVehicles --> getV
     useVehicles --> statsV
-    
+
     useDrivers --> addD
     useDrivers --> updateD
     useDrivers --> deleteD
     useDrivers --> getD
     useDrivers --> activeD
     useDrivers --> statsD
-    
+
     style useAuth fill:#FF6B6B
     style useVehicles fill:#4CAF50
     style useDrivers fill:#2196F3

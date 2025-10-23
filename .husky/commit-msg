@@ -1,5 +1,7 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Validar formato de commit message
-npx commitlint --edit $1
+# Commitlint deshabilitado por petición del autor — hook no-op
+# Si quieres restaurarlo más tarde, reemplaza estas líneas por:
+# npx commitlint --edit $1
+exit 0
