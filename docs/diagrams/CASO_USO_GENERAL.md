@@ -64,6 +64,7 @@ Ver `Diagrama_Casos_Uso.md` (módulos: Vehículos, Conductores, Rutas, Mantenimi
 ## 9. Referencias
 
 - Diagrama de Casos de Uso: `Diagrama_Casos_Uso.md`
+- Casos de Uso + pseudocódigo: InformeTecnicoCasosDeUsoPseudocódigo.md
 - Diagrama ER: `Diagrama_ER.md`
 - Arquitectura: `../ARQUITECTURA.md`
 - Backlog: `../BACKLOG_PRODUCTO.md`
