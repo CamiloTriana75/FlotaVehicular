@@ -864,6 +864,7 @@ npm run test:coverage
 - **[Diagrama de Arquitectura](docs/diagrams/Arquitectura_Sistema.md)** - Visualización de la arquitectura
 - **[Diagrama ER](docs/diagrams/Diagrama_ER.md)** - Modelo de base de datos
 - **[Casos de Uso](docs/diagrams/Diagrama_Casos_Uso.md)** - Diagramas de casos de uso
+- **[Secuencia de Casos de Uso](docs/diagramas/Diagrama_Secuencia_Casos_Uso.md)** - Diagramas de secuencia por módulo
 
 #### Desarrollo Día a Día
 
