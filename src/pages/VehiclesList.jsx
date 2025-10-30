@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { mockVehicles } from '../data/mockVehicles';
 import Card from '../components/Card';
@@ -7,14 +7,21 @@ import { Search, Eye, Truck, Plus } from 'lucide-react';
 
 const VehiclesList = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const navigate = useNavigate();
 
-  const filteredVehicles = mockVehicles.filter(
-    (vehicle) =>
-      vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      vehicle.conductor.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredVehicles = useMemo(() => {
+    return mockVehicles
+      .filter(
+        (vehicle) =>
+          vehicle.placa.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vehicle.modelo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          vehicle.conductor.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+      .filter((vehicle) =>
+        statusFilter === 'all' ? true : vehicle.status === statusFilter
+      );
+  }, [searchTerm, statusFilter]);
 
   const columns = [
     {
@@ -117,6 +124,19 @@ const VehiclesList = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
+          </div>
+          <div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="w-full sm:w-56 px-3 py-2 border border-gray-300 rounded-lg"
+            >
+              <option value="all">Todos los estados</option>
+              <option value="activo">Activo</option>
+              <option value="mantenimiento">En mantenimiento</option>
+              <option value="estacionado">Estacionado</option>
+              <option value="fuera_servicio">Fuera de servicio</option>
+            </select>
           </div>
           <button
             onClick={() => navigate('/vehiculos/nuevo')}
