@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Declaraciones de tipos para el store
  * Esto permite que TypeScript reconozca los módulos JavaScript

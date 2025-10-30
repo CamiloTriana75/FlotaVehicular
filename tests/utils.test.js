@@ -20,13 +20,15 @@ describe('Vehicle Utils', () => {
   // Función para calcular distancia entre dos puntos GPS
   const calculateDistance = (lat1, lng1, lat2, lng2) => {
     const R = 6371; // Radio de la Tierra en km
-    const dLat = (lat2 - lat1) * Math.PI / 180;
-    const dLng = (lng2 - lng1) * Math.PI / 180;
-    const a = 
-      Math.sin(dLat/2) * Math.sin(dLat/2) +
-      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-      Math.sin(dLng/2) * Math.sin(dLng/2);
-    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    const dLat = ((lat2 - lat1) * Math.PI) / 180;
+    const dLng = ((lng2 - lng1) * Math.PI) / 180;
+    const a =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos((lat1 * Math.PI) / 180) *
+        Math.cos((lat2 * Math.PI) / 180) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
 
@@ -45,9 +47,9 @@ describe('Vehicle Utils', () => {
   });
 
   it('should calculate distance between GPS coordinates', () => {
-    // Distancia entre dos puntos en Bogotá (aprox. 5km)
-    const distance = calculateDistance(4.7110, -74.0721, 4.6588, -74.0535);
-    expect(distance).toBeCloseTo(8.5, 0); // Aproximadamente 8.5km
+    // Distancia entre dos puntos en Bogotá (aprox. 6.2 km)
+    const distance = calculateDistance(4.711, -74.0721, 4.6588, -74.0535);
+    expect(distance).toBeCloseTo(6.2, 1); // Aproximadamente 6.2 km
   });
 });
 
@@ -78,10 +80,10 @@ describe('Driver Utils', () => {
   it('should calculate days until license expiration', () => {
     const futureDate = new Date();
     futureDate.setDate(futureDate.getDate() + 30);
-    
+
     const pastDate = new Date();
     pastDate.setDate(pastDate.getDate() - 10);
-    
+
     expect(getDaysUntilExpiration(futureDate)).toBeCloseTo(30, 0);
     expect(getDaysUntilExpiration(pastDate)).toBeCloseTo(-10, 0);
   });
