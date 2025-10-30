@@ -382,3 +382,45 @@ npm run test -- --reporter=verbose
 ---
 
 **¡Happy Coding! 🚀**
+
+## 🚦 Gestión de Estado de Vehículos (HU2)
+
+Esta funcionalidad permite a usuarios administradores cambiar el estado operativo de un vehículo y mantener un historial de cambios.
+
+- Estados soportados: `Activo`, `En mantenimiento`, `Fuera de servicio`.
+- Cada cambio registra fecha, hora, usuario, estado anterior y nuevo.
+- El historial se muestra en el detalle del vehículo y puede exportarse a CSV.
+
+### ¿Dónde usarlo?
+
+- Página: `Vehículos > Ver (detalle)`.
+- Sección "Estado" muestra el estado actual y, si eres admin, un selector para cambiarlo.
+- Sección "Historial de Estados" lista los cambios y tiene botón "Exportar CSV".
+
+### Permisos
+
+- Solo usuarios con rol `admin` pueden modificar el estado.
+- En modo demo, el login mock asigna rol `admin` por defecto.
+
+### Persistencia (modo demo)
+
+- El historial se guarda en `localStorage` bajo la clave `vehicle_status_history`.
+- La estructura por vehículo es: `[{ id, vehicleId, oldStatus, newStatus, userId, userEmail, timestamp }]`.
+
+### Extensión a Supabase (propuesta)
+
+Para producción, crear tabla `vehicle_status_history` con RLS:
+
+```sql
+create table if not exists vehicle_status_history (
+  id uuid primary key default gen_random_uuid(),
+  vehicle_id bigint not null references vehicles(id) on delete cascade,
+  old_status text not null,
+  new_status text not null,
+  user_id uuid not null references auth.users(id),
+  user_email text,
+  created_at timestamptz not null default now()
+);
+```
+
+Luego, reemplazar la persistencia en `src/shared/utils/statusHistory.js` por llamadas a Supabase.
