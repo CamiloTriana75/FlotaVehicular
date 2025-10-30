@@ -1,12 +1,11 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 /**
  * Declaraciones de tipos para el store
  * Esto permite que TypeScript reconozca los módulos JavaScript
  */
 
 declare module './store' {
-  export const AppProvider: React.FC<{ children: React.ReactNode }>;
-  export const useAppContext: () => any;
+  export const AppProvider: unknown;
+  export const useAppContext: () => { state: unknown; dispatch: unknown };
   export * from './store/types';
   export * from './store/actions/authActions';
   export * from './store/actions/vehicleActions';
@@ -14,9 +13,9 @@ declare module './store' {
 }
 
 declare module './store/types' {
-  export const AUTH_ACTIONS: any;
-  export const VEHICLE_ACTIONS: any;
-  export const DRIVER_ACTIONS: any;
-  export const ALERT_ACTIONS: any;
-  export const UI_ACTIONS: any;
+  export const AUTH_ACTIONS: Record<string, string>;
+  export const VEHICLE_ACTIONS: Record<string, string>;
+  export const DRIVER_ACTIONS: Record<string, string>;
+  export const ALERT_ACTIONS: Record<string, string>;
+  export const UI_ACTIONS: Record<string, string>;
 }

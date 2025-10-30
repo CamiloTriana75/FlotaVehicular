@@ -21,14 +21,16 @@ export const formatCurrency = (amount, currency = 'COP') => {
  * @param {string} format - Formato de salida
  * @returns {string} Fecha formateada
  */
-export const formatDate = (date, format = 'DD/MM/YYYY') => {
+export const formatDate = (date, format = 'DD/MM/YYYY', useUTC = false) => {
   const d = new Date(date);
-  const day = String(d.getDate()).padStart(2, '0');
-  const month = String(d.getMonth() + 1).padStart(2, '0');
-  const year = d.getFullYear();
-  const hours = String(d.getHours()).padStart(2, '0');
-  const minutes = String(d.getMinutes()).padStart(2, '0');
-  const seconds = String(d.getSeconds()).padStart(2, '0');
+  const get = (method) => (useUTC ? `getUTC${method}` : `get${method}`);
+
+  const day = String(d[get('Date')]()).padStart(2, '0');
+  const month = String(d[get('Month')]() + 1).padStart(2, '0');
+  const year = d[get('FullYear')]();
+  const hours = String(d[get('Hours')]()).padStart(2, '0');
+  const minutes = String(d[get('Minutes')]()).padStart(2, '0');
+  const seconds = String(d[get('Seconds')]()).padStart(2, '0');
 
   return format
     .replace('DD', day)
