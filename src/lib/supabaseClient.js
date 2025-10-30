@@ -23,6 +23,7 @@ export const mockAuth = {
         user_metadata: {
           full_name: 'Usuario Demo',
         },
+        role: 'admin',
       };
       return {
         data: { user: mockUser },
