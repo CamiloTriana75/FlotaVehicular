@@ -22,6 +22,7 @@ Este documento resume el alcance funcional del sistema FlotaVehicular y enlaza a
 ## 3. Diagrama General
 
 Ver `Diagrama_Casos_Uso.md` (módulos: Vehículos, Conductores, Rutas, Mantenimiento, Alertas, Incidentes, Reportes, Integraciones, Configuración, Auth).
+Además, para los flujos detallados, consulta `Diagrama_Secuencia_Casos_Uso.md`.
 
 ## 4. Flujo Principal (Happy Path)
 
@@ -64,6 +65,7 @@ Ver `Diagrama_Casos_Uso.md` (módulos: Vehículos, Conductores, Rutas, Mantenimi
 ## 9. Referencias
 
 - Diagrama de Casos de Uso: `Diagrama_Casos_Uso.md`
+- Diagramas de Secuencia de Casos de Uso: `Diagrama_Secuencia_Casos_Uso.md`
 - Diagrama ER: `Diagrama_ER.md`
 - Arquitectura: `../ARQUITECTURA.md`
 - Backlog: `../BACKLOG_PRODUCTO.md`
