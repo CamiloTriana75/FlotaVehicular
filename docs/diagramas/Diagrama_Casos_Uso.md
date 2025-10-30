@@ -1,5 +1,7 @@
 # Diagrama General de Casos de Uso
 
+> Ver también: `Diagrama_Secuencia_Casos_Uso.md` para los flujos detallados de cada caso de uso.
+
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': { 'primaryColor':'#61DAFB'}}}%%
 graph TB
