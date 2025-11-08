@@ -846,6 +846,60 @@ npm run test:coverage
 - **Prettier** - Consistencia de formato
 - **GitHub Actions** - CI/CD
 
+## ✅ Issue #49 - Configuración de Base de Datos
+
+**Estado:** ✅ COMPLETADO
+
+Este issue cubre la configuración e integración de Supabase con el proyecto. Si eres nuevo y necesitas entender cómo funciona la BD:
+
+👉 **[Lee DB_SETUP.md](docs/DB_SETUP.md)** - Guía completa de configuración
+
+### Checklist de Verificación
+
+- ✅ **Supabase conectado** - Proyecto creado en https://supabase.com
+- ✅ **Variables de entorno** - `.env` configurado con credenciales
+- ✅ **Migrations ejecutadas** - Todas en orden: initial_schema → white_temple → auth_functions → seed_conductores
+- ✅ **Usuarios admin creados** - `admin` / `Admin123!` y `jtrianaadmin` / `Flota2025$Secure`
+- ✅ **Autenticación personalizada** - RPC function `validate_user_login()` funcional
+- ✅ **Seed data** - 4 conductores de ejemplo disponibles
+- ✅ **Servicio conductorService.js** - CRUD completo implementado
+- ✅ **Página DriversList** - Migrada a usar datos reales de BD
+- ✅ **Página /health** - Verifica conexión con Supabase
+- ✅ **Tests de BD** - Suite de tests en `tests/database.test.js`
+- ✅ **Documentación** - DB_SETUP.md y env.example actualizado
+
+### Verificar que todo funciona
+
+```bash
+# 1. Instalar dependencias
+npm install
+
+# 2. Configurar .env
+cp .env.example .env
+# Editar .env con tus credenciales de Supabase
+
+# 3. Iniciar servidor
+npm run dev
+
+# 4. Verificar conexión
+# - Ve a http://localhost:5173/health
+# - Deberías ver "Conexión exitosa con Supabase"
+
+# 5. Probar login
+# - Ve a http://localhost:5173/login
+# - Username: admin
+# - Password: Admin123!
+
+# 6. Ver conductores
+# - Ve a http://localhost:5173/conductores
+# - Deberías ver 4 conductores desde BD
+
+# 7. Ejecutar tests
+npm run test -- tests/database.test.js
+```
+
+---
+
 ## 📚 Documentación Adicional
 
 ### 🚀 Para Nuevos Miembros del Equipo

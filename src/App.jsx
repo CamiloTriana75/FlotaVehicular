@@ -16,6 +16,7 @@ import Settings from './pages/Settings';
 import VehicleDetail from './pages/VehicleDetail';
 import Alerts from './pages/Alerts';
 import RoutesPage from './pages/Routes';
+import HealthCheck from './pages/HealthCheck';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -73,6 +74,7 @@ function App() {
               <Route path="/configuracion" element={<Settings />} />
               <Route path="/alertas" element={<Alerts />} />
               <Route path="/rutas" element={<RoutesPage />} />
+              <Route path="/health" element={<HealthCheck />} />
             </Routes>
           </main>
         </div>
