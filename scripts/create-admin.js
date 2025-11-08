@@ -7,16 +7,20 @@ import { createClient } from '@supabase/supabase-js';
 import * as readline from 'readline';
 
 // Cargar variables de entorno (asegúrate de tener un .env en la raíz)
-const SUPABASE_URL =
-  process.env.VITE_SUPABASE_URL || 'https://nqsfitpsygpwfglchihl.supabase.co';
+const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY; // Necesitas la SERVICE KEY, no la ANON KEY
+
+if (!SUPABASE_URL) {
+  console.error('❌ Error: VITE_SUPABASE_URL no está configurada');
+  console.log('Agrega esta variable a tu archivo .env');
+}
 
 if (!SUPABASE_SERVICE_KEY) {
   console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY no está configurada');
   console.log('Agrega esta variable a tu archivo .env:');
   console.log('SUPABASE_SERVICE_ROLE_KEY=tu_service_role_key_aqui');
   console.log(
-    '\nPuedes obtenerla en: https://app.supabase.com/project/nqsfitpsygpwfglchihl/settings/api'
+    '\nPuedes obtenerla en: https://app.supabase.com/project/tu-proyecto-id/settings/api'
   );
   process.exit(1);
 }
@@ -134,10 +138,10 @@ async function createAdminUser() {
           fecha_creacion
         ) 
         VALUES (
-          '${username}',
-          crypt('${password}', gen_salt('bf')),
-          '${rol}',
-          '${email}',
+          $1,
+          crypt($2, gen_salt('bf')),
+          $3,
+          $4,
           true,
           NOW()
         )
@@ -146,11 +150,14 @@ async function createAdminUser() {
             rol = EXCLUDED.rol,
             activo = true,
             email = EXCLUDED.email,
-            password_hash = crypt('${password}', gen_salt('bf'))
+            password_hash = crypt($2, gen_salt('bf'))
         RETURNING id_usuario, username, email, rol, activo;
       `;
 
-      const { data, error } = await supabase.rpc('exec_sql', { sql: sqlQuery });
+      const { data, error } = await supabase.rpc('exec_sql', {
+        sql: sqlQuery,
+        params: [username, password, rol, email],
+      });
 
       if (error) {
         throw error;
