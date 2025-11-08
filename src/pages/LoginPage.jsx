@@ -3,7 +3,7 @@ import { useAuth } from '../lib/supabaseClient';
 import { Truck, User, Lock } from 'lucide-react';
 
 const LoginPage = ({ onLogin }) => {
-  const [email, setEmail] = useState('');
+  const [usernameOrEmail, setUsernameOrEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -15,17 +15,19 @@ const LoginPage = ({ onLogin }) => {
     setError('');
 
     try {
-      const result = await auth.signIn(email, password);
-      const { data, error } = auth.isMockMode ? result : result;
+      const result = await auth.signIn(usernameOrEmail, password);
 
-      if (error) {
-        setError(error.message);
-      } else {
-        localStorage.setItem('mockUser', JSON.stringify(data.user));
+      if (result.error) {
+        setError(result.error.message);
+      } else if (result.data?.user) {
+        console.log('✅ Login exitoso:', result.data.user);
         onLogin();
+      } else {
+        setError('Error inesperado durante el login');
       }
     } catch (err) {
-      setError('Error de conexión');
+      console.error('Error en handleSubmit:', err);
+      setError('Error de conexión: ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -45,20 +47,20 @@ const LoginPage = ({ onLogin }) => {
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
             <label
-              htmlFor="email"
+              htmlFor="usernameOrEmail"
               className="block text-sm font-medium text-gray-700"
             >
-              Email
+              Usuario o Email
             </label>
             <div className="mt-1 relative">
               <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
               <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                id="usernameOrEmail"
+                type="text"
+                value={usernameOrEmail}
+                onChange={(e) => setUsernameOrEmail(e.target.value)}
                 className="pl-10 w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="usuario@email.com"
+                placeholder="admin o admin@flotavehicular.com"
                 required
               />
             </div>
@@ -102,11 +104,17 @@ const LoginPage = ({ onLogin }) => {
 
         <div className="mt-6 p-4 bg-blue-50 rounded-lg">
           <p className="text-xs text-blue-800">
-            <strong>Modo Demo:</strong> Usa cualquier email y contraseña para
-            acceder
-            {auth.isMockMode && (
+            <strong>Credenciales de prueba:</strong>
+            {auth.isMockMode ? (
               <span className="block mt-1">
-                🔧 Funcionando en modo mock (sin Supabase)
+                🔧 Modo mock: cualquier email y contraseña
+              </span>
+            ) : (
+              <span className="block mt-1">
+                � Usuario:{' '}
+                <code className="bg-blue-100 px-1 rounded">admin</code> |
+                Contraseña:{' '}
+                <code className="bg-blue-100 px-1 rounded">Admin123!</code>
               </span>
             )}
           </p>

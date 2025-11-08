@@ -1,23 +1,56 @@
-import React, { useState } from 'react';
-import { mockDrivers } from '../data/mockVehicles';
+import React, { useState, useEffect } from 'react';
+import { conductorService } from '../services/conductorService';
 import Card from '../components/Card';
 import Table from '../components/Table';
-import { Search, Users, Phone, Mail, Calendar } from 'lucide-react';
+import {
+  Search,
+  Users,
+  Phone,
+  Mail,
+  Calendar,
+  AlertCircle,
+  RefreshCw,
+} from 'lucide-react';
 
 const DriversList = () => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [conductores, setConductores] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const filteredDrivers = mockDrivers.filter(
+  // Cargar conductores desde la base de datos
+  useEffect(() => {
+    loadConductores();
+  }, []);
+
+  const loadConductores = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { data, error: fetchError } = await conductorService.getAll();
+      if (fetchError) throw fetchError;
+      setConductores(data || []);
+    } catch (err) {
+      console.error('Error cargando conductores:', err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredDrivers = conductores.filter(
     (driver) =>
-      driver.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      driver.cedula.includes(searchTerm) ||
-      driver.vehiculoAsignado.toLowerCase().includes(searchTerm.toLowerCase())
+      driver.nombre_completo
+        ?.toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
+      driver.cedula?.includes(searchTerm) ||
+      driver.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const columns = [
     {
       header: 'Nombre',
-      accessor: 'nombre',
+      accessor: 'nombre_completo',
       cell: (value, row) => (
         <div>
           <p className="font-medium">{value}</p>
@@ -32,11 +65,11 @@ const DriversList = () => {
         <div>
           <div className="flex items-center text-sm">
             <Phone className="h-3 w-3 mr-1" />
-            {value}
+            {value || 'N/A'}
           </div>
           <div className="flex items-center text-sm text-gray-500 mt-1">
             <Mail className="h-3 w-3 mr-1" />
-            {row.email}
+            {row.email || 'N/A'}
           </div>
         </div>
       ),
@@ -103,13 +136,42 @@ const DriversList = () => {
             <p className="text-gray-600">Gestión del personal conductor</p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Total de conductores</p>
-          <p className="text-2xl font-bold text-blue-600">
-            {mockDrivers.length}
-          </p>
+        <div className="flex items-center gap-4">
+          <button
+            onClick={loadConductores}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+            Actualizar
+          </button>
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Total de conductores</p>
+            <p className="text-2xl font-bold text-blue-600">
+              {conductores.length}
+            </p>
+          </div>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
+          <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+          <div>
+            <h3 className="font-semibold text-red-900">
+              Error al cargar conductores
+            </h3>
+            <p className="text-sm text-red-700">{error}</p>
+            <button
+              onClick={loadConductores}
+              className="mt-2 text-sm text-red-600 hover:text-red-800 underline"
+            >
+              Intentar de nuevo
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Estadísticas rápidas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -121,7 +183,11 @@ const DriversList = () => {
             <div className="ml-4">
               <p className="text-sm text-gray-600">Conductores Activos</p>
               <p className="text-2xl font-bold text-green-600">
-                {mockDrivers.filter((d) => d.estado === 'activo').length}
+                {
+                  conductores.filter(
+                    (d) => d.estado === 'activo' || d.estado === 'en_servicio'
+                  ).length
+                }
               </p>
             </div>
           </div>
@@ -135,7 +201,7 @@ const DriversList = () => {
             <div className="ml-4">
               <p className="text-sm text-gray-600">Disponibles</p>
               <p className="text-2xl font-bold text-blue-600">
-                {mockDrivers.filter((d) => d.estado === 'disponible').length}
+                {conductores.filter((d) => d.estado === 'disponible').length}
               </p>
             </div>
           </div>
@@ -150,13 +216,14 @@ const DriversList = () => {
               <p className="text-sm text-gray-600">Licencias por Vencer</p>
               <p className="text-2xl font-bold text-red-600">
                 {
-                  mockDrivers.filter((d) => {
-                    const fecha = new Date(d.licenciaVencimiento);
+                  conductores.filter((d) => {
+                    if (!d.fecha_venc_licencia) return false;
+                    const fecha = new Date(d.fecha_venc_licencia);
                     const hoy = new Date();
                     const diasRestantes = Math.ceil(
                       (fecha - hoy) / (1000 * 60 * 60 * 24)
                     );
-                    return diasRestantes <= 30;
+                    return diasRestantes >= 0 && diasRestantes <= 30;
                   }).length
                 }
               </p>

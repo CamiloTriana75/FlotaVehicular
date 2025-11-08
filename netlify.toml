@@ -1,0 +1,29 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# Secrets scanning - omitir false positives
+# VITE_SUPABASE_URL no es un secreto, es una URL pública
+# VITE_SUPABASE_ANON_KEY es una clave pública, no el secret_key
+# package-lock.json solo contiene references, no valores reales
+[build.environment]
+  SECRETS_SCAN_OMIT_PATHS = "package-lock.json,.netlify/plugins/**,dist/**"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_APP_NAME,VITE_APP_VERSION,VITE_APP_ENVIRONMENT"
+
+[dev]
+  command = "npm run dev"
+  port = 5173
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[context.production]
+  environment = { VITE_MOCK_MODE = "false" }
+
+[context.deploy-preview]
+  environment = { VITE_MOCK_MODE = "false" }
+
+[context.branch-deploy]
+  environment = { VITE_MOCK_MODE = "false" }
