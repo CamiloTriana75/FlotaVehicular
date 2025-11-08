@@ -13,6 +13,7 @@ import {
   Route,
   Shield,
   X,
+  Activity,
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -88,6 +89,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/configuracion',
       icon: Settings,
       description: 'Configuración del sistema',
+    },
+    {
+      title: 'Estado BD',
+      path: '/health',
+      icon: Activity,
+      description: 'Verificar conexión',
+      badgeColor: 'bg-green-100 text-green-800',
     },
   ];
 
