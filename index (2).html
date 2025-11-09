@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Conductores</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🧍‍♂️ Gestión de Conductores</h1>
+  </header>
+
+  <main>
+    <section class="controls">
+      <button id="btnAgregar">+ Agregar Conductor</button>
+      <input type="text" id="busqueda" placeholder="Buscar por nombre o licencia...">
+      <select id="filtroEstado">
+        <option value="Todos">Todos</option>
+        <option value="Activo">Activo</option>
+        <option value="Suspendido">Suspendido</option>
+      </select>
+    </section>
+
+    <section class="tabla">
+      <table id="tablaConductores">
+        <thead>
+          <tr>
+            <th>Nombre</th>
+            <th>Licencia</th>
+            <th>Vencimiento</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal oculto">
+    <div class="modal-contenido">
+      <h2 id="tituloModal">Nuevo Conductor</h2>
+      <form id="formConductor">
+        <input type="hidden" id="conductorId">
+        
+        <label>Nombre:</label>
+        <input type="text" id="nombre" required>
+
+        <label>Licencia:</label>
+        <input type="text" id="licencia" required>
+
+        <label>Fecha de Vencimiento:</label>
+        <input type="date" id="vencimiento" required>
+
+        <label>Estado:</label>
+        <select id="estado">
+          <option value="Activo">Activo</option>
+          <option value="Suspendido">Suspendido</option>
+        </select>
+
+        <div class="botones">
+          <button type="submit" class="btn-guardar">Guardar</button>
+          <button type="button" id="cancelar">Cancelar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
