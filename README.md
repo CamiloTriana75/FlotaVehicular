@@ -846,6 +846,313 @@ npm run test:coverage
 - **Prettier** - Consistencia de formato
 - **GitHub Actions** - CI/CD
 
+---
+
+## ✅ Issue #50 - CRUD de Conductores (RRHH)
+
+**Estado:** ✅ COMPLETADO  
+**Sprint:** 9 - Gestión de Conductores  
+**Story Points:** 5  
+**Tiempo estimado:** 12 horas
+
+### 📋 User Story
+
+> Como **RRHH**, quiero poder **crear, leer, actualizar y eliminar conductores** desde la UI conectada a la DB, para **mantener la información actualizada en producción**.
+
+### ✅ Implementación Completa
+
+#### 1. Usuario y Rol RRHH
+
+- ✅ **Usuario creado** en BD con rol `rrhh`
+  - **Username:** `rrhh`
+  - **Password:** `RRHH2025!`
+  - **Email:** `rrhh@flotavehicular.com`
+  - **Migración:** `20251109000001_add_rrhh_user.sql`
+
+- ✅ **Dashboard RRHH** dedicado (`/rrhh/dashboard`)
+  - KPIs específicos (Total, Activos, Disponibles, Licencias por vencer)
+  - Conductores recientes
+  - Alertas de licencias próximas a vencer
+  - Accesos rápidos a gestión de conductores
+
+#### 2. API Endpoints
+
+Todos los endpoints usan el servicio `conductorService` que conecta con Supabase:
+
+| Método | Endpoint                     | Descripción                    | Validaciones                      |
+| ------ | ---------------------------- | ------------------------------ | --------------------------------- |
+| GET    | `/conductores`               | Listar todos los conductores   | Filtros: `estado`, `search`       |
+| GET    | `/conductores/:id`           | Obtener conductor por ID       | ID requerido                      |
+| POST   | `/conductores`               | Crear nuevo conductor          | Campos obligatorios, fecha válida |
+| PUT    | `/conductores/:id`           | Actualizar conductor           | Validación de fechas              |
+| DELETE | `/conductores/:id`           | Eliminar conductor             | Confirmación requerida            |
+| GET    | `/conductores/disponibles`   | Conductores disponibles        | Licencia vigente                  |
+| GET    | `/conductores/licencias-exp` | Licencias por vencer (30 días) | Rango de fechas                   |
+
+#### 3. Componentes UI
+
+**Páginas creadas:**
+
+- ✅ `RRHHDashboard.jsx` - Dashboard exclusivo para RRHH
+- ✅ `NewDriver.jsx` - Formulario de creación
+- ✅ `DriverDetail.jsx` - Edición y eliminación
+- ✅ `DriverForm.jsx` - Componente reutilizable con validaciones
+
+**Páginas actualizadas:**
+
+- ✅ `DriversList.jsx` - Botón "Nuevo Conductor", alertas visuales de licencias
+- ✅ `App.jsx` - Rutas configuradas
+
+**Rutas disponibles:**
+
+```
+/rrhh/dashboard          → Dashboard RRHH
+/conductores             → Lista de conductores
+/conductores/nuevo       → Crear conductor
+/conductores/:id         → Editar/Ver conductor
+```
+
+#### 4. Validaciones Implementadas
+
+**Frontend (DriverForm.jsx):**
+
+- ✅ Nombre completo obligatorio
+- ✅ Cédula obligatoria
+- ✅ Fecha vencimiento licencia obligatoria
+- ✅ Fecha debe ser hoy o futura (zona horaria Colombia)
+- ✅ Email válido (opcional)
+- ✅ Parsing local de fechas ISO (YYYY-MM-DD) para evitar problemas de timezone
+
+**Alertas Visuales:**
+
+- 🔴 **Licencia vencida** - Texto rojo + "(¡Vencida!)"
+- 🟡 **Licencia por vencer** (≤ 30 días) - Texto amarillo + días restantes
+- 🟢 **Licencia vigente** - Sin alertas
+
+**Backend:**
+
+- ✅ Constraints de BD en Supabase (unique cedula, required fields)
+- ✅ RLS (Row Level Security) por rol
+
+#### 5. Tests
+
+**Archivo:** `tests/drivers.test.js`
+
+✅ **11 tests implementados** - Todos pasando:
+
+```bash
+✓ Campos obligatorios (2 tests)
+  ✓ Debe retornar errores cuando faltan campos obligatorios
+  ✓ Debe aceptar datos válidos sin errores
+
+✓ Validación de fecha de vencimiento (4 tests)
+  ✓ Debe rechazar una fecha pasada
+  ✓ Debe aceptar la fecha de hoy
+  ✓ Debe aceptar una fecha futura
+  ✓ Debe rechazar formato de fecha inválido
+
+✓ Validación de email (3 tests)
+  ✓ Debe aceptar email válido
+  ✓ Debe rechazar email inválido
+  ✓ Debe permitir email vacío
+
+✓ Happy path - Escenarios completos (2 tests)
+  ✓ Escenario 1: Crear conductor válido
+  ✓ Escenario 2: Licencia próxima a vencer
+```
+
+**Ejecutar tests:**
+
+```bash
+npm run test -- tests/drivers.test.js
+```
+
+#### 6. Casos de Prueba (E2E Manual)
+
+**✅ Caso 1: Crear conductor → verificar aparece en lista**
+
+1. Login como `rrhh` / `RRHH2025!`
+2. Ir a `/conductores/nuevo`
+3. Llenar formulario con datos válidos
+4. Click en "Crear Conductor"
+5. ✅ Redirección a `/conductores`
+6. ✅ Conductor aparece en la lista
+
+**✅ Caso 2: Licencia próxima a vencer → alerta visual**
+
+1. Crear/editar conductor con fecha de licencia en 15 días
+2. ✅ En formulario: advertencia amarilla "Licencia vence en 15 días"
+3. ✅ En lista: texto amarillo + "(15d)"
+4. ✅ En Dashboard RRHH: aparece en sección "Licencias por Vencer"
+
+**✅ Caso 3: Validación de campos obligatorios**
+
+1. Intentar crear conductor sin nombre
+2. ✅ Mensaje de error: "El nombre completo es obligatorio"
+3. Intentar con fecha pasada
+4. ✅ Mensaje de error: "La fecha debe ser hoy o una fecha futura"
+
+**✅ Caso 4: Actualizar conductor**
+
+1. Ir a `/conductores/:id`
+2. Modificar datos
+3. Click en "Guardar Cambios"
+4. ✅ Cambios reflejados en BD y lista
+
+**✅ Caso 5: Eliminar conductor**
+
+1. Ir a detalle del conductor
+2. Scroll a "Zona Peligrosa"
+3. Click en "Eliminar Conductor"
+4. ✅ Confirmación requerida
+5. ✅ Conductor eliminado de BD y lista
+
+### 🎯 Criterios de Aceptación Cumplidos
+
+- ✅ **CRUD funcional** desde UI y vía API
+- ✅ **Validaciones frontend** (fechas, campos obligatorios)
+- ✅ **Validaciones backend** (Supabase constraints + RLS)
+- ✅ **Tests unitarios** básicos (11 tests, 100% passing)
+- ✅ **Endpoints documentados** en README
+- ✅ **UI responsive** (Tailwind CSS, mobile-first)
+- ✅ **Tests E2E** manuales (happy path verificado)
+- ✅ **Mensajes/alertas** para licencias próximas a vencer
+- ✅ **Integración con arquitectura unidireccional** (conductorService → Supabase)
+
+### 🚀 Cómo Usar (Usuario RRHH)
+
+#### Login
+
+```
+URL: http://localhost:5174/login
+Usuario: rrhh
+Contraseña: RRHH2025!
+```
+
+#### Dashboard RRHH
+
+```
+URL: http://localhost:5174/rrhh/dashboard
+
+Muestra:
+- Total de conductores
+- Conductores activos
+- Conductores disponibles
+- Licencias por vencer (próximos 30 días)
+- Conductores recientes
+- Alertas de licencias próximas
+```
+
+#### Gestión de Conductores
+
+```bash
+# Ver lista completa
+/conductores
+
+# Crear nuevo conductor
+/conductores/nuevo
+
+# Editar conductor existente
+/conductores/:id
+
+# Eliminar conductor
+/conductores/:id → Botón "Eliminar" en zona peligrosa
+```
+
+### 📊 Formato de Fechas
+
+Todas las fechas usan **formato ISO (YYYY-MM-DD)** con parsing local para compatibilidad con zona horaria de Colombia:
+
+```javascript
+// Ejemplo de fecha válida
+fecha_venc_licencia: '2026-12-31';
+
+// Parsing local para evitar timezone shift
+const parts = '2026-12-31'.split('-');
+const fecha = new Date(2026, 11, 31); // Año, Mes-1, Día
+```
+
+### 📁 Archivos Creados/Modificados
+
+**Nuevos:**
+
+- `supabase/migrations/20251109000001_add_rrhh_user.sql`
+- `src/pages/RRHHDashboard.jsx`
+- `src/components/DriverForm.jsx`
+- `src/pages/NewDriver.jsx`
+- `src/pages/DriverDetail.jsx`
+- `tests/drivers.test.js`
+
+**Modificados:**
+
+- `src/pages/DriversList.jsx` (alertas + botón nuevo)
+- `src/App.jsx` (rutas)
+- `README.md` (esta documentación)
+
+### 🔐 Permisos del Rol RRHH
+
+| Funcionalidad            | RRHH | Admin | Manager | Operator | Viewer |
+| ------------------------ | ---- | ----- | ------- | -------- | ------ |
+| Ver lista de conductores | ✅   | ✅    | ✅      | ✅       | ✅     |
+| Crear conductor          | ✅   | ✅    | ❌      | ❌       | ❌     |
+| Editar conductor         | ✅   | ✅    | ❌      | ❌       | ❌     |
+| Eliminar conductor       | ✅   | ✅    | ❌      | ❌       | ❌     |
+| Dashboard RRHH           | ✅   | ✅    | ❌      | ❌       | ❌     |
+| Ver alertas de licencias | ✅   | ✅    | ✅      | ✅       | ❌     |
+| Generar reportes         | ✅   | ✅    | ✅      | 🟡       | ❌     |
+
+### ⚠️ Notas Importantes
+
+- **Zona horaria:** Todas las fechas se manejan en hora local (Colombia UTC-5)
+- **Alertas:** Las licencias que vencen en ≤ 30 días se marcan automáticamente
+- **Validación:** La fecha de vencimiento debe ser hoy o futura
+- **Email:** Campo opcional pero si se proporciona debe ser válido
+- **Estado por defecto:** "activo" al crear un conductor
+- **Confirmación:** Eliminación requiere confirmación del usuario
+
+### 🎓 Para Desarrolladores
+
+**Función de validación reutilizable:**
+
+```javascript
+import { validateDriverData } from '../components/DriverForm';
+
+const errors = validateDriverData({
+  nombre_completo: 'Juan Pérez',
+  cedula: '1234567890',
+  fecha_venc_licencia: '2026-12-31',
+});
+
+// errors = {} si todo es válido
+// errors = { campo: 'mensaje' } si hay errores
+```
+
+**Servicio de conductores:**
+
+```javascript
+import { conductorService } from '../services/conductorService';
+
+// Listar todos
+const { data, error } = await conductorService.getAll();
+
+// Crear
+const { data, error } = await conductorService.create({
+  nombre_completo: 'Carlos Mendoza',
+  cedula: '1015234567',
+  fecha_venc_licencia: '2026-06-15',
+});
+
+// Actualizar
+const { data, error } = await conductorService.update(id, {
+  telefono: '3001234567',
+});
+
+// Eliminar
+const { error } = await conductorService.delete(id);
+```
+
+---
+
 ## ✅ Issue #49 - Configuración de Base de Datos
 
 **Estado:** ✅ COMPLETADO

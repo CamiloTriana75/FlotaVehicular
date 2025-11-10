@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -14,17 +14,51 @@ import {
   Shield,
   X,
   Activity,
+  Briefcase,
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const menuItems = [
+  // Cargar usuario actual
+  useEffect(() => {
+    const userStr =
+      localStorage.getItem('currentUser') || localStorage.getItem('mockUser');
+    if (userStr) {
+      try {
+        setCurrentUser(JSON.parse(userStr));
+      } catch (err) {
+        console.error('Error al parsear usuario:', err);
+      }
+    }
+  }, []);
+
+  // Obtener rol del usuario
+  const getUserRole = () => {
+    if (!currentUser) return null;
+    return (
+      currentUser.rol || currentUser.user_metadata?.role || currentUser.role
+    );
+  };
+
+  const userRole = getUserRole();
+
+  // Configuración de menús por rol
+  const allMenuItems = [
     {
-      title: 'Dashboard',
+      title: 'Dashboard General',
       path: '/dashboard',
       icon: LayoutDashboard,
       description: 'Vista general del sistema',
+      roles: ['superusuario', 'admin', 'operador'], // NO incluir 'rrhh' aquí
+    },
+    {
+      title: 'Dashboard RRHH',
+      path: '/rrhh/dashboard',
+      icon: Briefcase,
+      description: 'Panel de Recursos Humanos',
+      roles: ['rrhh'], // Solo para RRHH
     },
     {
       title: 'Vehículos',
@@ -32,12 +66,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Truck,
       description: 'Gestión de flota vehicular',
       badge: '5',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
       title: 'Conductores',
       path: '/conductores',
       icon: Users,
       description: 'Gestión de personal',
+      roles: ['superusuario', 'admin', 'rrhh'], // RRHH tiene acceso a conductores
     },
     {
       title: 'Monitoreo',
@@ -45,24 +81,28 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: MapPin,
       description: 'Tracking en tiempo real',
       badge: '3',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
       title: 'Rutas',
       path: '/rutas',
       icon: Route,
       description: 'Planificación de rutas',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
       title: 'Combustible',
       path: '/combustible',
       icon: Fuel,
       description: 'Control de combustible',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
       title: 'Mantenimiento',
       path: '/mantenimiento',
       icon: Wrench,
       description: 'Mantenimiento predictivo',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
       title: 'Alertas',
@@ -71,24 +111,28 @@ const Sidebar = ({ isOpen, onClose }) => {
       description: 'Incidentes y emergencias',
       badge: '2',
       badgeColor: 'bg-red-500',
+      roles: ['superusuario', 'admin', 'operador', 'rrhh'],
     },
     {
       title: 'Reportes',
       path: '/reportes',
       icon: BarChart3,
       description: 'Analytics y reportes',
+      roles: ['superusuario', 'admin', 'rrhh'],
     },
     {
       title: 'Seguridad',
       path: '/seguridad',
       icon: Shield,
       description: 'Roles y permisos',
+      roles: ['superusuario', 'admin'],
     },
     {
       title: 'Configuración',
       path: '/configuracion',
       icon: Settings,
       description: 'Configuración del sistema',
+      roles: ['superusuario', 'admin', 'rrhh', 'operador'],
     },
     {
       title: 'Estado BD',
@@ -96,8 +140,16 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Activity,
       description: 'Verificar conexión',
       badgeColor: 'bg-green-100 text-green-800',
+      roles: ['superusuario', 'admin'],
     },
   ];
+
+  // Filtrar menús según el rol del usuario
+  const menuItems = userRole
+    ? allMenuItems.filter(
+        (item) => !item.roles || item.roles.includes(userRole)
+      )
+    : allMenuItems;
 
   const isActive = (path) => {
     return (
