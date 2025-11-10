@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Menu,
   Bell,
@@ -13,6 +13,21 @@ import {
 
 const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Cargar usuario actual desde localStorage
+  useEffect(() => {
+    const userStr =
+      localStorage.getItem('currentUser') || localStorage.getItem('mockUser');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Error al parsear usuario:', err);
+      }
+    }
+  }, []);
   const [notifications] = useState([
     {
       id: 1,
@@ -38,6 +53,39 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  // Obtener nombre para mostrar y rol
+  const getUserDisplayName = () => {
+    if (!currentUser) return 'Usuario';
+    return (
+      currentUser.username ||
+      currentUser.user_metadata?.full_name ||
+      currentUser.email?.split('@')[0] ||
+      'Usuario'
+    );
+  };
+
+  const getUserRole = () => {
+    if (!currentUser) return 'Usuario';
+    const rol =
+      currentUser.rol || currentUser.user_metadata?.role || currentUser.role;
+
+    // Mapear roles a nombres legibles
+    const roleMap = {
+      superusuario: 'Superusuario',
+      admin: 'Administrador',
+      rrhh: 'Recursos Humanos',
+      operador: 'Operador',
+      conductor: 'Conductor',
+    };
+
+    return roleMap[rol] || rol || 'Usuario';
+  };
+
+  const getUserEmail = () => {
+    if (!currentUser) return '';
+    return currentUser.email || 'sin-email@sistema.com';
+  };
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
@@ -121,9 +169,9 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-gray-900">
-                  Admin Usuario
+                  {getUserDisplayName()}
                 </p>
-                <p className="text-xs text-gray-500">Administrador</p>
+                <p className="text-xs text-gray-500">{getUserRole()}</p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
@@ -132,11 +180,9 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900">
-                    Admin Usuario
+                    {getUserDisplayName()}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    admin@fleetmanager.com
-                  </p>
+                  <p className="text-xs text-gray-500">{getUserEmail()}</p>
                 </div>
 
                 <div className="py-2">

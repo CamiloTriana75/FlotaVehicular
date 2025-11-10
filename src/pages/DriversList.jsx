@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { conductorService } from '../services/conductorService';
 import Card from '../components/Card';
 import Table from '../components/Table';
@@ -10,6 +11,8 @@ import {
   Calendar,
   AlertCircle,
   RefreshCw,
+  Plus,
+  Edit,
 } from 'lucide-react';
 
 const DriversList = () => {
@@ -102,27 +105,56 @@ const DriversList = () => {
     },
     {
       header: 'Licencia',
-      accessor: 'licenciaVencimiento',
+      accessor: 'fecha_venc_licencia',
       cell: (value) => {
+        if (!value) return <span className="text-gray-400">N/A</span>;
+
         const fecha = new Date(value);
         const hoy = new Date();
         const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
-        const proximoVencimiento = diasRestantes <= 30;
+        const proximoVencimiento = diasRestantes >= 0 && diasRestantes <= 30;
+        const vencida = diasRestantes < 0;
 
         return (
           <div className="flex items-center">
             <Calendar className="h-3 w-3 mr-1" />
             <span
-              className={`text-sm ${proximoVencimiento ? 'text-red-600' : ''}`}
+              className={`text-sm ${
+                vencida
+                  ? 'text-red-700 font-semibold'
+                  : proximoVencimiento
+                    ? 'text-yellow-700 font-semibold'
+                    : ''
+              }`}
             >
               {fecha.toLocaleDateString('es-CO')}
             </span>
-            {proximoVencimiento && (
-              <span className="ml-1 text-xs text-red-500">(!)</span>
+            {vencida && (
+              <span className="ml-1 text-xs text-red-600 font-bold">
+                (¡Vencida!)
+              </span>
+            )}
+            {proximoVencimiento && !vencida && (
+              <span className="ml-1 text-xs text-yellow-600 font-bold">
+                ({diasRestantes}d)
+              </span>
             )}
           </div>
         );
       },
+    },
+    {
+      header: 'Acciones',
+      accessor: 'id_conductor',
+      cell: (value) => (
+        <Link
+          to={`/conductores/${value}`}
+          className="flex items-center gap-1 text-blue-600 hover:text-blue-800 text-sm font-medium"
+        >
+          <Edit className="h-4 w-4" />
+          Editar
+        </Link>
+      ),
     },
   ];
 
@@ -140,11 +172,18 @@ const DriversList = () => {
           <button
             onClick={loadConductores}
             disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors"
           >
             <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             Actualizar
           </button>
+          <Link
+            to="/conductores/nuevo"
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          >
+            <Plus className="h-5 w-5" />
+            Nuevo Conductor
+          </Link>
           <div className="text-right">
             <p className="text-sm text-gray-500">Total de conductores</p>
             <p className="text-2xl font-bold text-blue-600">
