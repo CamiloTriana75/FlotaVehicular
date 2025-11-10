@@ -7,8 +7,10 @@
 # VITE_SUPABASE_ANON_KEY es una clave pública, no el secret_key
 # package-lock.json solo contiene references, no valores reales
 [build.environment]
-  SECRETS_SCAN_OMIT_PATHS = "package-lock.json,.netlify/plugins/**,dist/**"
-  SECRETS_SCAN_OMIT_KEYS = "VITE_APP_NAME,VITE_APP_VERSION,VITE_APP_ENVIRONMENT"
+  # Omitir archivos y rutas conocidas que pueden contener valores de ejemplo o binarios
+  SECRETS_SCAN_OMIT_PATHS = "package-lock.json,.netlify/plugins/**,dist/**,.env.example"
+  # Omitir variables públicas o conocidas para cliente
+  SECRETS_SCAN_OMIT_KEYS = "VITE_APP_NAME,VITE_APP_VERSION,VITE_APP_ENVIRONMENT,VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY"
 
 [dev]
   command = "npm run dev"
