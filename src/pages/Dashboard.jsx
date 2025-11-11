@@ -1,5 +1,5 @@
 import React from 'react';
-import { mockVehicles, mockDrivers } from '../data/mockVehicles';
+import { mockVehicles, mockDrivers } from '../data/mockVehicles'; // TODO: Reemplazar datos mock por fuente real cuando esté disponible
 import Card from '../components/Card';
 import { Link } from 'react-router-dom';
 import MapViewer from '../components/MapViewer';
@@ -409,6 +409,26 @@ const Dashboard = () => {
               <p className="text-xs text-green-600">Sin incidentes</p>
             </div>
           </div>
+        </Card>
+      </div>
+
+      {/* Acceso rápido a gestión de usuarios */}
+      <div className="grid grid-cols-1">
+        <Card className="p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Gestión de Usuarios
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Administra usuarios y roles del sistema.
+            </p>
+          </div>
+          <Link
+            to="/usuarios"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Ir a Usuarios
+          </Link>
         </Card>
       </div>
     </div>
