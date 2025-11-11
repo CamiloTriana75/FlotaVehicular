@@ -150,6 +150,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       roles: ['superusuario', 'admin'],
     },
     {
+      title: 'Usuarios',
+      path: '/usuarios',
+      icon: Users,
+      description: 'Gestión de usuarios',
+      roles: ['superusuario', 'admin'],
+    },
+    {
       title: 'Configuración',
       path: '/configuracion',
       icon: Settings,
