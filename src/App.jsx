@@ -23,6 +23,7 @@ import HealthCheck from './pages/HealthCheck';
 import AssignmentsPage from './pages/AssignmentsPage';
 import DriverIncidents from './pages/DriverIncidents';
 import DriverPerformance from './pages/DriverPerformance';
+import UsersAdmin from './pages/UsersAdmin';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -119,6 +120,7 @@ function App() {
               <Route path="/alertas" element={<Alerts />} />
               <Route path="/incidentes" element={<DriverIncidents />} />
               <Route path="/desempeno" element={<DriverPerformance />} />
+              <Route path="/usuarios" element={<UsersAdmin />} />
               <Route path="/rutas" element={<RoutesPage />} />
               <Route path="/health" element={<HealthCheck />} />
             </Routes>
