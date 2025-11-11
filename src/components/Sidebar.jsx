@@ -84,6 +84,20 @@ const Sidebar = ({ isOpen, onClose }) => {
       roles: ['superusuario', 'admin', 'supervisor'],
     },
     {
+      title: 'Incidentes',
+      path: '/incidentes',
+      icon: AlertTriangle,
+      description: 'Historial y gestión de incidentes',
+      roles: ['superusuario', 'admin', 'supervisor'],
+    },
+    {
+      title: 'Desempeño',
+      path: '/desempeno',
+      icon: BarChart3,
+      description: 'KPIs por conductor',
+      roles: ['superusuario', 'admin', 'supervisor'],
+    },
+    {
       title: 'Monitoreo',
       path: '/monitoreo',
       icon: MapPin,
