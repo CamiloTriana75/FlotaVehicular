@@ -32,7 +32,7 @@ const VehicleForm = ({ vehicle, onSave, onCancel }) => {
     tipoCombustible: vehicle?.tipoCombustible || 'gasolina',
 
     // Estado
-    estado: vehicle?.estado || 'disponible',
+    estado: vehicle?.estado || vehicle?.status || 'activo',
     kilometraje: vehicle?.kilometraje || 0,
 
     // Mantenimiento (opcional)
@@ -93,9 +93,10 @@ const VehicleForm = ({ vehicle, onSave, onCancel }) => {
 
     if (
       formData.capacidad &&
-      (formData.capacidad < 1 || formData.capacidad > 100)
+      (formData.capacidad < 1 || formData.capacidad > 200)
     ) {
-      newErrors.capacidad = 'La capacidad debe estar entre 1 y 100';
+      newErrors.capacidad =
+        'La capacidad de combustible debe estar entre 1 y 200 litros';
     }
 
     // Estado
@@ -351,27 +352,28 @@ const VehicleForm = ({ vehicle, onSave, onCancel }) => {
             )}
           </div>
 
-          {/* Capacidad */}
+          {/* Capacidad de Combustible */}
           <div>
             <label
               htmlFor="capacidad"
               className="block text-sm font-medium text-gray-700 mb-1"
             >
-              Capacidad (pasajeros)
+              Capacidad de Combustible (litros)
             </label>
             <input
               id="capacidad"
               type="number"
               min="1"
-              max="100"
+              max="200"
+              step="0.1"
               value={formData.capacidad}
               onChange={(e) =>
-                handleChange('capacidad', parseInt(e.target.value) || '')
+                handleChange('capacidad', parseFloat(e.target.value) || '')
               }
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 ${
                 errors.capacidad ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="5"
+              placeholder="50.0"
             />
             {errors.capacidad && (
               <p className="text-red-600 text-xs mt-1">{errors.capacidad}</p>

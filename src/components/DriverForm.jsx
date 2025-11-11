@@ -19,12 +19,8 @@ export function validateDriverData(data) {
     errors.cedula = 'La cédula es obligatoria';
   }
 
-  // Fecha de vencimiento de licencia obligatoria
-  if (!data.fecha_venc_licencia) {
-    errors.fecha_venc_licencia =
-      'La fecha de vencimiento de la licencia es obligatoria';
-  } else {
-    // Validar que la fecha sea válida y futura (o hoy)
+  // Fecha de vencimiento de licencia (opcional): validar solo si viene
+  if (data.fecha_venc_licencia) {
     const parts = String(data.fecha_venc_licencia).split('-');
     let fecha;
     if (parts.length === 3) {
@@ -53,6 +49,11 @@ export function validateDriverData(data) {
     }
   }
 
+  // Número de licencia obligatorio para registro en 'drivers'
+  if (!data.numero_licencia || String(data.numero_licencia).trim() === '') {
+    errors.numero_licencia = 'El número de licencia es obligatorio';
+  }
+
   return errors;
 }
 
@@ -71,6 +72,7 @@ export default function DriverForm({
     cedula: initialData.cedula || '',
     telefono: initialData.telefono || '',
     email: initialData.email || '',
+    numero_licencia: initialData.numero_licencia || '',
     fecha_venc_licencia: initialData.fecha_venc_licencia || '',
     estado: initialData.estado || 'activo',
     direccion: initialData.direccion || '',
@@ -256,10 +258,31 @@ export default function DriverForm({
           Licencia y Empleo
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Número de Licencia */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Número de Licencia <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              name="numero_licencia"
+              value={formData.numero_licencia}
+              onChange={handleChange}
+              className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                errors.numero_licencia ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="Ej: 123456789"
+            />
+            {errors.numero_licencia && (
+              <p className="text-xs text-red-600 mt-1">
+                {errors.numero_licencia}
+              </p>
+            )}
+          </div>
           {/* Fecha Vencimiento Licencia */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fecha Vencimiento Licencia <span className="text-red-500">*</span>
+              Fecha Vencimiento Licencia
             </label>
             <input
               type="date"
