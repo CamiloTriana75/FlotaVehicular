@@ -20,6 +20,7 @@ import VehicleDetail from './pages/VehicleDetail';
 import Alerts from './pages/Alerts';
 import RoutesPage from './pages/Routes';
 import HealthCheck from './pages/HealthCheck';
+import AssignmentsPage from './pages/AssignmentsPage';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -109,6 +110,7 @@ function App() {
               <Route path="/conductores" element={<DriversList />} />
               <Route path="/conductores/nuevo" element={<NewDriver />} />
               <Route path="/conductores/:id" element={<DriverDetail />} />
+              <Route path="/asignaciones" element={<AssignmentsPage />} />
               <Route path="/mantenimiento" element={<Maintenance />} />
               <Route path="/reportes" element={<Reports />} />
               <Route path="/configuracion" element={<Settings />} />

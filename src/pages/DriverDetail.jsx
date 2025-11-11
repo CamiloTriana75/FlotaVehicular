@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { UserCog, Trash2, AlertCircle } from 'lucide-react';
 import DriverForm from '../components/DriverForm';
-import { conductorService } from '../services/conductorService';
+import { driverService } from '../services/driverService';
 
 /**
  * Página para editar/ver detalle de un conductor
@@ -27,7 +27,7 @@ export default function DriverDetail() {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await conductorService.getById(id);
+      const { data, error: fetchError } = await driverService.getById(id);
 
       if (fetchError) {
         throw new Error(fetchError.message || 'Error al cargar el conductor');
@@ -48,7 +48,7 @@ export default function DriverDetail() {
 
   const handleUpdate = async (formData) => {
     try {
-      const { data, error: updateError } = await conductorService.update(
+      const { data, error: updateError } = await driverService.update(
         id,
         formData
       );
@@ -77,7 +77,7 @@ export default function DriverDetail() {
     setDeleting(true);
 
     try {
-      const { error: deleteError } = await conductorService.delete(id);
+      const { error: deleteError } = await driverService.delete(id);
 
       if (deleteError) {
         throw new Error(
@@ -149,6 +149,13 @@ export default function DriverDetail() {
     );
   }
 
+  // Preparar datos iniciales para el formulario a partir de 'drivers'
+  const initialForForm = {
+    ...driver,
+    nombre_completo: `${driver.nombre || ''} ${driver.apellidos || ''}`.trim(),
+    numero_licencia: driver.numero_licencia || '',
+  };
+
   return (
     <div className="max-w-4xl mx-auto">
       {/* Header */}
@@ -163,7 +170,7 @@ export default function DriverDetail() {
                 Editar Conductor
               </h1>
               <p className="text-gray-600">
-                Actualizar información de {driver.nombre_completo}
+                Actualizar información de {driver.nombre} {driver.apellidos}
               </p>
             </div>
           </div>
@@ -174,7 +181,7 @@ export default function DriverDetail() {
       <div className="bg-white rounded-lg shadow-md p-6 mb-6">
         <DriverForm
           mode="edit"
-          initialData={driver}
+          initialData={initialForForm}
           onSubmit={handleUpdate}
           onCancel={handleCancel}
         />
