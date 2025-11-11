@@ -35,11 +35,7 @@ const NavBar = ({ onLogout, isMockMode = false }) => {
               <span className="text-xl font-bold text-gray-900">
                 FlotaManager
               </span>
-              {isMockMode && (
-                <span className="text-xs text-orange-600 font-medium">
-                  Modo Demo
-                </span>
-              )}
+              {/* Indicador de estado removido para evitar lenguaje 'demo/mock' en UI */}
             </div>
           </Link>
 

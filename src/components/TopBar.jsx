@@ -124,14 +124,20 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
           {/* Connection Status */}
           <div className="flex items-center space-x-2">
             {isMockMode ? (
-              <div className="flex items-center space-x-1 text-orange-600">
+              <div
+                className="flex items-center space-x-1 text-yellow-600"
+                title="Sin conexión a backend real"
+              >
                 <WifiOff className="w-4 h-4" />
-                <span className="text-sm font-medium">Modo Demo</span>
+                <span className="text-sm font-medium">Offline</span>
               </div>
             ) : (
-              <div className="flex items-center space-x-1 text-green-600">
+              <div
+                className="flex items-center space-x-1 text-green-600"
+                title="Conectado a base de datos"
+              >
                 <Wifi className="w-4 h-4" />
-                <span className="text-sm font-medium">Conectado</span>
+                <span className="text-sm font-medium">Online</span>
               </div>
             )}
           </div>

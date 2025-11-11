@@ -215,7 +215,7 @@ export const mockAuth = {
         id: 'mock-user-id',
         email: email,
         user_metadata: {
-          full_name: 'Usuario Demo',
+          full_name: 'Usuario',
         },
         role: 'admin',
       };
