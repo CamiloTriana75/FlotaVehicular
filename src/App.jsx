@@ -21,6 +21,8 @@ import Alerts from './pages/Alerts';
 import RoutesPage from './pages/Routes';
 import HealthCheck from './pages/HealthCheck';
 import AssignmentsPage from './pages/AssignmentsPage';
+import DriverIncidents from './pages/DriverIncidents';
+import DriverPerformance from './pages/DriverPerformance';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -115,6 +117,8 @@ function App() {
               <Route path="/reportes" element={<Reports />} />
               <Route path="/configuracion" element={<Settings />} />
               <Route path="/alertas" element={<Alerts />} />
+              <Route path="/incidentes" element={<DriverIncidents />} />
+              <Route path="/desempeno" element={<DriverPerformance />} />
               <Route path="/rutas" element={<RoutesPage />} />
               <Route path="/health" element={<HealthCheck />} />
             </Routes>
