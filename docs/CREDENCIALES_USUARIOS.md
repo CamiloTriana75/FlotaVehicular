@@ -29,8 +29,8 @@ Rol: admin
 ### 3. **RECURSOS HUMANOS (RRHH)**
 
 ```
-Email: rrhh@flota.com
-Password: Rrhh123!
+Email: rrhh@flotavehicular.com
+Password: RRHH2025!
 Rol: rrhh
 ```
 
