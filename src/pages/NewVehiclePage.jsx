@@ -1,19 +1,29 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, AlertCircle } from 'lucide-react';
 import VehicleForm from '../components/VehicleForm';
-import { useVehicles } from '../hooks/useVehicles';
+import { vehicleService } from '../services/vehicleService';
 
 export default function NewVehiclePage() {
   const navigate = useNavigate();
-  const { addVehicle } = useVehicles();
   const [showSuccess, setShowSuccess] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleSave = async (vehicleData) => {
     try {
-      await addVehicle(vehicleData);
+      console.log('Guardando vehículo en BD:', vehicleData);
+      setError(null);
 
-      // Mostrar mensaje de éxito
+      const { data, error: saveError } =
+        await vehicleService.createFromForm(vehicleData);
+
+      if (saveError) {
+        console.error('Error al guardar vehículo:', saveError);
+        setError(saveError.message || 'Error al guardar el vehículo');
+        return;
+      }
+
+      console.log('Vehículo guardado exitosamente:', data);
       setShowSuccess(true);
 
       // Redirigir después de 2 segundos
@@ -22,7 +32,7 @@ export default function NewVehiclePage() {
       }, 2000);
     } catch (error) {
       console.error('Error al guardar el vehículo:', error);
-      // TODO: Mostrar mensaje de error
+      setError(error.message || 'Error inesperado al guardar el vehículo');
     }
   };
 
@@ -69,6 +79,21 @@ export default function NewVehiclePage() {
               <p className="text-green-700 text-sm">
                 Redirigiendo a la lista de vehículos...
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Mensaje de Error */}
+      {error && (
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-center space-x-3">
+            <AlertCircle className="h-6 w-6 text-red-600" />
+            <div>
+              <p className="text-red-800 font-medium">
+                Error al guardar el vehículo
+              </p>
+              <p className="text-red-700 text-sm">{error}</p>
             </div>
           </div>
         </div>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { conductorService } from '../services/conductorService';
+import { driverService } from '../services/driverService';
 import Card from '../components/Card';
 import Table from '../components/Table';
 import {
@@ -30,7 +30,7 @@ const DriversList = () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await conductorService.getAll();
+      const { data, error: fetchError } = await driverService.getAll();
       if (fetchError) throw fetchError;
       setConductores(data || []);
     } catch (err) {
@@ -41,22 +41,25 @@ const DriversList = () => {
     }
   };
 
-  const filteredDrivers = conductores.filter(
-    (driver) =>
-      driver.nombre_completo
-        ?.toLowerCase()
-        .includes(searchTerm.toLowerCase()) ||
-      driver.cedula?.includes(searchTerm) ||
-      driver.email?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredDrivers = conductores.filter((driver) => {
+    const nombreCompleto =
+      `${driver.nombre || ''} ${driver.apellidos || ''}`.trim();
+    return (
+      nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (driver.cedula || '').includes(searchTerm) ||
+      (driver.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  });
 
   const columns = [
     {
       header: 'Nombre',
-      accessor: 'nombre_completo',
+      accessor: 'nombre',
       cell: (value, row) => (
         <div>
-          <p className="font-medium">{value}</p>
+          <p className="font-medium">
+            {row.nombre} {row.apellidos}
+          </p>
           <p className="text-xs text-gray-500">CC: {row.cedula}</p>
         </div>
       ),
@@ -105,47 +108,16 @@ const DriversList = () => {
     },
     {
       header: 'Licencia',
-      accessor: 'fecha_venc_licencia',
-      cell: (value) => {
-        if (!value) return <span className="text-gray-400">N/A</span>;
-
-        const fecha = new Date(value);
-        const hoy = new Date();
-        const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
-        const proximoVencimiento = diasRestantes >= 0 && diasRestantes <= 30;
-        const vencida = diasRestantes < 0;
-
-        return (
-          <div className="flex items-center">
-            <Calendar className="h-3 w-3 mr-1" />
-            <span
-              className={`text-sm ${
-                vencida
-                  ? 'text-red-700 font-semibold'
-                  : proximoVencimiento
-                    ? 'text-yellow-700 font-semibold'
-                    : ''
-              }`}
-            >
-              {fecha.toLocaleDateString('es-CO')}
-            </span>
-            {vencida && (
-              <span className="ml-1 text-xs text-red-600 font-bold">
-                (¡Vencida!)
-              </span>
-            )}
-            {proximoVencimiento && !vencida && (
-              <span className="ml-1 text-xs text-yellow-600 font-bold">
-                ({diasRestantes}d)
-              </span>
-            )}
-          </div>
-        );
-      },
+      accessor: 'numero_licencia',
+      cell: (value) => (
+        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+          {value || 'N/A'}
+        </span>
+      ),
     },
     {
       header: 'Acciones',
-      accessor: 'id_conductor',
+      accessor: 'id',
       cell: (value) => (
         <Link
           to={`/conductores/${value}`}
