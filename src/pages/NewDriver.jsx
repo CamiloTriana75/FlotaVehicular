@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import DriverForm from '../components/DriverForm';
-import { conductorService } from '../services/conductorService';
+import { driverService } from '../services/driverService';
 
 /**
  * Página para crear un nuevo conductor
@@ -13,7 +13,8 @@ export default function NewDriver() {
 
   const handleSubmit = async (formData) => {
     try {
-      const { data, error } = await conductorService.create(formData);
+      // Crear registro en la tabla 'drivers' (no en 'conductor')
+      const { data, error } = await driverService.createFromForm(formData);
 
       if (error) {
         throw new Error(error.message || 'Error al crear el conductor');

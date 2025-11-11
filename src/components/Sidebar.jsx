@@ -15,6 +15,7 @@ import {
   X,
   Activity,
   Briefcase,
+  Calendar,
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -74,6 +75,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Users,
       description: 'Gestión de personal',
       roles: ['superusuario', 'admin', 'rrhh'], // RRHH tiene acceso a conductores
+    },
+    {
+      title: 'Asignaciones',
+      path: '/asignaciones',
+      icon: Calendar,
+      description: 'Vehículos a conductores',
+      roles: ['superusuario', 'admin', 'supervisor'],
     },
     {
       title: 'Monitoreo',

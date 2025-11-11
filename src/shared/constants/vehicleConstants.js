@@ -20,8 +20,8 @@ export const FUEL_TYPES = [
 ];
 
 export const VEHICLE_STATUS = [
-  { value: 'disponible', label: 'Disponible' },
-  { value: 'asignado', label: 'Asignado' },
+  { value: 'activo', label: 'Activo' },
+  { value: 'estacionado', label: 'Estacionado' },
   { value: 'mantenimiento', label: 'Mantenimiento' },
   { value: 'inactivo', label: 'Inactivo' },
 ];
