@@ -1,7 +1,13 @@
 import { supabase, isInMockMode } from '../lib/supabaseClient';
 
 // Roles permitidos desde UI
-export const ALLOWED_ROLES = ['admin', 'supervisor', 'rrhh'];
+export const ALLOWED_ROLES = [
+  'admin',
+  'supervisor',
+  'rrhh',
+  'operador',
+  'conductor',
+];
 
 // Validación ligera de payload
 function sanitizeUserPayload(payload) {
