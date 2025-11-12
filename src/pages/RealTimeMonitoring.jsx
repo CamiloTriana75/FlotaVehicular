@@ -343,8 +343,18 @@ const RealTimeMonitoring = () => {
             className="z-0"
           >
             <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              url={
+                import.meta.env.VITE_MAPBOX_TOKEN &&
+                import.meta.env.VITE_MAPBOX_STYLE_ID
+                  ? `https://api.mapbox.com/styles/v1/${import.meta.env.VITE_MAPBOX_STYLE_ID}/tiles/512/{z}/{x}/{y}@2x?access_token=${import.meta.env.VITE_MAPBOX_TOKEN}`
+                  : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+              }
+              attribution={
+                import.meta.env.VITE_MAPBOX_TOKEN &&
+                import.meta.env.VITE_MAPBOX_STYLE_ID
+                  ? '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                  : '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+              }
             />
 
             <MapUpdater vehicles={filteredVehicles} />
