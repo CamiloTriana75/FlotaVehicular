@@ -74,7 +74,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/conductores',
       icon: Users,
       description: 'Gestión de personal',
-      roles: ['superusuario', 'admin', 'rrhh'], // RRHH tiene acceso a conductores
+      roles: ['superusuario', 'admin', 'rrhh'], // RRHH y superusuario/admin gestionan conductores
+    },
+    {
+      title: 'Nuevo Conductor',
+      path: '/conductores/nuevo',
+      icon: Users,
+      description: 'Crear conductor (RRHH / Superusuario)',
+      roles: ['superusuario', 'admin', 'rrhh'],
     },
     {
       title: 'Asignaciones',
@@ -104,6 +111,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       description: 'Tracking en tiempo real',
       badge: '3',
       roles: ['superusuario', 'admin', 'operador'],
+    },
+    {
+      title: 'Tracker (Conductor)',
+      path: '/tracker',
+      icon: MapPin,
+      description: 'Enviar ubicación desde el dispositivo',
+      roles: ['conductor', 'operador', 'superusuario', 'admin'],
     },
     {
       title: 'Rutas',
