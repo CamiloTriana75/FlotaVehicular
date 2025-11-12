@@ -24,9 +24,12 @@ import AssignmentsPage from './pages/AssignmentsPage';
 import DriverIncidents from './pages/DriverIncidents';
 import DriverPerformance from './pages/DriverPerformance';
 import UsersAdmin from './pages/UsersAdmin';
+import RealTimeMonitoring from './pages/RealTimeMonitoring';
+import VehicleTracker from './pages/VehicleTracker';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
   const auth = useAuth();
@@ -111,7 +114,14 @@ function App() {
               <Route path="/vehiculos/nuevo" element={<NewVehiclePage />} />
               <Route path="/vehiculos/:id" element={<VehicleDetail />} />
               <Route path="/conductores" element={<DriversList />} />
-              <Route path="/conductores/nuevo" element={<NewDriver />} />
+              <Route
+                path="/conductores/nuevo"
+                element={
+                  <ProtectedRoute roles={['superusuario', 'admin', 'rrhh']}>
+                    <NewDriver />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/conductores/:id" element={<DriverDetail />} />
               <Route path="/asignaciones" element={<AssignmentsPage />} />
               <Route path="/mantenimiento" element={<Maintenance />} />
@@ -121,6 +131,17 @@ function App() {
               <Route path="/incidentes" element={<DriverIncidents />} />
               <Route path="/desempeno" element={<DriverPerformance />} />
               <Route path="/usuarios" element={<UsersAdmin />} />
+              <Route path="/monitoreo" element={<RealTimeMonitoring />} />
+              <Route
+                path="/tracker"
+                element={
+                  <ProtectedRoute
+                    roles={['conductor', 'operador', 'superusuario', 'admin']}
+                  >
+                    <VehicleTracker />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/rutas" element={<RoutesPage />} />
               <Route path="/health" element={<HealthCheck />} />
             </Routes>

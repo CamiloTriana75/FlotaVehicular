@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserPlus } from 'lucide-react';
 import DriverForm from '../components/DriverForm';
 import { driverService } from '../services/driverService';
+import { userService } from '../services/userService';
 
 /**
  * Página para crear un nuevo conductor
@@ -13,7 +14,23 @@ export default function NewDriver() {
 
   const handleSubmit = async (formData) => {
     try {
-      // Crear registro en la tabla 'drivers' (no en 'conductor')
+      // 1) Si se solicitó cuenta de acceso, crear usuario con rol 'conductor'
+      if (formData._createAccount) {
+        const fullName = (formData.nombre_completo || '').trim();
+        const username = fullName || (formData.email || '').split('@')[0];
+        const password = formData._password || 'Temporal2025$';
+        const email = formData.email || null;
+
+        const { error: userErr } = await userService.create({
+          username,
+          email,
+          rol: 'conductor',
+          password,
+        });
+        if (userErr) throw userErr;
+      }
+
+      // 2) Crear registro del conductor en 'drivers'
       const { data, error } = await driverService.createFromForm(formData);
 
       if (error) {
