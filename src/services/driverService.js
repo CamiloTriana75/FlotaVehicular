@@ -31,10 +31,15 @@ export const driverService = {
       estado: formData.estado || 'activo',
     };
 
+    // Asegurar que no se envían flags internos
+    // (Supabase error: Could not find the '_createAccount' column of 'drivers')
+    // Borra campos adicionales del objeto original
+    const cleaned = { ...payload }; // payload ya sólo contiene columnas válidas
+
     try {
       const { data, error } = await supabase
         .from('drivers')
-        .insert([payload])
+        .insert([cleaned])
         .select()
         .single();
 
@@ -102,6 +107,9 @@ export const driverService = {
       delete updatePayload.nombre_completo;
       delete updatePayload.fecha_venc_licencia; // no existe en drivers
       delete updatePayload.fecha_ingreso; // no existe en drivers
+      // Limpiar flags internos del formulario
+      delete updatePayload._createAccount;
+      delete updatePayload._password;
 
       const { data, error } = await supabase
         .from('drivers')

@@ -83,6 +83,8 @@ export default function DriverForm({
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
   const [licenciaWarning, setLicenciaWarning] = useState(null);
+  const [createAccount, setCreateAccount] = useState(false);
+  const [password, setPassword] = useState('');
 
   useEffect(() => {
     // Verificar si la licencia vence pronto
@@ -120,6 +122,15 @@ export default function DriverForm({
 
     // Validar datos
     const validation = validateDriverData(formData);
+    // Validación extra si se crea cuenta
+    if (createAccount) {
+      if (!formData.email || formData.email.trim() === '') {
+        validation.email = 'Email es obligatorio para crear la cuenta';
+      }
+      if (!password || password.length < 8) {
+        validation.password = 'La contraseña debe tener al menos 8 caracteres';
+      }
+    }
     setErrors(validation);
 
     if (Object.keys(validation).length > 0) {
@@ -128,7 +139,11 @@ export default function DriverForm({
 
     setLoading(true);
     try {
-      await onSubmit(formData);
+      await onSubmit({
+        ...formData,
+        _createAccount: createAccount,
+        _password: createAccount ? password : undefined,
+      });
     } catch (err) {
       console.error('Error en formulario:', err);
       setErrors({
@@ -340,6 +355,62 @@ export default function DriverForm({
             />
           </div>
         </div>
+      </div>
+
+      {/* Sección: Cuenta de Acceso (Opcional) */}
+      <div className="bg-gray-50 p-4 rounded-lg">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+          Cuenta de Acceso (opcional)
+        </h3>
+        <label className="inline-flex items-center gap-2 mb-3">
+          <input
+            type="checkbox"
+            className="h-4 w-4"
+            checked={createAccount}
+            onChange={(e) => setCreateAccount(e.target.checked)}
+            disabled={loading}
+          />
+          <span>Crear usuario con rol "conductor" para iniciar sesión</span>
+        </label>
+        {createAccount && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email de acceso <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={(e) => handleChange(e)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.email ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="usuario@dominio.com"
+              />
+              {errors.email && (
+                <p className="text-xs text-red-600 mt-1">{errors.email}</p>
+              )}
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Contraseña <span className="text-red-500">*</span>
+              </label>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                  errors.password ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Mínimo 8 caracteres"
+              />
+              {errors.password && (
+                <p className="text-xs text-red-600 mt-1">{errors.password}</p>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Botones de acción */}
