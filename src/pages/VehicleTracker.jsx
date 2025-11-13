@@ -32,11 +32,16 @@ const VehicleTracker = () => {
     errors: 0,
   });
   const [userVehicles, setUserVehicles] = useState([]);
+  const [isSimulation, setIsSimulation] = useState(false);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const auth = useAuth();
 
   const watchIdRef = useRef(null);
   const intervalRef = useRef(null);
+  const simSpeedRef = useRef(18); // km/h (≈5 m/s)
+  const simHeadingRef = useRef(45); // grados (NE)
+  const sendingRef = useRef(false);
+  const lastCoordsRef = useRef(null);
 
   useEffect(() => {
     // Cleanup al desmontar componente
@@ -132,49 +137,95 @@ const VehicleTracker = () => {
         throw new Error('Tu navegador no soporta geolocalización');
       }
 
-      // Solicitar permisos explícitamente con getCurrentPosition primero
-      // Esto fuerza el diálogo de permisos en navegadores móviles
-      await new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(
-          (position) => {
-            console.log('Permiso de ubicación concedido:', position);
-            setCurrentPosition({
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-              accuracy: position.coords.accuracy,
-              altitude: position.coords.altitude,
-              heading: position.coords.heading,
-              speed: position.coords.speed ? position.coords.speed * 3.6 : 0,
-            });
-            resolve(position);
-          },
-          (error) => {
-            console.error('Error solicitando permisos GPS:', error);
-            let errorMsg = 'No se pudo acceder a tu ubicación. ';
-            switch (error.code) {
-              case error.PERMISSION_DENIED:
-                errorMsg +=
-                  'Permiso denegado. Por favor, activa los permisos de ubicación para este sitio en la configuración de tu navegador.';
-                break;
-              case error.POSITION_UNAVAILABLE:
-                errorMsg +=
-                  'Ubicación no disponible. Verifica que el GPS esté activado en tu dispositivo.';
-                break;
-              case error.TIMEOUT:
-                errorMsg += 'Tiempo de espera agotado. Intenta nuevamente.';
-                break;
-              default:
-                errorMsg += error.message;
+      // Solicitar permisos explícitamente solo si NO estamos en simulación
+      if (!isSimulation) {
+        await new Promise((resolve, reject) => {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              console.log('Permiso de ubicación concedido:', position);
+              setCurrentPosition({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+                accuracy: position.coords.accuracy,
+                altitude: position.coords.altitude,
+                heading: position.coords.heading,
+                speed: position.coords.speed ? position.coords.speed * 3.6 : 0,
+              });
+              resolve(position);
+            },
+            (error) => {
+              console.error('Error solicitando permisos GPS:', error);
+              let errorMsg = 'No se pudo acceder a tu ubicación. ';
+              switch (error.code) {
+                case error.PERMISSION_DENIED:
+                  errorMsg +=
+                    'Permiso denegado. Por favor, activa los permisos de ubicación para este sitio en la configuración de tu navegador.';
+                  break;
+                case error.POSITION_UNAVAILABLE:
+                  errorMsg +=
+                    'Ubicación no disponible. Verifica que el GPS esté activado en tu dispositivo.';
+                  break;
+                case error.TIMEOUT:
+                  errorMsg += 'Tiempo de espera agotado. Intenta nuevamente.';
+                  break;
+                default:
+                  errorMsg += error.message;
+              }
+              reject(new Error(errorMsg));
+            },
+            {
+              enableHighAccuracy: true,
+              timeout: 10000,
+              maximumAge: 0,
             }
-            reject(new Error(errorMsg));
+          );
+        });
+      } else {
+        // Semilla de simulación inmediata si no hay coordenadas
+        const seed = lastCoordsRef.current ||
+          currentPosition || {
+            latitude: 4.711,
+            longitude: -74.072,
+            accuracy: 10,
+            altitude: null,
+            heading: simHeadingRef.current,
+            speed: simSpeedRef.current,
+            timestamp: new Date().toISOString(),
+          };
+        lastCoordsRef.current = seed;
+        setCurrentPosition(seed);
+      }
+
+      // Iniciar watchPosition para mantener la última posición disponible sin bloquear
+      // Iniciar watchPosition solo si NO estamos en simulación
+      if (!isSimulation) {
+        watchIdRef.current = locationService.watchPosition(
+          (coords, error) => {
+            if (error) {
+              console.warn(
+                'GPS watch (continuará reintentando):',
+                error.message
+              );
+              setConnectionStatus('connecting');
+              return;
+            }
+            if (coords) {
+              lastCoordsRef.current = coords;
+              setCurrentPosition(coords);
+              setStats((prev) => ({
+                ...prev,
+                speed: Math.round(coords.speed || 0),
+                heading: Math.round(coords.heading || 0),
+                accuracy: Math.round(coords.accuracy || 0),
+              }));
+            }
           },
           {
             enableHighAccuracy: true,
-            timeout: 15000,
+            timeout: 10000,
             maximumAge: 0,
           }
         );
-      });
 
       // Variable para almacenar la última posición GPS
       let lastKnownPosition = null;
@@ -189,6 +240,45 @@ const VehicleTracker = () => {
             return;
           }
 
+      // Iniciar polling cada 1 segundo para garantizar envíos constantes usando la última posición conocida
+      intervalRef.current = setInterval(async () => {
+        if (sendingRef.current) return;
+        sendingRef.current = true;
+        try {
+          let coords = lastCoordsRef.current;
+
+          if (isSimulation) {
+            // Generar punto simulado cada segundo
+            const base = coords ||
+              currentPosition || {
+                latitude: 4.711,
+                longitude: -74.072,
+                accuracy: 10,
+                altitude: null,
+                heading: simHeadingRef.current,
+                speed: simSpeedRef.current,
+                timestamp: new Date().toISOString(),
+              };
+
+            const metersPerSec = simSpeedRef.current / 3.6; // km/h -> m/s
+            const headingRad = (simHeadingRef.current * Math.PI) / 180;
+            const dNorth = metersPerSec * Math.cos(headingRad); // metros
+            const dEast = metersPerSec * Math.sin(headingRad); // metros
+            const latRad = (base.latitude * Math.PI) / 180;
+            const newLat = base.latitude + dNorth / 111111;
+            const newLon = base.longitude + dEast / (111111 * Math.cos(latRad));
+
+            coords = {
+              latitude: newLat,
+              longitude: newLon,
+              accuracy: 5,
+              altitude: base.altitude,
+              heading: simHeadingRef.current,
+              speed: simSpeedRef.current,
+              timestamp: new Date().toISOString(),
+            };
+            lastCoordsRef.current = coords;
+          }
           if (coords) {
             lastKnownPosition = coords;
             setCurrentPosition(coords);
@@ -205,7 +295,7 @@ const VehicleTracker = () => {
           timeout: 10000,
           maximumAge: 0,
         }
-      );
+      }, 1000);
 
       // Enviar ubicación al servidor cada 1 segundo
       const trackingInterval = setInterval(async () => {
@@ -280,6 +370,11 @@ const VehicleTracker = () => {
         clearInterval(watchIdRef.current.trackingInterval);
       }
       watchIdRef.current = null;
+    }
+
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
     }
 
     setIsTracking(false);
@@ -528,6 +623,21 @@ const VehicleTracker = () => {
 
         {/* Controls */}
         <div className="bg-white shadow-lg p-6 border-t">
+          <div className="flex items-center justify-between mb-4">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                checked={isSimulation}
+                onChange={(e) => setIsSimulation(e.target.checked)}
+                disabled={isTracking}
+              />
+              <span>Modo simulación (puntos sintéticos cada 1s)</span>
+            </label>
+            <div className="text-xs text-gray-500">
+              Vel: {simSpeedRef.current} km/h · Rumbo: {simHeadingRef.current}°
+            </div>
+          </div>
           <div className="flex gap-4">
             {!isTracking ? (
               <button
@@ -670,7 +780,7 @@ const VehicleTracker = () => {
           <div className="mt-4 text-center">
             <div className="text-xs text-gray-500">
               {isTracking
-                ? `Enviando ubicación cada 3-5 segundos para ${vehicleId}`
+                ? `Enviando ubicación cada 1 segundo para ${vehicleId}`
                 : 'Tracker detenido'}
             </div>
           </div>

@@ -37,6 +37,10 @@ import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
 import ProtectedRoute from './components/ProtectedRoute';
+import {
+  initializeNotifications,
+  stopNotifications,
+} from './services/notificationService';
 
 function App() {
   const auth = useAuth();
@@ -62,6 +66,20 @@ function App() {
     }
   }, [isAuthenticated]);
 
+  // Inicializar notificaciones globales al autenticarse
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      console.log('🔔 Inicializando notificaciones globales...');
+      initializeNotifications();
+    } else {
+      stopNotifications();
+    }
+
+    return () => {
+      stopNotifications();
+    };
+  }, [isAuthenticated]);
+
   const handleLogin = () => {
     setIsAuthenticated(true);
   };
@@ -71,6 +89,7 @@ function App() {
     setCurrentUser(null);
     localStorage.removeItem('mockUser');
     localStorage.removeItem('currentUser');
+    stopNotifications(); // Detener notificaciones al cerrar sesión
     if (auth.isMockMode) {
       console.log('Sesión cerrada en modo mock');
     }
@@ -89,6 +108,10 @@ function App() {
     // Redirección según el rol
     if (userRole === 'rrhh') {
       return <Navigate to="/rrhh/dashboard" replace />;
+    }
+
+    if (userRole === 'operador') {
+      return <Navigate to="/operador/dashboard" replace />;
     }
 
     // Por defecto, ir al dashboard general
@@ -117,6 +140,14 @@ function App() {
               <Route path="/" element={<RoleDashboardRedirect />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/rrhh/dashboard" element={<RRHHDashboard />} />
+              <Route
+                path="/operador/dashboard"
+                element={
+                  <ProtectedRoute roles={['operador', 'admin', 'superusuario']}>
+                    <OperadorDashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/vehiculos" element={<VehiclesList />} />
               <Route path="/vehiculos/nuevo" element={<NewVehiclePage />} />
               <Route path="/vehiculos/:id" element={<VehicleDetail />} />
