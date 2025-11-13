@@ -355,8 +355,36 @@ export const locationService = {
     }
 
     try {
+      // PASO 1: Resolver vehicle_id si se pasó una placa
+      let resolvedVehicleId = vehicle_id;
+      let vehiclePlaca = vehicle_id;
+
+      if (isNaN(vehicle_id)) {
+        console.log(`🔍 Buscando vehículo por placa: "${vehicle_id}"`);
+        const { data: vehicleData, error: vehicleError } = await supabase
+          .from('vehicles')
+          .select('id, placa')
+          .eq('placa', vehicle_id.toUpperCase())
+          .single();
+
+        if (vehicleError || !vehicleData) {
+          console.error(
+            `❌ Vehículo no encontrado con placa "${vehicle_id}":`,
+            vehicleError
+          );
+          throw new Error(`Vehículo con placa "${vehicle_id}" no encontrado`);
+        }
+
+        resolvedVehicleId = vehicleData.id;
+        vehiclePlaca = vehicleData.placa;
+        console.log(
+          `✅ Vehículo encontrado: ID=${resolvedVehicleId}, Placa=${vehiclePlaca}`
+        );
+      }
+
+      // PASO 2: Insertar ubicación usando RPC
       const { data, error } = await supabase.rpc('insert_vehicle_location', {
-        p_vehicle_id: vehicle_id,
+        p_vehicle_id: vehiclePlaca, // La función RPC acepta placa
         p_latitude: latitude,
         p_longitude: longitude,
         p_speed: speed,
@@ -369,9 +397,40 @@ export const locationService = {
         throw new Error(`Error insertando ubicación: ${error.message}`);
       }
 
+      console.log(
+        `📍 Ubicación insertada: Placa=${vehiclePlaca}, Speed=${speed} km/h, Lat=${latitude.toFixed(6)}, Lng=${longitude.toFixed(6)}`
+      );
+
+      // PASO 3: EVALUAR ALERTAS después de insertar la ubicación
+      try {
+        // Importar dinámicamente para evitar dependencia circular
+        const { evaluarAlertasUbicacion } = await import('./alertService.js');
+
+        console.log(
+          `🔍 Evaluando alertas: vehicle_id=${resolvedVehicleId} (${vehiclePlaca}), speed=${speed} km/h`
+        );
+
+        const resultado = await evaluarAlertasUbicacion(
+          parseInt(resolvedVehicleId),
+          speed, // velocidad en km/h
+          latitude, // latitud
+          longitude // longitud
+        );
+
+        if (resultado.data && resultado.data.length > 0) {
+          console.log(
+            `🚨 ${resultado.data.length} Alertas generadas:`,
+            resultado.data
+          );
+        }
+      } catch (alertError) {
+        console.error('⚠️ Error evaluando alertas (no crítico):', alertError);
+        // No fallar la inserción si la evaluación de alertas falla
+      }
+
       return { data, error: null };
     } catch (err) {
-      console.error('Error al insertar ubicación:', err);
+      console.error('❌ Error al insertar ubicación:', err);
       return { data: null, error: err };
     }
   },

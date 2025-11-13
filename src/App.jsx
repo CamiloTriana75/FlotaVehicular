@@ -18,6 +18,7 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import VehicleDetail from './pages/VehicleDetail';
 import Alerts from './pages/Alerts';
+import AlertRulesConfig from './pages/AlertRulesConfig';
 import RoutesPage from './pages/Routes';
 import HealthCheck from './pages/HealthCheck';
 import AssignmentsPage from './pages/AssignmentsPage';
@@ -26,6 +27,12 @@ import DriverPerformance from './pages/DriverPerformance';
 import UsersAdmin from './pages/UsersAdmin';
 import RealTimeMonitoring from './pages/RealTimeMonitoring';
 import VehicleTracker from './pages/VehicleTracker';
+import RoutesList from './pages/RoutesList';
+import NewRoutePage from './pages/NewRoutePage';
+import AssignRoutePage from './pages/AssignRoutePage';
+import MyRoutes from './pages/MyRoutes';
+import ConductorRouteView from './pages/ConductorRouteView';
+import RouteMonitoring from './pages/RouteMonitoring';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -128,6 +135,14 @@ function App() {
               <Route path="/reportes" element={<Reports />} />
               <Route path="/configuracion" element={<Settings />} />
               <Route path="/alertas" element={<Alerts />} />
+              <Route
+                path="/alertas/configuracion"
+                element={
+                  <ProtectedRoute roles={['superusuario', 'admin']}>
+                    <AlertRulesConfig />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/incidentes" element={<DriverIncidents />} />
               <Route path="/desempeno" element={<DriverPerformance />} />
               <Route path="/usuarios" element={<UsersAdmin />} />
@@ -143,6 +158,84 @@ function App() {
                 }
               />
               <Route path="/rutas" element={<RoutesPage />} />
+              <Route
+                path="/rutas/planificacion"
+                element={
+                  <ProtectedRoute
+                    roles={[
+                      'superusuario',
+                      'admin',
+                      'operador',
+                      'planificador',
+                    ]}
+                  >
+                    <RoutesList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rutas/planificacion/nueva"
+                element={
+                  <ProtectedRoute
+                    roles={[
+                      'superusuario',
+                      'admin',
+                      'operador',
+                      'planificador',
+                    ]}
+                  >
+                    <NewRoutePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rutas/planificacion/:routeId/asignar"
+                element={
+                  <ProtectedRoute
+                    roles={[
+                      'superusuario',
+                      'admin',
+                      'operador',
+                      'planificador',
+                    ]}
+                  >
+                    <AssignRoutePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/conductor/mis-rutas"
+                element={
+                  <ProtectedRoute
+                    roles={['conductor', 'operador', 'superusuario', 'admin']}
+                  >
+                    <MyRoutes />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/conductor/mis-rutas/:assignmentId"
+                element={
+                  <ProtectedRoute roles={['conductor']}>
+                    <ConductorRouteView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rutas/monitoreo"
+                element={
+                  <ProtectedRoute
+                    roles={[
+                      'superusuario',
+                      'admin',
+                      'operador',
+                      'planificador',
+                    ]}
+                  >
+                    <RouteMonitoring />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/health" element={<HealthCheck />} />
             </Routes>
           </main>
