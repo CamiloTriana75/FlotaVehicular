@@ -1,7 +1,7 @@
 # 📊 Backlog de Producto Actualizado - FlotaVehicular
 
-> **Fecha de actualización:** 2025-11-08  
-> **Sprint actual:** Sprint 9 - Gestión de Conductores  
+> **Fecha de actualización:** 2025-11-12  
+> **Sprint actual:** Sprint 9 - Gestión de Conductores y Alertas  
 > **Casos de uso totales:** 55  
 > **Historias de usuario totales:** 60+
 
@@ -17,9 +17,9 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 
 | Categoría                | Total | Completadas | En Progreso | Pendientes | % Avance |
 | ------------------------ | ----- | ----------- | ----------- | ---------- | -------- |
-| **Épicas**               | 10    | 2           | 1           | 7          | 20%      |
-| **Casos de Uso**         | 55    | 8           | 5           | 42         | 15%      |
-| **Historias de Usuario** | 60+   | 12          | 3           | 45+        | 20%      |
+| **Épicas**               | 10    | 3           | 1           | 6          | 30%      |
+| **Casos de Uso**         | 55    | 13          | 2           | 40         | 24%      |
+| **Historias de Usuario** | 60+   | 13          | 3           | 44+        | 22%      |
 
 ---
 
@@ -47,22 +47,62 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 
 ---
 
-### Épica 2: Gestión de Conductores 🟡 (40%)
+### Épica 3: Monitoreo en Tiempo Real - Alertas ✅ (Completado parcial - HU9)
+
+| ID      | Historia de Usuario                                                        | Casos de Uso     | Estado        | Sprint |
+| ------- | -------------------------------------------------------------------------- | ---------------- | ------------- | ------ |
+| **HU9** | Como manager quiero configurar alertas por velocidad, detenciones, desvíos | UC28-31, UC33(p) | ✅ Completado | 9      |
+
+**Funcionalidades implementadas (HU9):**
+
+- ✅ Centro de Alertas (`/alertas`) con vista de tarjetas y filtros
+- ✅ Notificaciones del navegador en tiempo real
+- ✅ Página de configuración de umbrales (`/configurar-alertas`)
+- ✅ Detección automática de velocidad excesiva
+- ✅ Detección automática de paradas prolongadas
+- ✅ Suscripción Realtime (Supabase) a nuevas alertas
+- ✅ Filtros por tipo, gravedad, vehículo
+- ✅ Metadatos enriquecidos (velocidad, duración, coordenadas)
+- ✅ Debounce para evitar alertas duplicadas
+- ✅ Enriquecimiento de vehículos en notificaciones (placa + marca/modelo)
+- ✅ Scripts SQL: tabla `alerts`, `alert_rules`, RPCs optimizados
+- ✅ Integración con sistema de tracking de ubicaciones
+
+**Casos de uso completados:**
+
+- ✅ UC28: Ver Alertas Activas
+- ✅ UC29: Generar Alerta Automática
+- ✅ UC30: Descartar Alerta
+- ✅ UC31: Configurar Notificaciones
+- 🟡 UC33: Alertas por Velocidad ✅ / Detención ✅ / Desvío ❌ (requiere rutas)
+
+**Pendiente para futuras issues:**
+
+- ❌ UC32: Geocercas → Nueva HU separada
+- ❌ UC33 (desvíos): Requiere módulo de rutas planificadas (Épica 4)
+
+---
+
+### Épica 2: Gestión de Conductores 🟡 (60%)
 
 | ID      | Historia de Usuario                                           | Casos de Uso     | Estado         | Sprint |
 | ------- | ------------------------------------------------------------- | ---------------- | -------------- | ------ |
 | **HU4** | Como admin quiero registrar conductores con datos y licencias | UC10, UC11, UC12 | 🟡 En progreso | 9      |
-| **HU6** | Como manager quiero ver historial de conductores              | UC13, UC14       | 🟡 En progreso | 9      |
+| **HU6** | Como manager quiero ver historial de conductores              | UC13, UC14       | ✅ Completado  | 9      |
 | **HU5** | Como manager quiero gestionar horarios y turnos               | UC15             | ❌ Pendiente   | -      |
 
 **Funcionalidades implementadas:**
 
-- ✅ Servicio `conductorService.js` con métodos CRUD
+- ✅ Servicio `driverService.js` con métodos CRUD
 - ✅ Página `/conductores` lista conductores desde BD
 - ✅ Botón "Actualizar" para recargar datos
 - ✅ Estadísticas: disponibles, activos, licencias por vencer
-- ✅ Búsqueda por nombre, cédula, email
+- ✅ Búsqueda por nombre, cédula, email, vehículo asignado
 - ✅ Seed data: 4 conductores de ejemplo con estados variados
+- ✅ Integración con asignaciones (`vehicle_assignments`)
+- ✅ Columna "Vehículo Asignado" con placa, marca y modelo
+- ✅ Cambio automático de estado a "activo" cuando tiene asignación vigente
+- ✅ Suscripción Realtime para refrescar al cambiar asignaciones
 
 **Pendiente:**
 
@@ -198,33 +238,53 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 
 ---
 
-#### Épica 3: Monitoreo en Tiempo Real (0%)
+#### Épica 3: Monitoreo en Tiempo Real (60%)
 
-| ID      | Historia de Usuario                                                        | Casos de Uso | Estimación | Dependencias      |
-| ------- | -------------------------------------------------------------------------- | ------------ | ---------- | ----------------- |
-| **HU7** | Como manager quiero visualizar ubicación en mapa en tiempo real            | UC5          | 13 SP      | HU1, GPS/hardware |
-| **HU8** | Como admin quiero establecer geocercas y recibir alertas                   | UC9, UC32    | 8 SP       | HU7               |
-| **HU9** | Como manager quiero configurar alertas por velocidad, detenciones, desvíos | UC28-33      | 8 SP       | HU7               |
+| ID      | Historia de Usuario                                                        | Casos de Uso | Estimación | Dependencias      | Estado        |
+| ------- | -------------------------------------------------------------------------- | ------------ | ---------- | ----------------- | ------------- |
+| **HU7** | Como manager quiero visualizar ubicación en mapa en tiempo real            | UC5          | 13 SP      | HU1, GPS/hardware | ❌ Pendiente  |
+| **HU8** | Como admin quiero establecer geocercas y recibir alertas                   | UC9, UC32    | 8 SP       | HU7               | ❌ Pendiente  |
+| **HU9** | Como manager quiero configurar alertas por velocidad, detenciones, desvíos | UC28-33      | 8 SP       | HU7               | ✅ Completado |
 
 **Casos de uso relacionados:**
 
-- UC5: Rastrear Ubicación Tiempo Real
-- UC9: Ver Geocercas
-- UC28: Ver Alertas Activas
-- UC29: Generar Alerta Automática
-- UC30: Descartar Alerta
-- UC31: Configurar Notificaciones
-- UC32: Configurar Geocercas
-- UC33: Alertas por Velocidad/Detención/Desvío
+- UC5: Rastrear Ubicación Tiempo Real ❌
+- UC9: Ver Geocercas ❌ (Mover a HU8)
+- UC28: Ver Alertas Activas ✅
+- UC29: Generar Alerta Automática ✅
+- UC30: Descartar Alerta ✅
+- UC31: Configurar Notificaciones ✅
+- UC32: Configurar Geocercas ❌ (Mover a HU8 - Issue separada)
+- UC33: Alertas por Velocidad/Detención ✅ (Desvío pendiente - requiere módulo de rutas)
+
+**Funcionalidades implementadas (HU9):**
+
+- ✅ Centro de Alertas (`/alertas`) con lista en tiempo real
+- ✅ Notificaciones del navegador con permisos
+- ✅ Configuración de umbrales (`/configurar-alertas`)
+- ✅ Detección automática de velocidad excesiva
+- ✅ Detección automática de paradas prolongadas
+- ✅ Suscripción Realtime a nuevas alertas
+- ✅ Filtros por tipo, gravedad, vehículo
+- ✅ Metadatos enriquecidos (velocidad, duración, coordenadas)
+- ✅ Debounce para evitar alertas duplicadas
+- ✅ Enriquecimiento de vehículos en notificaciones (placa + marca/modelo)
+- ✅ Lista de conductores con vehículo asignado y estado automático
+
+**Pendiente para futuras issues:**
+
+- ❌ Geocercas (UC32) → Crear HU separada
+- ❌ Alertas de desvío de ruta → Requiere módulo de rutas (Épica 4)
+- ❌ Tracking GPS en tiempo real (UC5) → HU7
 
 **Tareas técnicas:**
 
-1. Integración con GPS (API o hardware)
-2. WebSocket para actualizaciones en tiempo real
-3. Tabla `locations` con PostGIS
-4. Componente `MapViewer` con marcadores en tiempo real
-5. Geocercas (polígonos en PostGIS)
-6. Sistema de alertas automáticas
+1. ❌ Integración con GPS (API o hardware) - Pendiente HU7
+2. ✅ Realtime para actualizaciones de alertas
+3. ✅ Tabla `alerts` y `alert_rules` con metadatos JSONB
+4. ❌ Componente `MapViewer` con marcadores en tiempo real - Pendiente HU7
+5. ❌ Geocercas (polígonos en PostGIS) - Pendiente HU8
+6. ✅ Sistema de alertas automáticas (velocidad/paradas)
 
 ---
 
@@ -361,13 +421,14 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 
 ### Módulo de Alertas (6 CU)
 
-| Caso de Uso                                  | Estado | Historia | Sprint |
-| -------------------------------------------- | ------ | -------- | ------ |
-| UC28: Ver Alertas Activas                    | ❌     | HU9      | 16     |
-| UC29: Generar Alerta Automática              | ❌     | HU9      | 16     |
-| UC30: Descartar Alerta                       | ❌     | HU9      | 16     |
-| UC31: Configurar Notificaciones              | ❌     | HU9      | 17     |
-| UC32: Configurar Geocercas                   | ❌     | HU8      | 16     |
+| Caso de Uso                                  | Estado | Historia | Sprint | Notas                                     |
+| -------------------------------------------- | ------ | -------- | ------ | ----------------------------------------- |
+| UC28: Ver Alertas Activas                    | ✅     | HU9      | 9      | Centro alertas con filtros                |
+| UC29: Generar Alerta Automática              | ✅     | HU9      | 9      | Velocidad y paradas                       |
+| UC30: Descartar Alerta                       | ✅     | HU9      | 9      | Actualización de estado                   |
+| UC31: Configurar Notificaciones              | ✅     | HU9      | 9      | Browser + Realtime                        |
+| UC32: Configurar Geocercas                   | ❌     | HU8      | TBD    | Issue separada (HU32)                     |
+| UC33: Alertas por Velocidad/Detención/Desvío | 🟡     | HU9      | 9      | Velocidad ✅ Paradas ✅ Desvío ❌ (rutas) |
 | UC33: Alertas por Velocidad/Detención/Desvío | ❌     | HU9      | 16     |
 
 ### Módulo de Incidentes (3 CU)

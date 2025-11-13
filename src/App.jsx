@@ -18,6 +18,8 @@ import Reports from './pages/Reports';
 import Settings from './pages/Settings';
 import VehicleDetail from './pages/VehicleDetail';
 import Alerts from './pages/Alerts';
+import AlertCenter from './pages/AlertCenter';
+import AlertRulesConfig from './pages/AlertRulesConfig';
 import RoutesPage from './pages/Routes';
 import HealthCheck from './pages/HealthCheck';
 import AssignmentsPage from './pages/AssignmentsPage';
@@ -26,10 +28,15 @@ import DriverPerformance from './pages/DriverPerformance';
 import UsersAdmin from './pages/UsersAdmin';
 import RealTimeMonitoring from './pages/RealTimeMonitoring';
 import VehicleTracker from './pages/VehicleTracker';
+import OperadorDashboard from './pages/OperadorDashboard';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
 import ProtectedRoute from './components/ProtectedRoute';
+import {
+  initializeNotifications,
+  stopNotifications,
+} from './services/notificationService';
 
 function App() {
   const auth = useAuth();
@@ -55,6 +62,20 @@ function App() {
     }
   }, [isAuthenticated]);
 
+  // Inicializar notificaciones globales al autenticarse
+  React.useEffect(() => {
+    if (isAuthenticated) {
+      console.log('🔔 Inicializando notificaciones globales...');
+      initializeNotifications();
+    } else {
+      stopNotifications();
+    }
+
+    return () => {
+      stopNotifications();
+    };
+  }, [isAuthenticated]);
+
   const handleLogin = () => {
     setIsAuthenticated(true);
   };
@@ -64,6 +85,7 @@ function App() {
     setCurrentUser(null);
     localStorage.removeItem('mockUser');
     localStorage.removeItem('currentUser');
+    stopNotifications(); // Detener notificaciones al cerrar sesión
     if (auth.isMockMode) {
       console.log('Sesión cerrada en modo mock');
     }
@@ -82,6 +104,10 @@ function App() {
     // Redirección según el rol
     if (userRole === 'rrhh') {
       return <Navigate to="/rrhh/dashboard" replace />;
+    }
+
+    if (userRole === 'operador') {
+      return <Navigate to="/operador/dashboard" replace />;
     }
 
     // Por defecto, ir al dashboard general
@@ -110,6 +136,14 @@ function App() {
               <Route path="/" element={<RoleDashboardRedirect />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/rrhh/dashboard" element={<RRHHDashboard />} />
+              <Route
+                path="/operador/dashboard"
+                element={
+                  <ProtectedRoute roles={['operador', 'admin', 'superusuario']}>
+                    <OperadorDashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/vehiculos" element={<VehiclesList />} />
               <Route path="/vehiculos/nuevo" element={<NewVehiclePage />} />
               <Route path="/vehiculos/:id" element={<VehicleDetail />} />
@@ -127,7 +161,15 @@ function App() {
               <Route path="/mantenimiento" element={<Maintenance />} />
               <Route path="/reportes" element={<Reports />} />
               <Route path="/configuracion" element={<Settings />} />
-              <Route path="/alertas" element={<Alerts />} />
+              <Route path="/alertas" element={<AlertCenter />} />
+              <Route
+                path="/alertas/config"
+                element={
+                  <ProtectedRoute roles={['superusuario', 'admin']}>
+                    <AlertRulesConfig />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/incidentes" element={<DriverIncidents />} />
               <Route path="/desempeno" element={<DriverPerformance />} />
               <Route path="/usuarios" element={<UsersAdmin />} />
