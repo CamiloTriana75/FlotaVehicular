@@ -53,8 +53,8 @@ Rol: supervisor
 ### 5. **OPERADOR**
 
 ```
-Email: operador@flota.com
-Password: Operador123!
+Email: operador@flotavehicular.com
+Password: Operador2024!
 Rol: operador
 ```
 
