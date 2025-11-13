@@ -22,6 +22,8 @@ const VehicleTracker = () => {
   const [connectionStatus, setConnectionStatus] = useState('disconnected');
   const [lastUpdate, setLastUpdate] = useState(null);
   const [error, setError] = useState('');
+  const [simulateSpeed, setSimulateSpeed] = useState(false); // Nuevo: modo simulación
+  const [simulatedSpeed, setSimulatedSpeed] = useState(20); // Velocidad simulada
   const [stats, setStats] = useState({
     speed: 0,
     heading: 0,
@@ -174,9 +176,12 @@ const VehicleTracker = () => {
         );
       });
 
+      // Variable para almacenar la última posición GPS
+      let lastKnownPosition = null;
+
       // Iniciar seguimiento GPS continuo
-      watchIdRef.current = locationService.watchPosition(
-        async (coords, error) => {
+      const gpsWatchId = locationService.watchPosition(
+        (coords, error) => {
           if (error) {
             console.error('Error GPS:', error);
             setError(error.message);
@@ -185,6 +190,7 @@ const VehicleTracker = () => {
           }
 
           if (coords) {
+            lastKnownPosition = coords;
             setCurrentPosition(coords);
             setStats((prev) => ({
               ...prev,
@@ -192,50 +198,70 @@ const VehicleTracker = () => {
               heading: Math.round(coords.heading || 0),
               accuracy: Math.round(coords.accuracy || 0),
             }));
-
-            // Enviar ubicación a servidor
-            try {
-              const result = await locationService.insertLocation({
-                vehicle_id: vehicleId.trim().toUpperCase(),
-                latitude: coords.latitude,
-                longitude: coords.longitude,
-                speed: coords.speed || 0,
-                heading: coords.heading || 0,
-                accuracy: coords.accuracy,
-                altitude: coords.altitude,
-              });
-
-              if (result.error) {
-                throw result.error;
-              }
-
-              setConnectionStatus('connected');
-              setLastUpdate(new Date());
-              setStats((prev) => ({
-                ...prev,
-                pointsSent: prev.pointsSent + 1,
-              }));
-            } catch (err) {
-              console.error('Error enviando ubicación:', err);
-              setError(`Error de conexión: ${err.message}`);
-              setConnectionStatus('error');
-              setStats((prev) => ({
-                ...prev,
-                errors: prev.errors + 1,
-              }));
-            }
           }
         },
         {
           enableHighAccuracy: true,
           timeout: 10000,
-          maximumAge: 2000,
+          maximumAge: 0,
         }
       );
 
-      if (!watchIdRef.current) {
-        throw new Error('No se pudo iniciar el seguimiento GPS');
-      }
+      // Enviar ubicación al servidor cada 1 segundo
+      const trackingInterval = setInterval(async () => {
+        if (!lastKnownPosition) {
+          console.log('⏳ Esperando primera lectura GPS...');
+          return;
+        }
+
+        try {
+          // Usar velocidad simulada si está activada, sino la real del GPS
+          const speedToSend = simulateSpeed
+            ? simulatedSpeed
+            : lastKnownPosition.speed || 0;
+
+          const result = await locationService.insertLocation({
+            vehicle_id: vehicleId.trim().toUpperCase(),
+            latitude: lastKnownPosition.latitude,
+            longitude: lastKnownPosition.longitude,
+            speed: speedToSend,
+            heading: lastKnownPosition.heading || 0,
+            accuracy: lastKnownPosition.accuracy,
+            altitude: lastKnownPosition.altitude,
+          });
+
+          if (result.error) {
+            throw result.error;
+          }
+
+          setConnectionStatus('connected');
+          setLastUpdate(new Date());
+          setStats((prev) => ({
+            ...prev,
+            pointsSent: prev.pointsSent + 1,
+            speed: speedToSend, // Actualizar stats con velocidad enviada
+          }));
+        } catch (err) {
+          console.error('Error enviando ubicación:', err);
+          setError(`Error de conexión: ${err.message}`);
+          setConnectionStatus('error');
+          setStats((prev) => ({
+            ...prev,
+            errors: prev.errors + 1,
+          }));
+        }
+      }, 1000); // Cada 1 segundo
+
+      // Guardar referencias
+      watchIdRef.current = {
+        gpsWatchId,
+        trackingInterval,
+      };
+
+      const modeMsg = simulateSpeed
+        ? `🎭 Tracking GPS iniciado - MODO SIMULACIÓN (${simulatedSpeed} km/h)`
+        : '🚀 Tracking GPS iniciado - enviando ubicaciones cada 1 segundo';
+      console.log(modeMsg);
     } catch (err) {
       setError(err.message);
       setIsTracking(false);
@@ -245,7 +271,14 @@ const VehicleTracker = () => {
 
   const stopTracking = () => {
     if (watchIdRef.current) {
-      locationService.clearWatch(watchIdRef.current);
+      // Detener watchPosition del GPS
+      if (watchIdRef.current.gpsWatchId) {
+        locationService.clearWatch(watchIdRef.current.gpsWatchId);
+      }
+      // Detener intervalo de envío
+      if (watchIdRef.current.trackingInterval) {
+        clearInterval(watchIdRef.current.trackingInterval);
+      }
       watchIdRef.current = null;
     }
 
@@ -253,6 +286,7 @@ const VehicleTracker = () => {
     setConnectionStatus('disconnected');
     setCurrentPosition(null);
     setError('');
+    console.log('⏹️ Tracking GPS detenido');
   };
 
   const getConnectionIcon = () => {
@@ -365,6 +399,133 @@ const VehicleTracker = () => {
           )}
         </div>
 
+        {/* Modo Simulación de Velocidad */}
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 shadow-lg p-6 border-t-4 border-purple-500">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <div className="p-2 bg-purple-600 rounded-lg">
+                <Car className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-gray-900">
+                  Modo Simulación
+                </h3>
+                <p className="text-xs text-gray-600">
+                  Simular velocidad para pruebas de alertas
+                </p>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={simulateSpeed}
+                onChange={(e) => setSimulateSpeed(e.target.checked)}
+                className="sr-only peer"
+                disabled={isTracking}
+              />
+              <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
+            </label>
+          </div>
+
+          {simulateSpeed && (
+            <div className="mt-4 space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Velocidad Simulada:{' '}
+                  <span
+                    className={`font-bold ${
+                      simulatedSpeed > 120
+                        ? 'text-red-600'
+                        : simulatedSpeed === 0
+                          ? 'text-yellow-600'
+                          : 'text-purple-600'
+                    }`}
+                  >
+                    {simulatedSpeed} km/h
+                  </span>
+                  {simulatedSpeed > 120 && (
+                    <span className="ml-2 text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full">
+                      ⚠️ GENERARÁ ALERTA
+                    </span>
+                  )}
+                  {simulatedSpeed === 0 && (
+                    <span className="ml-2 text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full">
+                      ⏸️ Alerta después de 5 min
+                    </span>
+                  )}
+                  {simulatedSpeed > 0 && simulatedSpeed <= 120 && (
+                    <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full">
+                      ✓ Sin alerta
+                    </span>
+                  )}
+                </label>
+                <input
+                  type="range"
+                  min="0"
+                  max="150"
+                  step="5"
+                  value={simulatedSpeed}
+                  onChange={(e) => setSimulatedSpeed(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-purple-600"
+                  disabled={isTracking}
+                />
+                <div className="flex justify-between text-xs text-gray-500 mt-1">
+                  <span>0 km/h</span>
+                  <span className="text-orange-600 font-semibold">
+                    120 km/h ⚠️
+                  </span>
+                  <span>150 km/h</span>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => setSimulatedSpeed(0)}
+                  disabled={isTracking}
+                  className="px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-800 text-xs font-medium rounded-lg disabled:opacity-50"
+                >
+                  ⏸️ Parada
+                </button>
+                <button
+                  onClick={() => setSimulatedSpeed(60)}
+                  disabled={isTracking}
+                  className="px-3 py-2 bg-green-100 hover:bg-green-200 text-green-800 text-xs font-medium rounded-lg disabled:opacity-50"
+                >
+                  ✓ 60 km/h
+                </button>
+                <button
+                  onClick={() => setSimulatedSpeed(130)}
+                  disabled={isTracking}
+                  className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-800 text-xs font-medium rounded-lg disabled:opacity-50"
+                >
+                  ⚡ 130 km/h
+                </button>
+              </div>
+
+              <div className="bg-purple-100 border border-purple-300 rounded-lg p-3 mt-3">
+                <p className="text-xs text-purple-900">
+                  <strong>💡 Umbrales de Alertas:</strong>
+                  <br />•{' '}
+                  <strong className="text-red-700">
+                    Velocidad &gt; 120 km/h
+                  </strong>{' '}
+                  → Alerta inmediata después de 10s sostenidos
+                  <br />•{' '}
+                  <strong className="text-yellow-700">
+                    Velocidad = 0 km/h
+                  </strong>{' '}
+                  → Alerta de parada después de 5 minutos
+                  <br />•{' '}
+                  <strong className="text-green-700">
+                    Velocidad 1-120 km/h
+                  </strong>{' '}
+                  → Sin alertas
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Controls */}
         <div className="bg-white shadow-lg p-6 border-t">
           <div className="flex gap-4">
@@ -447,8 +608,19 @@ const VehicleTracker = () => {
 
               <div>
                 <div className="text-gray-600 mb-1">Velocidad</div>
-                <div className="font-mono text-gray-900 bg-gray-50 p-2 rounded">
-                  {stats.speed} km/h
+                <div
+                  className={`font-mono text-gray-900 p-2 rounded flex items-center justify-between ${
+                    simulateSpeed
+                      ? 'bg-purple-100 border-2 border-purple-400'
+                      : 'bg-gray-50'
+                  }`}
+                >
+                  <span>{stats.speed} km/h</span>
+                  {simulateSpeed && (
+                    <span className="text-xs bg-purple-600 text-white px-2 py-0.5 rounded-full">
+                      SIMULADO
+                    </span>
+                  )}
                 </div>
               </div>
 
