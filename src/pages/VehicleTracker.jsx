@@ -198,8 +198,9 @@ const VehicleTracker = () => {
 
       // Iniciar watchPosition para mantener la última posición disponible sin bloquear
       // Iniciar watchPosition solo si NO estamos en simulación
+      let gpsWatchId = null;
       if (!isSimulation) {
-        watchIdRef.current = locationService.watchPosition(
+        gpsWatchId = locationService.watchPosition(
           (coords, error) => {
             if (error) {
               console.warn(
@@ -226,74 +227,56 @@ const VehicleTracker = () => {
             maximumAge: 0,
           }
         );
+      }
 
       // Variable para almacenar la última posición GPS
       let lastKnownPosition = null;
 
-      // Iniciar seguimiento GPS continuo
-      const gpsWatchId = locationService.watchPosition(
-        (coords, error) => {
-          if (error) {
-            console.error('Error GPS:', error);
-            setError(error.message);
-            setConnectionStatus('error');
-            return;
-          }
-
       // Iniciar polling cada 1 segundo para garantizar envíos constantes usando la última posición conocida
-      intervalRef.current = setInterval(async () => {
-        if (sendingRef.current) return;
-        sendingRef.current = true;
-        try {
-          let coords = lastCoordsRef.current;
+      intervalRef.current = setInterval(() => {
+        let coords = lastCoordsRef.current;
 
-          if (isSimulation) {
-            // Generar punto simulado cada segundo
-            const base = coords ||
-              currentPosition || {
-                latitude: 4.711,
-                longitude: -74.072,
-                accuracy: 10,
-                altitude: null,
-                heading: simHeadingRef.current,
-                speed: simSpeedRef.current,
-                timestamp: new Date().toISOString(),
-              };
-
-            const metersPerSec = simSpeedRef.current / 3.6; // km/h -> m/s
-            const headingRad = (simHeadingRef.current * Math.PI) / 180;
-            const dNorth = metersPerSec * Math.cos(headingRad); // metros
-            const dEast = metersPerSec * Math.sin(headingRad); // metros
-            const latRad = (base.latitude * Math.PI) / 180;
-            const newLat = base.latitude + dNorth / 111111;
-            const newLon = base.longitude + dEast / (111111 * Math.cos(latRad));
-
-            coords = {
-              latitude: newLat,
-              longitude: newLon,
-              accuracy: 5,
-              altitude: base.altitude,
+        if (isSimulation) {
+          // Generar punto simulado cada segundo
+          const base = coords ||
+            currentPosition || {
+              latitude: 4.711,
+              longitude: -74.072,
+              accuracy: 10,
+              altitude: null,
               heading: simHeadingRef.current,
               speed: simSpeedRef.current,
               timestamp: new Date().toISOString(),
             };
-            lastCoordsRef.current = coords;
-          }
-          if (coords) {
-            lastKnownPosition = coords;
-            setCurrentPosition(coords);
-            setStats((prev) => ({
-              ...prev,
-              speed: Math.round(coords.speed || 0),
-              heading: Math.round(coords.heading || 0),
-              accuracy: Math.round(coords.accuracy || 0),
-            }));
-          }
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 0,
+
+          const metersPerSec = simSpeedRef.current / 3.6; // km/h -> m/s
+          const headingRad = (simHeadingRef.current * Math.PI) / 180;
+          const dNorth = metersPerSec * Math.cos(headingRad); // metros
+          const dEast = metersPerSec * Math.sin(headingRad); // metros
+          const latRad = (base.latitude * Math.PI) / 180;
+          const newLat = base.latitude + dNorth / 111111;
+          const newLon = base.longitude + dEast / (111111 * Math.cos(latRad));
+
+          coords = {
+            latitude: newLat,
+            longitude: newLon,
+            accuracy: 5,
+            altitude: base.altitude,
+            heading: simHeadingRef.current,
+            speed: simSpeedRef.current,
+            timestamp: new Date().toISOString(),
+          };
+          lastCoordsRef.current = coords;
+        }
+        if (coords) {
+          lastKnownPosition = coords;
+          setCurrentPosition(coords);
+          setStats((prev) => ({
+            ...prev,
+            speed: Math.round(coords.speed || 0),
+            heading: Math.round(coords.heading || 0),
+            accuracy: Math.round(coords.accuracy || 0),
+          }));
         }
       }, 1000);
 
