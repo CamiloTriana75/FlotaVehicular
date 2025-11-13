@@ -16,6 +16,7 @@ import {
   Activity,
   Briefcase,
   Calendar,
+  Navigation,
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -120,6 +121,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       roles: ['superusuario', 'admin', 'operador'],
     },
     {
+      title: 'Mis Rutas',
+      path: '/conductor/mis-rutas',
+      icon: Navigation,
+      description: 'Rutas asignadas (conductor)',
+      roles: ['conductor'],
+    },
+    {
       title: 'Tracker (Conductor)',
       path: '/tracker',
       icon: MapPin,
@@ -127,11 +135,18 @@ const Sidebar = ({ isOpen, onClose }) => {
       roles: ['conductor', 'operador', 'superusuario', 'admin'],
     },
     {
-      title: 'Rutas',
-      path: '/rutas',
+      title: 'Planificación Rutas',
+      path: '/rutas/planificacion',
+      icon: Navigation,
+      description: 'Crear y asignar rutas optimizadas',
+      roles: ['planificador'],
+    },
+    {
+      title: 'Monitoreo Rutas',
+      path: '/rutas/monitoreo',
       icon: Route,
-      description: 'Planificación de rutas',
-      roles: ['superusuario', 'admin', 'operador'],
+      description: 'Seguimiento de rutas en progreso',
+      roles: ['superusuario', 'admin', 'operador', 'planificador'],
     },
     {
       title: 'Combustible',
@@ -155,6 +170,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       badge: '2',
       badgeColor: 'bg-red-500',
       roles: ['superusuario', 'admin', 'operador', 'rrhh'],
+    },
+    {
+      title: 'Config. Alertas',
+      path: '/alertas/configuracion',
+      icon: Settings,
+      description: 'Configurar umbrales',
+      roles: ['superusuario', 'admin'],
     },
     {
       title: 'Reportes',

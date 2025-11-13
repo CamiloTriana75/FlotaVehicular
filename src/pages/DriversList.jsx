@@ -47,16 +47,68 @@ const DriversList = () => {
     };
   }, []);
 
-  const loadConductores = async () => {
-    setLoading(true);
+  const loadConductores = async (silentRefresh = false) => {
+    if (!silentRefresh) setLoading(true);
     setError(null);
     try {
-      // 1) Cargar drivers y asignaciones activas en paralelo
-      const [driversRes, assignsRes] = await Promise.all([
+      // Cargar conductores y asignaciones en paralelo
+      const [driversResult, assignmentsResult] = await Promise.all([
         driverService.getAll(),
         getActiveAssignments(),
       ]);
 
+<<<<<<< 13-hu10-crear-y-asignar-rutas-optimizadas
+      if (driversResult.error) throw driversResult.error;
+      if (assignmentsResult.error) throw assignmentsResult.error;
+
+      const drivers = driversResult.data || [];
+      const assignments = assignmentsResult.data || [];
+
+      // Crear un mapa de asignaciones por driver_id
+      // Priorizar asignaciones que están activas AHORA (start_time <= now <= end_time)
+      const now = new Date();
+      const assignmentMap = new Map();
+
+      assignments.forEach((assignment) => {
+        const startTime = new Date(assignment.start_time);
+        const endTime = assignment.end_time
+          ? new Date(assignment.end_time)
+          : null;
+        const isCurrent = startTime <= now && (!endTime || endTime >= now);
+
+        // Solo guardar si no hay asignación previa O si esta es actual y la previa no
+        const existing = assignmentMap.get(assignment.driver_id);
+        if (!existing || (isCurrent && !existing.isCurrent)) {
+          assignmentMap.set(assignment.driver_id, {
+            ...assignment,
+            isCurrent,
+          });
+        }
+      });
+
+      // Enriquecer conductores con info de asignación
+      const enrichedDrivers = drivers.map((driver) => {
+        const assignment = assignmentMap.get(driver.id);
+
+        if (assignment && assignment.vehicles) {
+          const vehiculoInfo = `${assignment.vehicles.placa} - ${assignment.vehicles.marca} ${assignment.vehicles.modelo}`;
+
+          return {
+            ...driver,
+            vehiculoAsignado: vehiculoInfo,
+            // Solo cambiar estado a "activo" si la asignación está activa AHORA
+            estado: assignment.isCurrent ? 'activo' : driver.estado,
+          };
+        }
+
+        return {
+          ...driver,
+          vehiculoAsignado: '—',
+        };
+      });
+
+      setConductores(enrichedDrivers);
+=======
       if (driversRes.error) throw driversRes.error;
       if (assignsRes.error) throw assignsRes.error;
 
@@ -97,24 +149,55 @@ const DriversList = () => {
       });
 
       setConductores(enriched);
+>>>>>>> main
     } catch (err) {
       console.error('Error cargando conductores:', err);
       setError(err.message);
     } finally {
-      setLoading(false);
+      if (!silentRefresh) setLoading(false);
     }
   };
+
+  // Suscripción en tiempo real a cambios en vehicle_assignments
+  useEffect(() => {
+    const channel = supabase
+      .channel('assignments-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*', // INSERT, UPDATE, DELETE
+          schema: 'public',
+          table: 'vehicle_assignments',
+        },
+        (payload) => {
+          console.log('🔄 Cambio en asignaciones detectado:', payload);
+          // Recargar conductores silenciosamente
+          loadConductores(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      channel.unsubscribe();
+    };
+  }, []);
 
   const filteredDrivers = conductores.filter((driver) => {
     const nombreCompleto =
       `${driver.nombre || ''} ${driver.apellidos || ''}`.trim();
+    const searchLower = searchTerm.toLowerCase();
     return (
-      nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      nombreCompleto.toLowerCase().includes(searchLower) ||
       (driver.cedula || '').includes(searchTerm) ||
+<<<<<<< 13-hu10-crear-y-asignar-rutas-optimizadas
+      (driver.email || '').toLowerCase().includes(searchLower) ||
+      (driver.vehiculoAsignado || '').toLowerCase().includes(searchLower)
+=======
       (driver.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (driver.vehiculoAsignado || '')
         .toLowerCase()
         .includes(searchTerm.toLowerCase())
+>>>>>>> main
     );
   });
 

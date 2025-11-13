@@ -1,7 +1,7 @@
 # 📊 Backlog de Producto Actualizado - FlotaVehicular
 
 > **Fecha de actualización:** 2025-11-12  
-> **Sprint actual:** Sprint 9 - Gestión de Conductores y Alertas  
+> **Sprint actual:** Sprint 10 - Planificación de Rutas  
 > **Casos de uso totales:** 55  
 > **Historias de usuario totales:** 60+
 
@@ -18,12 +18,38 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 | Categoría                | Total | Completadas | En Progreso | Pendientes | % Avance |
 | ------------------------ | ----- | ----------- | ----------- | ---------- | -------- |
 | **Épicas**               | 10    | 3           | 1           | 6          | 30%      |
-| **Casos de Uso**         | 55    | 13          | 2           | 40         | 24%      |
+| **Casos de Uso**         | 55    | 11          | 5           | 39         | 20%      |
 | **Historias de Usuario** | 60+   | 13          | 3           | 44+        | 22%      |
 
 ---
 
-## ✅ COMPLETADO (Sprint 1-9)
+## ✅ COMPLETADO (Sprint 1-10)
+
+### Épica 4: Planificación y Optimización de Rutas ✅ (33%)
+
+| ID       | Historia de Usuario                                        | Casos de Uso     | Estado        | Sprint |
+| -------- | ---------------------------------------------------------- | ---------------- | ------------- | ------ |
+| **HU10** | Como manager quiero crear y asignar rutas optimizadas      | UC22, UC23, UC26 | ✅ Completado | 10     |
+| **HU11** | Como conductor quiero navegación turn-by-turn              | -                | ❌ Pendiente  | -      |
+| **HU12** | Como manager quiero comparar rutas planificadas vs. reales | UC24, UC25, UC27 | ❌ Pendiente  | -      |
+
+**Funcionalidades implementadas (HU10):**
+
+- ✅ Servicio `routeService.js` con integración Mapbox Optimization API
+- ✅ Tabla `routes` con JSONB para waypoints y geometría
+- ✅ Tabla `route_assignments` para asignar rutas a conductores/vehículos
+- ✅ Página `/rutas/planificacion/nueva` con editor interactivo de waypoints
+- ✅ Mapa Mapbox con click-to-add waypoints (2-12 puntos)
+- ✅ Optimización automática de rutas vía API
+- ✅ Geocoding reverso para mostrar direcciones
+- ✅ Visualización de ruta optimizada en mapa
+- ✅ Página `/rutas/planificacion` lista rutas y asignaciones
+- ✅ Página `/rutas/planificacion/:id/asignar` asigna ruta a conductor
+- ✅ Auto-detección de vehículo asignado al conductor
+- ✅ Función SQL `get_driver_active_routes()`
+- ✅ Estados de asignación: programada, en_progreso, completada, cancelada
+
+---
 
 ### Épica 10: Configuración y Seguridad ✅ (100%)
 
@@ -191,34 +217,6 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 ---
 
 ### 🟡 PRIORIDAD MEDIA (Sprint 13-18)
-
-#### Épica 4: Planificación y Optimización de Rutas (0%)
-
-| ID       | Historia de Usuario                                        | Casos de Uso     | Estimación | Dependencias |
-| -------- | ---------------------------------------------------------- | ---------------- | ---------- | ------------ |
-| **HU10** | Como manager quiero crear y asignar rutas optimizadas      | UC22, UC23, UC26 | 13 SP      | HU1, HU4 🟡  |
-| **HU11** | Como conductor quiero navegación turn-by-turn              | -                | 21 SP      | HU10, GPS    |
-| **HU12** | Como manager quiero comparar rutas planificadas vs. reales | UC24, UC25, UC27 | 8 SP       | HU10         |
-
-**Casos de uso relacionados:**
-
-- UC22: Crear Ruta
-- UC23: Asignar Ruta a Vehículo/Conductor
-- UC24: Monitorear Ruta en Progreso
-- UC25: Finalizar Ruta
-- UC26: Optimizar Rutas
-- UC27: Comparar Ruta Planificada vs Real
-
-**Tareas técnicas:**
-
-1. Integración con API de mapas (Google Maps / Mapbox)
-2. Servicio `rutaService.js`
-3. Página `/rutas/nueva` con mapa interactivo
-4. Algoritmo de optimización de rutas (TSP)
-5. Componente `MapViewer` mejorado
-6. Tabla `asignacion` con tracking de rutas
-
----
 
 #### Épica 5: Gestión de Combustible (0%)
 
@@ -412,11 +410,11 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 
 | Caso de Uso                             | Estado | Historia | Sprint |
 | --------------------------------------- | ------ | -------- | ------ |
-| UC22: Crear Ruta                        | ❌     | HU10     | 14     |
-| UC23: Asignar Ruta a Vehículo/Conductor | ❌     | HU10     | 14     |
+| UC22: Crear Ruta                        | ✅     | HU10     | 10     |
+| UC23: Asignar Ruta a Vehículo/Conductor | ✅     | HU10     | 10     |
 | UC24: Monitorear Ruta en Progreso       | ❌     | HU12     | 15     |
 | UC25: Finalizar Ruta                    | ❌     | HU12     | 15     |
-| UC26: Optimizar Rutas                   | ❌     | HU10     | 16     |
+| UC26: Optimizar Rutas                   | ✅     | HU10     | 10     |
 | UC27: Comparar Ruta Planificada vs Real | ❌     | HU12     | 15     |
 
 ### Módulo de Alertas (6 CU)
