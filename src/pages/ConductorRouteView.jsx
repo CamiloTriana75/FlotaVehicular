@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -56,6 +56,16 @@ export default function ConductorRouteView() {
   const [currentPosition, setCurrentPosition] = useState(null);
   const [nextWaypoint, setNextWaypoint] = useState(null);
   const [distanceToNext, setDistanceToNext] = useState(null);
+  const [voiceEnabled, setVoiceEnabled] = useState(false);
+  const [lastSpokenWp, setLastSpokenWp] = useState(null);
+  const [turnSteps, setTurnSteps] = useState([]);
+  const [directionsMeta, setDirectionsMeta] = useState(null);
+
+  // Helpers
+  const formatDistance = (m) =>
+    m < 1000 ? `${m.toFixed(0)} m` : `${(m / 1000).toFixed(2)} km`;
+  const formatDuration = (sec) =>
+    sec < 60 ? `${sec.toFixed(0)} s` : `${Math.round(sec / 60)} min`;
 
   const checkedWaypointsRef = useRef(new Set());
 
@@ -187,6 +197,105 @@ export default function ConductorRouteView() {
     };
   }, [assignment]);
 
+  // Obtener instrucciones giro a giro desde Mapbox Directions (español)
+  useEffect(() => {
+    const wps = assignment?.route?.waypoints || [];
+    if (!MAPBOX_TOKEN || !assignment || !wps || wps.length < 2) {
+      setTurnSteps([]);
+      setDirectionsMeta(null);
+      return;
+    }
+
+    const controller = new AbortController();
+    const fetchDirections = async () => {
+      try {
+        const coords = wps.map((w) => `${w.lng},${w.lat}`).join(';');
+        const url = `https://api.mapbox.com/directions/v5/mapbox/driving/${coords}?alternatives=false&geometries=geojson&steps=true&overview=full&language=es&access_token=${MAPBOX_TOKEN}`;
+        const res = await fetch(url, { signal: controller.signal });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const json = await res.json();
+        const route = json?.routes?.[0];
+        if (!route) throw new Error('Ruta no encontrada');
+        const steps = [];
+        (route.legs || []).forEach((leg, legIdx) => {
+          (leg.steps || []).forEach((st, stepIdx) => {
+            steps.push({
+              key: `${legIdx}-${stepIdx}`,
+              instruction: st.maneuver?.instruction || 'Sigue recto',
+              distance: st.distance || 0,
+              duration: st.duration || 0,
+            });
+          });
+        });
+        setTurnSteps(steps);
+        setDirectionsMeta({
+          distance: route.distance,
+          duration: route.duration,
+        });
+      } catch (e) {
+        console.warn(
+          'No se pudieron cargar instrucciones de Mapbox:',
+          e?.message || e
+        );
+        setTurnSteps([]);
+        setDirectionsMeta(null);
+      }
+    };
+
+    fetchDirections();
+    return () => controller.abort();
+  }, [assignment]);
+
+  // Construir pasos sencillos entre waypoints con distancia y ETA estimada
+  const routeSteps = useMemo(() => {
+    const wps = assignment?.route?.waypoints || [];
+    if (!wps || wps.length === 0) return [];
+    const legs = [];
+    const assumedKmh = 30; // velocidad urbana estimada
+    const assumedMs = (assumedKmh * 1000) / 3600;
+    for (let i = 0; i < wps.length; i++) {
+      if (i === 0) continue;
+      const from = wps[i - 1];
+      const to = wps[i];
+      const d = calculateDistance(from.lat, from.lng, to.lat, to.lng);
+      const etaSec = d / assumedMs;
+      legs.push({
+        index: i + 1,
+        from,
+        to,
+        distance: d,
+        etaSec,
+        text: `Conduce al Punto #${to.number || to.order + 1 || i + 1}`,
+      });
+    }
+    return legs;
+  }, [assignment]);
+
+  // URLs externas para abrir navegación
+  const externalNav = useMemo(() => {
+    const wps = assignment?.route?.waypoints || [];
+    if (!wps || wps.length === 0) return { gmaps: '#', waze: '#' };
+    const origin = currentPosition
+      ? `${currentPosition.latitude},${currentPosition.longitude}`
+      : `${wps[0].lat},${wps[0].lng}`;
+    const destination = `${wps[wps.length - 1].lat},${wps[wps.length - 1].lng}`;
+    const waypoints =
+      wps.length > 2
+        ? wps
+            .slice(1, -1)
+            .map((w) => `${w.lat},${w.lng}`)
+            .join('|')
+        : '';
+    const gmaps = `https://www.google.com/maps/dir/?api=1&origin=${encodeURIComponent(
+      origin
+    )}&destination=${encodeURIComponent(
+      destination
+    )}&travelmode=driving${waypoints ? `&waypoints=${encodeURIComponent(waypoints)}` : ''}`;
+    // Waze no soporta múltiples paradas en URL pública: usamos destino final
+    const waze = `https://waze.com/ul?ll=${destination}&navigate=yes&zoom=17`;
+    return { gmaps, waze };
+  }, [assignment, currentPosition]);
+
   // Mostrar ubicación actual del dispositivo en el mapa + geofencing
   useEffect(() => {
     if (!map.current || !assignment) return;
@@ -273,6 +382,27 @@ export default function ConductorRouteView() {
         if (!coords) return;
         setCurrentPosition(coords);
         checkGeofence(coords);
+
+        // Voice guidance básico: anunciar siguiente punto al acercarse
+        if (voiceEnabled && nextWaypoint && distanceToNext !== null) {
+          const shouldAnnounce =
+            nextWaypoint.number !== lastSpokenWp && distanceToNext <= 200;
+          if (shouldAnnounce) {
+            try {
+              const phrase = `Siguiente punto número ${nextWaypoint.number} a ${
+                distanceToNext < 1000
+                  ? `${Math.max(1, distanceToNext.toFixed(0))} metros`
+                  : `${(distanceToNext / 1000).toFixed(1)} kilómetros`
+              }`;
+              const u = new SpeechSynthesisUtterance(phrase);
+              u.lang = 'es-ES';
+              window.speechSynthesis?.speak(u);
+              setLastSpokenWp(nextWaypoint.number);
+            } catch (e) {
+              // silenciar errores de síntesis
+            }
+          }
+        }
 
         const el = document.createElement('div');
         el.style.cssText =
@@ -390,6 +520,89 @@ export default function ConductorRouteView() {
 
       {/* Mapa */}
       <div ref={mapContainer} className="flex-1" />
+
+      {/* Panel inferior con pasos y acciones de navegación */}
+      <div className="bg-white border-t shadow-lg p-4 space-y-3">
+        <div className="flex items-center justify-between">
+          <div>
+            <div className="text-sm text-gray-500">Navegación</div>
+            <div className="text-base font-semibold text-gray-900">
+              {assignment.route?.name || 'Ruta asignada'}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={voiceEnabled}
+                onChange={(e) => setVoiceEnabled(e.target.checked)}
+              />
+              Instrucciones de voz
+            </label>
+          </div>
+        </div>
+
+        {directionsMeta && (
+          <div className="text-xs text-gray-600">
+            Distancia total: {formatDistance(directionsMeta.distance)} • Tiempo
+            estimado: {formatDuration(directionsMeta.duration)}
+          </div>
+        )}
+
+        <div className="flex items-center gap-3">
+          <a
+            href={externalNav.gmaps}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 text-center bg-blue-600 hover:bg-blue-700 text-white py-2 rounded-lg font-medium"
+          >
+            Abrir en Google Maps
+          </a>
+          <a
+            href={externalNav.waze}
+            target="_blank"
+            rel="noreferrer"
+            className="flex-1 text-center bg-indigo-600 hover:bg-indigo-700 text-white py-2 rounded-lg font-medium"
+          >
+            Abrir en Waze
+          </a>
+        </div>
+
+        {/* Lista de pasos: Mapbox primero; si falla, fallback a waypoints */}
+        <div className="max-h-56 overflow-auto divide-y rounded-md border">
+          {turnSteps.length > 0 ? (
+            turnSteps.map((st) => (
+              <div key={st.key} className="p-3">
+                <div className="text-sm font-medium text-gray-800">
+                  {st.instruction}
+                </div>
+                <div className="text-xs text-gray-500">
+                  {formatDistance(st.distance)} • {formatDuration(st.duration)}
+                </div>
+              </div>
+            ))
+          ) : routeSteps.length > 0 ? (
+            routeSteps.map((leg, idx) => (
+              <div key={idx} className="p-3 flex items-center justify-between">
+                <div>
+                  <div className="text-sm font-medium text-gray-800">
+                    {leg.text}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {formatDistance(leg.distance)} •{' '}
+                    {formatDuration(leg.etaSec)}
+                  </div>
+                </div>
+                <div className="text-xs text-gray-400">#{leg.index}</div>
+              </div>
+            ))
+          ) : (
+            <div className="p-3 text-sm text-gray-500">
+              No hay pasos disponibles.
+            </div>
+          )}
+        </div>
+      </div>
 
       {loading && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-white/50">
