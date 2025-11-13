@@ -13,6 +13,7 @@ import DriversList from './pages/DriversList';
 import NewDriver from './pages/NewDriver';
 import DriverDetail from './pages/DriverDetail';
 import RRHHDashboard from './pages/RRHHDashboard';
+import OperadorDashboard from './pages/OperadorDashboard';
 import Maintenance from './pages/Maintenance';
 import Reports from './pages/Reports';
 import Settings from './pages/Settings';
