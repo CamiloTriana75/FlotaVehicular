@@ -71,8 +71,8 @@ export async function getActiveAssignments() {
       .select(
         `
         *,
-        vehicle:vehicles(id, placa, marca, modelo, status),
-        driver:drivers(id, cedula, nombre, apellidos, numero_licencia)
+        vehicles(id, placa, marca, modelo, status),
+        drivers(id, cedula, nombre, apellidos, numero_licencia)
       `
       )
       .eq('status', 'active')

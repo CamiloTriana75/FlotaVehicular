@@ -11,7 +11,11 @@ import { supabase } from '../lib/supabaseClient';
  */
 export const obtenerReglasAlertas = async () => {
   try {
-    const { data, error } = await supabase.rpc('get_alert_rules');
+    // Consulta directa a la tabla en lugar de usar RPC
+    const { data, error } = await supabase
+      .from('alert_rules')
+      .select('*')
+      .order('tipo_alerta');
 
     if (error) throw error;
     return { data, error: null };
@@ -22,58 +26,147 @@ export const obtenerReglasAlertas = async () => {
 };
 
 /**
- * Actualizar configuración de una regla de alerta
- * @param {number} id - ID de la regla
- * @param {object} updates - Campos a actualizar
+ * Inicializar reglas de alerta con valores por defecto
  * @returns {Promise<object>}
  */
-export const actualizarReglaAlerta = async (id, updates) => {
+export const inicializarReglasAlertas = async () => {
   try {
-    const { data, error } = await supabase.rpc('update_alert_rule', {
-      p_rule_id: id,
-      p_umbrales: updates.umbrales || null,
-      p_tolerancia_porcentaje: updates.tolerancia_porcentaje || null,
-      p_debounce_segundos: updates.debounce_segundos || null,
-      p_nivel_prioridad: updates.nivel_prioridad || null,
-      p_habilitado:
-        updates.habilitado !== undefined ? updates.habilitado : null,
-    });
+    const reglasDefecto = [
+      {
+        tipo_alerta: 'velocidad_excesiva',
+        nombre: 'Velocidad Excesiva',
+        descripcion:
+          'Detecta cuando un vehículo excede el límite de velocidad configurado durante un tiempo prolongado',
+        habilitado: true,
+        umbrales: {
+          max_velocidad_kmh: 120,
+          duracion_segundos: 10,
+        },
+        debounce_segundos: 60,
+      },
+      {
+        tipo_alerta: 'parada_prolongada',
+        nombre: 'Parada Prolongada',
+        descripcion:
+          'Detecta cuando un vehículo permanece detenido en un lugar por un tiempo prolongado',
+        habilitado: true,
+        umbrales: {
+          duracion_segundos: 300,
+          radio_metros: 50,
+          velocidad_max_kmh: 5,
+        },
+        debounce_segundos: 60,
+      },
+    ];
+
+    // Intentar con upsert primero
+    let result = await supabase
+      .from('alert_rules')
+      .upsert(reglasDefecto, {
+        onConflict: 'tipo_alerta',
+        ignoreDuplicates: false,
+      })
+      .select();
+
+    // Si falla el upsert, intentar insert individual
+    if (result.error) {
+      console.warn('Upsert falló, intentando insert individual:', result.error);
+
+      const insertResults = [];
+      for (const regla of reglasDefecto) {
+        const { data, error } = await supabase
+          .from('alert_rules')
+          .insert([regla])
+          .select()
+          .single();
+
+        if (error && !error.message.includes('duplicate key')) {
+          console.error('Error insertando regla:', regla.tipo_alerta, error);
+          return { data: null, error };
+        }
+        if (data) insertResults.push(data);
+      }
+
+      return { data: insertResults, error: null };
+    }
+
+    return { data: result.data, error: null };
+  } catch (error) {
+    console.error('Error al inicializar reglas de alertas:', error);
+    return { data: null, error };
+  }
+};
+
+/**
+ * Actualizar configuración de una regla de alerta
+ * @param {string} tipoAlerta - Tipo de alerta
+ * @param {object} umbrales - Umbrales de configuración
+ * @param {boolean} habilitado - Estado de la regla (opcional)
+ * @returns {Promise<object>}
+ */
+export const actualizarReglaAlerta = async (
+  tipoAlerta,
+  umbrales,
+  habilitado = null
+) => {
+  try {
+    const updates = {
+      umbrales,
+      updated_at: new Date().toISOString(),
+    };
+
+    if (habilitado !== null) {
+      updates.habilitado = habilitado;
+    }
+
+    const { data, error } = await supabase
+      .from('alert_rules')
+      .update(updates)
+      .eq('tipo_alerta', tipoAlerta)
+      .select()
+      .single();
 
     if (error) throw error;
 
-    // Verificar si la función RPC devolvió success
-    if (data && !data.success) {
-      throw new Error(data.message || 'Error al actualizar regla');
-    }
-
-    return { data: data?.data, error: null };
+    return { data, error: null };
   } catch (error) {
-    console.error('Error al actualizar regla de alerta:', error);
+    console.error('Error al actualizar regla:', error);
     return { data: null, error };
   }
 };
 
 /**
  * Habilitar/deshabilitar una regla de alerta
- * @param {number} id - ID de la regla
- * @param {boolean} habilitado
+ * @param {string} tipoAlerta - Tipo de alerta (ej: 'velocidad_excesiva')
+ * @param {boolean} habilitado - Nuevo estado (opcional, null hace toggle)
  * @returns {Promise<object>}
  */
-export const toggleReglaAlerta = async (id, habilitado) => {
+export const toggleReglaAlerta = async (tipoAlerta, habilitado = null) => {
   try {
-    const { data, error } = await supabase.rpc('toggle_alert_rule', {
-      p_rule_id: id,
-      p_habilitado: habilitado,
-    });
+    // Si no se especifica habilitado, primero obtener el estado actual
+    if (habilitado === null) {
+      const { data: regla } = await supabase
+        .from('alert_rules')
+        .select('habilitado')
+        .eq('tipo_alerta', tipoAlerta)
+        .single();
+
+      habilitado = !regla?.habilitado;
+    }
+
+    const { data, error } = await supabase
+      .from('alert_rules')
+      .update({
+        habilitado,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('tipo_alerta', tipoAlerta)
+      .select()
+      .single();
 
     if (error) throw error;
 
-    // Verificar si la función RPC devolvió success
-    if (data && !data.success) {
-      throw new Error(data.message || 'Error al cambiar estado de regla');
-    }
-
-    return { data: data?.data, error: null };
+    return { data, error: null };
   } catch (error) {
     console.error('Error al cambiar estado de regla:', error);
     return { data: null, error };
@@ -96,83 +189,97 @@ export const evaluarAlertasUbicacion = async (
   lng
 ) => {
   try {
+    console.log(
+      `[evaluarAlertasUbicacion] 📍 Evaluando: vehicle_id=${vehicleId}, velocidad=${velocidad} km/h, lat=${lat.toFixed(4)}, lng=${lng.toFixed(4)}`
+    );
+
     const { data, error } = await supabase.rpc('evaluar_alertas_ubicacion', {
       p_vehicle_id: vehicleId,
-      p_velocidad: velocidad,
-      p_lat: lat,
-      p_lng: lng,
+      p_velocidad_actual: velocidad,
+      p_latitud: lat,
+      p_longitud: lng,
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error('[evaluarAlertasUbicacion] ❌ Error RPC:', error);
+      throw error;
+    }
 
-    // Si hay alertas, crearlas en la tabla alerts
+    console.log(
+      `[evaluarAlertasUbicacion] 📊 RPC retornó ${data?.length || 0} alertas`
+    );
+
     if (data && data.length > 0) {
+      console.log('[evaluarAlertasUbicacion] 🚨 Alertas detectadas:', data);
+      console.log('[evaluarAlertasUbicacion] 💾 Creando alertas en BD...');
+
       const alertasCreadas = await Promise.all(
         data.map((alerta) => crearAlerta(vehicleId, alerta))
       );
+
+      console.log(
+        `[evaluarAlertasUbicacion] ✅ ${alertasCreadas.length} alertas creadas exitosamente`
+      );
       return { data: alertasCreadas, error: null };
+    } else {
+      console.log(
+        `[evaluarAlertasUbicacion] ℹ️ Sin alertas (velocidad ${velocidad} km/h está dentro de límites normales)`
+      );
     }
 
     return { data: [], error: null };
   } catch (error) {
-    console.error('Error al evaluar alertas:', error);
-    return { data: null, error };
+    console.error(
+      '[evaluarAlertasUbicacion] 💥 Error evaluando alertas:',
+      error
+    );
+    return { data: [], error };
   }
 };
 
 /**
- * Crear una nueva alerta en la base de datos
- * @param {number|string} vehicleIdOrPlaca - ID del vehículo o placa
- * @param {object} alertaInfo - Info de la alerta (tipo, mensaje, prioridad)
+ * Crear una alerta en la base de datos
+ * @param {number|string} vehicleIdOrPlaca - ID o placa del vehículo
+ * @param {object} alertaData - Datos de la alerta
  * @returns {Promise<object>}
  */
-export const crearAlerta = async (vehicleIdOrPlaca, alertaInfo) => {
+export const crearAlerta = async (vehicleIdOrPlaca, alertaData) => {
   try {
     console.log(
-      `[crearAlerta] 🔍 Entrada: vehicleIdOrPlaca="${vehicleIdOrPlaca}" (tipo: ${typeof vehicleIdOrPlaca}), tipo_alerta="${alertaInfo.tipo_alerta}"`
+      `[crearAlerta] 🔍 Entrada: vehicleIdOrPlaca="${vehicleIdOrPlaca}" (tipo: ${typeof vehicleIdOrPlaca}), tipo_alerta="${alertaData.tipo_alerta}"`
     );
 
-    // Obtener info del vehículo y conductor
-    // Intentar por ID primero, luego por placa
+    // Resolver vehículo
     let vehiculo = null;
-    let vehiculoError = null;
-
-    // Si es número, asumir que es ID
-    if (typeof vehicleIdOrPlaca === 'number' || !isNaN(vehicleIdOrPlaca)) {
+    if (typeof vehicleIdOrPlaca === 'number') {
       console.log(`[crearAlerta] 🔎 Buscando por ID: ${vehicleIdOrPlaca}`);
-      const { data, error } = await supabase
+      const res = await supabase
         .from('vehicles')
         .select('id, placa')
         .eq('id', vehicleIdOrPlaca)
         .single();
-      vehiculo = data;
-      vehiculoError = error;
-      console.log(`[crearAlerta] Búsqueda por ID resultado:`, {
-        vehiculo,
-        error: vehiculoError?.message,
+      console.log('[crearAlerta] Búsqueda por ID resultado:', {
+        vehiculo: res.data,
+        error: res.error?.message,
       });
-    }
-
-    // Si no se encontró por ID o es string, buscar por placa
-    if (!vehiculo) {
-      console.log(`[crearAlerta] 🔎 Buscando por placa: "${vehicleIdOrPlaca}"`);
-      const { data, error } = await supabase
+      vehiculo = res.data;
+    } else {
+      console.log(`[crearAlerta] 🔎 Buscando por placa: ${vehicleIdOrPlaca}`);
+      const res = await supabase
         .from('vehicles')
         .select('id, placa')
         .eq('placa', vehicleIdOrPlaca)
         .single();
-      vehiculo = data;
-      vehiculoError = error;
-      console.log(`[crearAlerta] Búsqueda por placa resultado:`, {
-        vehiculo,
-        error: vehiculoError?.message,
+      console.log('[crearAlerta] Búsqueda por placa resultado:', {
+        vehiculo: res.data,
+        error: res.error?.message,
       });
+      vehiculo = res.data;
     }
 
     if (!vehiculo) {
-      console.error(
-        `[crearAlerta] ❌ No se encontró vehículo con ID/placa: ${vehicleIdOrPlaca}`,
-        vehiculoError
+      console.warn(
+        `[crearAlerta] ⚠️ No se encontró vehículo para: ${vehicleIdOrPlaca}`
       );
       return { data: null, error: new Error('Vehículo no encontrado') };
     }
@@ -181,146 +288,158 @@ export const crearAlerta = async (vehicleIdOrPlaca, alertaInfo) => {
       `[crearAlerta] ✅ Vehículo encontrado: ID=${vehiculo.id}, placa="${vehiculo.placa}"`
     );
 
-    // Intentar resolver driver_id actual desde assignments (si existe ese esquema)
-    let currentDriverId = null;
-    try {
-      const { data: assignment, error: assignErr } = await supabase
-        .from('assignments')
-        .select('driver_id')
-        .eq('vehicle_id', vehiculo.id)
-        .eq('estado', 'activa')
-        .order('fecha_inicio', { ascending: false })
-        .limit(1)
-        .single();
-      if (!assignErr && assignment) {
-        currentDriverId = assignment.driver_id || null;
-        console.log(`[crearAlerta] ℹ️ Driver asignado: ${currentDriverId}`);
-      }
-    } catch (e) {
-      // Silencioso: si no existe tabla/columna, dejamos driver_id en null
-      console.log(
-        `[crearAlerta] ℹ️ Sin asignación de conductor (tabla assignments puede no existir)`
-      );
-    }
-
-    const nuevaAlerta = {
+    // Preparar datos para inserción
+    const alertaPayload = {
       vehicle_id: vehiculo.id,
-      driver_id: currentDriverId,
-      tipo_alerta: alertaInfo.tipo_alerta,
-      mensaje: alertaInfo.mensaje,
-      nivel_prioridad: alertaInfo.prioridad || 'media',
-      estado: 'pendiente',
-      metadata: alertaInfo.metadata || {},
+      tipo_alerta: alertaData.tipo_alerta || alertaData.tipo,
+      mensaje: alertaData.mensaje,
+      nivel_prioridad:
+        alertaData.prioridad || alertaData.nivel_prioridad || 'media',
+      metadata: alertaData.metadata || {},
     };
 
-    console.log(`[crearAlerta] 📝 Insertando alerta:`, nuevaAlerta);
+    console.log(
+      '[crearAlerta] 📝 Insertando alerta:',
+      JSON.stringify(alertaPayload, null, 2)
+    );
 
     const { data, error } = await supabase
       .from('alerts')
-      .insert(nuevaAlerta)
+      .insert([alertaPayload])
       .select()
       .single();
 
     if (error) {
-      console.error(`[crearAlerta] 💥 Error insertando:`, error);
+      console.error('[crearAlerta] ❌ Error en INSERT:', error);
       throw error;
     }
 
-    // Actualizar tracking con el alert_id (si existe esa tabla/esquema)
-    try {
-      await supabase
-        .from('alert_tracking')
-        .update({ alert_id: data.id })
-        .eq('vehicle_id', vehiculo.id)
-        .eq('tipo_alerta', alertaInfo.tipo_alerta)
-        .eq('estado', 'activo');
-    } catch {}
-
     console.log(
-      `[crearAlerta] 🚨 Alerta creada exitosamente: ID=${data.id}, tipo="${alertaInfo.tipo_alerta}", vehículo="${vehiculo.placa}" (ID: ${vehiculo.id})`
+      `[crearAlerta] 🚨 Alerta creada exitosamente: ID=${data.id}, tipo="${data.tipo_alerta}", vehículo="${vehiculo.placa}"`
     );
 
     return { data, error: null };
   } catch (error) {
-    console.error('[crearAlerta] 💥 Error general:', error);
+    console.error('[crearAlerta] 💥 Error creando alerta:', error);
     return { data: null, error };
   }
 };
 
 /**
  * Obtener alertas con filtros
- * @param {object} filtros - { estado, tipo_alerta, prioridad, vehicleId }
- * @returns {Promise<Array>}
+ * @param {object} filtros - Filtros de consulta
+ * @returns {Promise<Array>} Lista de alertas
  */
 export const obtenerAlertas = async (filtros = {}) => {
   try {
-    // Nota: evitamos joins implícitos porque requieren FKs explícitas.
-    // Mostramos alertas planas; el UI maneja la ausencia de vehicles/drivers opcionales.
     let query = supabase
       .from('alerts')
       .select('*')
       .order('fecha_alerta', { ascending: false });
 
-    // Aplicar filtros
     if (filtros.estado) {
       query = query.eq('estado', filtros.estado);
     }
+
     if (filtros.tipo_alerta) {
       query = query.eq('tipo_alerta', filtros.tipo_alerta);
     }
-    if (filtros.prioridad) {
-      query = query.eq('nivel_prioridad', filtros.prioridad);
+
+    if (filtros.nivel_prioridad) {
+      query = query.eq('nivel_prioridad', filtros.nivel_prioridad);
     }
-    if (filtros.vehicleId) {
-      query = query.eq('vehicle_id', filtros.vehicleId);
-    }
+
     if (filtros.limit) {
       query = query.limit(filtros.limit);
     }
 
-    const { data, error } = await query;
+    const { data: alertas, error } = await query;
 
     if (error) throw error;
 
-    // Enriquecer alertas con datos de vehículo sin requerir FK
-    if (data && data.length > 0) {
+    // Enriquecer con datos de vehículos y conductores manualmente
+    if (alertas && alertas.length > 0) {
       const vehicleIds = [
-        ...new Set(data.map((a) => a.vehicle_id).filter(Boolean)),
+        ...new Set(alertas.map((a) => a.vehicle_id).filter(Boolean)),
+      ];
+      const driverIds = [
+        ...new Set(alertas.map((a) => a.driver_id).filter(Boolean)),
       ];
 
+      // Obtener vehículos
+      let vehiculos = [];
       if (vehicleIds.length > 0) {
-        const { data: vehicles } = await supabase
+        const { data: vehData } = await supabase
           .from('vehicles')
-          .select('id, placa, modelo, marca')
+          .select('id, placa, marca, modelo')
           .in('id', vehicleIds);
-
-        const vehicleMap = (vehicles || []).reduce((acc, v) => {
-          acc[v.id] = v;
-          return acc;
-        }, {});
-
-        // Enriquecer cada alerta
-        data.forEach((alerta) => {
-          if (alerta.vehicle_id && vehicleMap[alerta.vehicle_id]) {
-            alerta.vehicles = vehicleMap[alerta.vehicle_id];
-          }
-        });
+        vehiculos = vehData || [];
       }
+
+      // Obtener conductores
+      let conductores = [];
+      if (driverIds.length > 0) {
+        const { data: condData } = await supabase
+          .from('drivers')
+          .select('id, nombre, apellidos')
+          .in('id', driverIds);
+        conductores = condData || [];
+      }
+
+      // Mapear datos
+      const alertasEnriquecidas = alertas.map((alerta) => ({
+        ...alerta,
+        vehiculo: vehiculos.find((v) => v.id === alerta.vehicle_id) || null,
+        conductor: conductores.find((c) => c.id === alerta.driver_id) || null,
+      }));
+
+      return { data: alertasEnriquecidas, error: null };
     }
 
-    return { data, error: null };
+    return { data: alertas || [], error: null };
   } catch (error) {
-    console.error('Error al obtener alertas:', error);
+    console.error('Error obteniendo alertas:', error);
     return { data: null, error };
   }
 };
 
 /**
- * Obtener alertas pendientes (para notificaciones)
- * @returns {Promise<Array>}
+ * Obtener estadísticas de alertas
+ * @returns {Promise<object>} Estadísticas
  */
-export const obtenerAlertasPendientes = async () => {
-  return obtenerAlertas({ estado: 'pendiente', limit: 50 });
+export const obtenerEstadisticasAlertas = async () => {
+  try {
+    const { data, error } = await supabase.rpc('obtener_estadisticas_alertas');
+
+    if (error) throw error;
+
+    // Formato esperado
+    return {
+      data: data?.[0] || {
+        total: 0,
+        pendientes: 0,
+        vistas: 0,
+        resueltas: 0,
+        criticas: 0,
+      },
+      error: null,
+    };
+  } catch (error) {
+    console.error('Error obteniendo estadísticas:', error);
+    // Fallback: calcular manualmente
+    const { data: alertas } = await obtenerAlertas({ limit: 1000 });
+
+    const stats = {
+      total: alertas?.length || 0,
+      pendientes: alertas?.filter((a) => a.estado === 'pendiente').length || 0,
+      vistas: alertas?.filter((a) => a.estado === 'vista').length || 0,
+      resueltas: alertas?.filter((a) => a.estado === 'resuelta').length || 0,
+      criticas:
+        alertas?.filter((a) => a.nivel_prioridad === 'critica').length || 0,
+    };
+
+    return { data: stats, error: null };
+  }
 };
 
 /**
@@ -338,42 +457,44 @@ export const marcarAlertaComoVista = async (alertaId) => {
       .single();
 
     if (error) throw error;
+
     return { data, error: null };
   } catch (error) {
-    console.error('Error al marcar alerta como vista:', error);
+    console.error('Error marcando alerta como vista:', error);
     return { data: null, error };
   }
 };
 
 /**
- * Resolver una alerta
+ * Resolver alerta
  * @param {number} alertaId
- * @param {string} resolvidoPor - Nombre del usuario que resuelve
+ * @param {string} resuelto_por - Usuario que resolvió
  * @returns {Promise<object>}
  */
-export const resolverAlerta = async (alertaId, resolvidoPor) => {
+export const resolverAlerta = async (alertaId, resuelto_por) => {
   try {
     const { data, error } = await supabase
       .from('alerts')
       .update({
         estado: 'resuelta',
         fecha_resolucion: new Date().toISOString(),
-        resuelto_por: resolvidoPor,
+        resuelto_por: resuelto_por || 'Sistema',
       })
       .eq('id', alertaId)
       .select()
       .single();
 
     if (error) throw error;
+
     return { data, error: null };
   } catch (error) {
-    console.error('Error al resolver alerta:', error);
+    console.error('Error resolviendo alerta:', error);
     return { data: null, error };
   }
 };
 
 /**
- * Ignorar una alerta
+ * Ignorar alerta
  * @param {number} alertaId
  * @returns {Promise<object>}
  */
@@ -387,21 +508,22 @@ export const ignorarAlerta = async (alertaId) => {
       .single();
 
     if (error) throw error;
+
     return { data, error: null };
   } catch (error) {
-    console.error('Error al ignorar alerta:', error);
+    console.error('Error ignorando alerta:', error);
     return { data: null, error };
   }
 };
 
 /**
- * Suscribirse a nuevas alertas en tiempo real
- * @param {function} callback - Función que recibe las nuevas alertas
- * @returns {object} Suscripción de Supabase
+ * Suscribirse a cambios en tiempo real de alertas
+ * @param {Function} callback - Función a ejecutar cuando hay cambios
+ * @returns {object} Subscription object
  */
 export const suscribirseAAlertas = (callback) => {
   const subscription = supabase
-    .channel('alertas-realtime')
+    .channel('alerts_changes')
     .on(
       'postgres_changes',
       {
@@ -410,77 +532,13 @@ export const suscribirseAAlertas = (callback) => {
         table: 'alerts',
       },
       (payload) => {
-        console.log('🔔 Nueva alerta recibida:', payload.new);
+        console.log('Nueva alerta detectada:', payload);
         callback(payload.new);
       }
     )
     .subscribe();
 
   return subscription;
-};
-
-/**
- * Obtener estadísticas de alertas
- * @returns {Promise<object>}
- */
-export const obtenerEstadisticasAlertas = async () => {
-  try {
-    // Contar alertas por estado
-    const { data: porEstado, error: errorEstado } = await supabase
-      .from('alerts')
-      .select('estado')
-      .then((result) => {
-        if (result.error) throw result.error;
-        const counts = result.data.reduce((acc, alert) => {
-          acc[alert.estado] = (acc[alert.estado] || 0) + 1;
-          return acc;
-        }, {});
-        return { data: counts, error: null };
-      });
-
-    // Contar alertas por tipo
-    const { data: porTipo, error: errorTipo } = await supabase
-      .from('alerts')
-      .select('tipo_alerta')
-      .gte(
-        'fecha_alerta',
-        new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
-      )
-      .then((result) => {
-        if (result.error) throw result.error;
-        const counts = result.data.reduce((acc, alert) => {
-          acc[alert.tipo_alerta] = (acc[alert.tipo_alerta] || 0) + 1;
-          return acc;
-        }, {});
-        return { data: counts, error: null };
-      });
-
-    // Contar alertas por prioridad
-    const { data: porPrioridad, error: errorPrioridad } = await supabase
-      .from('alerts')
-      .select('nivel_prioridad')
-      .eq('estado', 'pendiente')
-      .then((result) => {
-        if (result.error) throw result.error;
-        const counts = result.data.reduce((acc, alert) => {
-          acc[alert.nivel_prioridad] = (acc[alert.nivel_prioridad] || 0) + 1;
-          return acc;
-        }, {});
-        return { data: counts, error: null };
-      });
-
-    return {
-      data: {
-        porEstado,
-        porTipo,
-        porPrioridad,
-      },
-      error: errorEstado || errorTipo || errorPrioridad,
-    };
-  } catch (error) {
-    console.error('Error al obtener estadísticas de alertas:', error);
-    return { data: null, error };
-  }
 };
 
 export default {
@@ -490,10 +548,9 @@ export default {
   evaluarAlertasUbicacion,
   crearAlerta,
   obtenerAlertas,
-  obtenerAlertasPendientes,
+  obtenerEstadisticasAlertas,
   marcarAlertaComoVista,
   resolverAlerta,
   ignorarAlerta,
   suscribirseAAlertas,
-  obtenerEstadisticasAlertas,
 };
