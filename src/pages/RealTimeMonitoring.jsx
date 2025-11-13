@@ -9,6 +9,7 @@ import {
   MapPin,
   Clock,
   Activity,
+  Maximize2,
 } from 'lucide-react';
 import { locationService } from '../services/locationService';
 
@@ -51,17 +52,44 @@ const vehicleIcons = {
 // Componente para actualizar vista del mapa
 const MapUpdater = ({ vehicles }) => {
   const map = useMap();
+  const hasInitialized = React.useRef(false);
 
   useEffect(() => {
+    // Solo centrar automáticamente la primera vez
+    if (vehicles.length > 0 && !hasInitialized.current) {
+      const group = new L.FeatureGroup(
+        vehicles.map((v) => L.marker([v.latitude, v.longitude]))
+      );
+      map.fitBounds(group.getBounds().pad(0.1));
+      hasInitialized.current = true;
+    }
+  }, [vehicles, map]);
+
+  return null;
+};
+
+// Botón para re-centrar el mapa
+const RecenterButton = ({ vehicles }) => {
+  const map = useMap();
+
+  const handleRecenter = () => {
     if (vehicles.length > 0) {
       const group = new L.FeatureGroup(
         vehicles.map((v) => L.marker([v.latitude, v.longitude]))
       );
       map.fitBounds(group.getBounds().pad(0.1));
     }
-  }, [vehicles, map]);
+  };
 
-  return null;
+  return (
+    <button
+      onClick={handleRecenter}
+      className="leaflet-control absolute top-20 right-2 z-[1000] bg-white rounded-lg shadow-lg p-2 hover:bg-gray-50 transition-colors"
+      title="Re-centrar vista en vehículos"
+    >
+      <Maximize2 className="w-5 h-5 text-gray-700" />
+    </button>
+  );
 };
 
 const RealTimeMonitoring = () => {
@@ -101,11 +129,11 @@ const RealTimeMonitoring = () => {
     };
   }, []);
 
-  // Auto-refresh cada 10 segundos como fallback
+  // Auto-refresh cada 5 segundos como fallback
   useEffect(() => {
     const interval = setInterval(() => {
       loadVehicleLocations();
-    }, 10000);
+    }, 5000);
 
     return () => clearInterval(interval);
   }, []);
@@ -358,6 +386,7 @@ const RealTimeMonitoring = () => {
             />
 
             <MapUpdater vehicles={filteredVehicles} />
+            <RecenterButton vehicles={filteredVehicles} />
 
             {filteredVehicles.map((vehicle) => (
               <Marker

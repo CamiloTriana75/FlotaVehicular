@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { driverService } from '../services/driverService';
+import { getActiveAssignments } from '../services/assignmentService';
+import { supabase } from '../lib/supabaseClient';
 import Card from '../components/Card';
 import Table from '../components/Table';
 import {
@@ -24,15 +26,77 @@ const DriversList = () => {
   // Cargar conductores desde la base de datos
   useEffect(() => {
     loadConductores();
+
+    // Suscribirse a cambios en asignaciones para refrescar automáticamente
+    const channel = supabase
+      .channel('drivers-assignments')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'vehicle_assignments' },
+        () => {
+          // Refrescar silenciosamente
+          loadConductores();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      try {
+        channel.unsubscribe();
+      } catch (_) {}
+    };
   }, []);
 
   const loadConductores = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: fetchError } = await driverService.getAll();
-      if (fetchError) throw fetchError;
-      setConductores(data || []);
+      // 1) Cargar drivers y asignaciones activas en paralelo
+      const [driversRes, assignsRes] = await Promise.all([
+        driverService.getAll(),
+        getActiveAssignments(),
+      ]);
+
+      if (driversRes.error) throw driversRes.error;
+      if (assignsRes.error) throw assignsRes.error;
+
+      const drivers = driversRes.data || [];
+      const assignments = (assignsRes.data || []).sort(
+        (a, b) => new Date(a.start_time) - new Date(b.start_time)
+      );
+
+      // 2) Indexar asignaciones por driver, priorizando las vigentes en este momento
+      const now = new Date();
+      const byDriver = new Map();
+      for (const a of assignments) {
+        const isCurrent =
+          new Date(a.start_time) <= now && now <= new Date(a.end_time);
+        const prev = byDriver.get(a.driver_id);
+        if (!prev) {
+          byDriver.set(a.driver_id, { a, isCurrent });
+          continue;
+        }
+        // Si el nuevo es actual y el previo no, reemplazar; si ambos actuales, mantener el primero
+        if (isCurrent && !prev.isCurrent) {
+          byDriver.set(a.driver_id, { a, isCurrent });
+        }
+      }
+
+      // 3) Enriquecer drivers con vehículo asignado y estado derivado
+      const enriched = drivers.map((d) => {
+        const entry = byDriver.get(d.id);
+        const assigned = entry?.a;
+        const isCurrent = entry?.isCurrent;
+        const vehiculoAsignado = assigned?.vehicle
+          ? `${assigned.vehicle.placa} - ${assigned.vehicle.marca} ${assigned.vehicle.modelo}`
+          : assigned?.vehicle_id
+            ? `#${assigned.vehicle_id}`
+            : '';
+        const estado = isCurrent ? 'activo' : d.estado || 'disponible';
+        return { ...d, vehiculoAsignado, estado };
+      });
+
+      setConductores(enriched);
     } catch (err) {
       console.error('Error cargando conductores:', err);
       setError(err.message);
@@ -47,7 +111,10 @@ const DriversList = () => {
     return (
       nombreCompleto.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (driver.cedula || '').includes(searchTerm) ||
-      (driver.email || '').toLowerCase().includes(searchTerm.toLowerCase())
+      (driver.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (driver.vehiculoAsignado || '')
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase())
     );
   });
 
@@ -102,7 +169,7 @@ const DriversList = () => {
       accessor: 'vehiculoAsignado',
       cell: (value) => (
         <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-          {value}
+          {value || '—'}
         </span>
       ),
     },
