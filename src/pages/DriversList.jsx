@@ -57,7 +57,6 @@ const DriversList = () => {
         getActiveAssignments(),
       ]);
 
-<<<<<<< 13-hu10-crear-y-asignar-rutas-optimizadas
       if (driversResult.error) throw driversResult.error;
       if (assignmentsResult.error) throw assignmentsResult.error;
 
@@ -108,48 +107,6 @@ const DriversList = () => {
       });
 
       setConductores(enrichedDrivers);
-=======
-      if (driversRes.error) throw driversRes.error;
-      if (assignsRes.error) throw assignsRes.error;
-
-      const drivers = driversRes.data || [];
-      const assignments = (assignsRes.data || []).sort(
-        (a, b) => new Date(a.start_time) - new Date(b.start_time)
-      );
-
-      // 2) Indexar asignaciones por driver, priorizando las vigentes en este momento
-      const now = new Date();
-      const byDriver = new Map();
-      for (const a of assignments) {
-        const isCurrent =
-          new Date(a.start_time) <= now && now <= new Date(a.end_time);
-        const prev = byDriver.get(a.driver_id);
-        if (!prev) {
-          byDriver.set(a.driver_id, { a, isCurrent });
-          continue;
-        }
-        // Si el nuevo es actual y el previo no, reemplazar; si ambos actuales, mantener el primero
-        if (isCurrent && !prev.isCurrent) {
-          byDriver.set(a.driver_id, { a, isCurrent });
-        }
-      }
-
-      // 3) Enriquecer drivers con vehículo asignado y estado derivado
-      const enriched = drivers.map((d) => {
-        const entry = byDriver.get(d.id);
-        const assigned = entry?.a;
-        const isCurrent = entry?.isCurrent;
-        const vehiculoAsignado = assigned?.vehicle
-          ? `${assigned.vehicle.placa} - ${assigned.vehicle.marca} ${assigned.vehicle.modelo}`
-          : assigned?.vehicle_id
-            ? `#${assigned.vehicle_id}`
-            : '';
-        const estado = isCurrent ? 'activo' : d.estado || 'disponible';
-        return { ...d, vehiculoAsignado, estado };
-      });
-
-      setConductores(enriched);
->>>>>>> main
     } catch (err) {
       console.error('Error cargando conductores:', err);
       setError(err.message);
@@ -189,15 +146,8 @@ const DriversList = () => {
     return (
       nombreCompleto.toLowerCase().includes(searchLower) ||
       (driver.cedula || '').includes(searchTerm) ||
-<<<<<<< 13-hu10-crear-y-asignar-rutas-optimizadas
       (driver.email || '').toLowerCase().includes(searchLower) ||
       (driver.vehiculoAsignado || '').toLowerCase().includes(searchLower)
-=======
-      (driver.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (driver.vehiculoAsignado || '')
-        .toLowerCase()
-        .includes(searchTerm.toLowerCase())
->>>>>>> main
     );
   });
 
