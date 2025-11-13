@@ -52,7 +52,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/dashboard',
       icon: LayoutDashboard,
       description: 'Vista general del sistema',
-      roles: ['superusuario', 'admin', 'operador'], // NO incluir 'rrhh' aquí
+      roles: ['superusuario', 'admin'], // Solo admin y superusuario
+    },
+    {
+      title: 'Panel Operador',
+      path: '/operador/dashboard',
+      icon: Activity,
+      description: 'Monitoreo de Flota',
+      roles: ['operador'], // Solo para operador
     },
     {
       title: 'Dashboard RRHH',
@@ -67,14 +74,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Truck,
       description: 'Gestión de flota vehicular',
       badge: '5',
-      roles: ['superusuario', 'admin', 'operador'],
+      roles: ['superusuario', 'admin'],
     },
     {
       title: 'Conductores',
       path: '/conductores',
       icon: Users,
       description: 'Gestión de personal',
-      roles: ['superusuario', 'admin', 'rrhh'], // RRHH y superusuario/admin gestionan conductores
+      roles: ['superusuario', 'admin', 'rrhh'],
     },
     {
       title: 'Nuevo Conductor',

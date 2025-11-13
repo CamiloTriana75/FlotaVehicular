@@ -1,4 +1,313 @@
 import { supabase, isInMockMode } from '../lib/supabaseClient';
+import { evaluarAlertasUbicacion, crearAlerta } from './alertService';
+
+// Cache simple en memoria para resolver id numérico del vehículo desde placa o devolver el mismo id si ya es numérico
+const vehicleIdCache = new Map();
+
+function isNumericId(v) {
+  if (typeof v === 'number') return Number.isFinite(v);
+  if (typeof v === 'string') {
+    const t = v.trim();
+    if (t === '') return false;
+    return /^\d+$/.test(t);
+  }
+  return false;
+}
+
+async function resolveVehiclePk(vehicleIdOrPlaca) {
+  if (!vehicleIdOrPlaca) {
+    console.warn('[resolveVehiclePk] ❌ Valor vacío recibido');
+    return null;
+  }
+
+  console.log(
+    `[resolveVehiclePk] 🔍 Entrada: "${vehicleIdOrPlaca}" (tipo: ${typeof vehicleIdOrPlaca})`
+  );
+
+  // Si ya es un id numérico o un string numérico, devolverlo como entero
+  if (isNumericId(vehicleIdOrPlaca)) {
+    const idNum =
+      typeof vehicleIdOrPlaca === 'number'
+        ? vehicleIdOrPlaca
+        : parseInt(String(vehicleIdOrPlaca).trim(), 10);
+    console.log(`[resolveVehiclePk] ✅ Es ID numérico: ${idNum}`);
+    return Number.isFinite(idNum) ? idNum : null;
+  }
+
+  // Caso placa: normalizar y resolver contra BD con cache
+  const placaKey = `PLACA#${String(vehicleIdOrPlaca).toUpperCase().trim()}`;
+  if (vehicleIdCache.has(placaKey)) {
+    const cached = vehicleIdCache.get(placaKey);
+    console.log(
+      `[resolveVehiclePk] 💾 Cache hit para "${vehicleIdOrPlaca}": ID=${cached}`
+    );
+    return cached;
+  }
+
+  try {
+    console.log(
+      `[resolveVehiclePk] 🔎 Buscando en BD: placa="${String(vehicleIdOrPlaca).toUpperCase().trim()}"`
+    );
+    const { data, error } = await supabase
+      .from('vehicles')
+      .select('id, placa')
+      .eq('placa', String(vehicleIdOrPlaca).toUpperCase().trim())
+      .single();
+    if (error) throw error;
+    const id = data?.id || null;
+    if (id) {
+      vehicleIdCache.set(placaKey, id);
+      console.log(
+        `[resolveVehiclePk] ✅ Encontrado en BD: placa="${data.placa}", ID=${id}`
+      );
+    } else {
+      console.warn(
+        `[resolveVehiclePk] ⚠️ No se encontró vehículo con placa "${vehicleIdOrPlaca}"`
+      );
+    }
+    return id;
+  } catch (e) {
+    console.error(
+      `[resolveVehiclePk] 💥 Error buscando placa "${vehicleIdOrPlaca}":`,
+      e?.message || e
+    );
+    return null;
+  }
+}
+
+// Fallback ligero en cliente para evaluar exceso de velocidad
+const speedTrackMap = new Map();
+const stopTrackMap = new Map(); // Para paradas prolongadas
+
+// Debounce para evitar alertas duplicadas (en milisegundos)
+const ALERT_DEBOUNCE_MS = 60000; // 60 segundos entre alertas del mismo tipo para el mismo vehículo
+const lastAlertTimestamp = new Map(); // Map<"vehiclePk_tipoAlerta", timestamp>
+
+// Cache de umbrales - se actualizan dinámicamente desde la BD
+let alertThresholds = {
+  velocidad_excesiva: {
+    max_velocidad_kmh: 10,
+    duracion_segundos: 2,
+  },
+  parada_prolongada: {
+    duracion_segundos: 10,
+    radio_metros: 50,
+    velocidad_max_kmh: 5,
+  },
+};
+
+let lastThresholdsUpdate = 0;
+const THRESHOLDS_CACHE_MS = 30000; // Actualizar cada 30 segundos
+
+// Función para obtener umbrales desde la BD
+async function fetchAlertThresholds() {
+  const now = Date.now();
+  if (now - lastThresholdsUpdate < THRESHOLDS_CACHE_MS) {
+    return alertThresholds; // Usar cache
+  }
+
+  try {
+    const { data, error } = await supabase.rpc('get_alert_rules');
+    if (error) throw error;
+
+    if (data && data.length > 0) {
+      data.forEach((rule) => {
+        if (rule.tipo_alerta === 'velocidad_excesiva' && rule.habilitado) {
+          alertThresholds.velocidad_excesiva = {
+            max_velocidad_kmh: rule.umbrales?.max_velocidad_kmh || 10,
+            duracion_segundos: rule.umbrales?.duracion_segundos || 2,
+          };
+        } else if (
+          rule.tipo_alerta === 'parada_prolongada' &&
+          rule.habilitado
+        ) {
+          alertThresholds.parada_prolongada = {
+            duracion_segundos: rule.umbrales?.duracion_segundos || 10,
+            radio_metros: rule.umbrales?.radio_metros || 50,
+            velocidad_max_kmh: 5,
+          };
+        }
+      });
+      lastThresholdsUpdate = now;
+      console.log('✅ Umbrales actualizados desde BD:', alertThresholds);
+    }
+  } catch (e) {
+    console.warn(
+      '⚠️ Error al obtener umbrales, usando valores por defecto:',
+      e?.message
+    );
+  }
+
+  return alertThresholds;
+}
+
+async function clientSideEvaluateSpeed(vehiclePk, speedKmh, lat, lng) {
+  if (!vehiclePk) return;
+
+  // Obtener umbrales dinámicos
+  const thresholds = await fetchAlertThresholds();
+  const SPEED_THRESHOLD_KMH = thresholds.velocidad_excesiva.max_velocidad_kmh;
+  const SPEED_DURATION_SEC = thresholds.velocidad_excesiva.duracion_segundos;
+
+  const now = Date.now();
+  const above = speedKmh > SPEED_THRESHOLD_KMH;
+  const rec = speedTrackMap.get(vehiclePk) || { start: null, alerted: false };
+
+  if (!above) {
+    // Reset si baja la velocidad
+    const wasAlerted = rec.alerted;
+    speedTrackMap.set(vehiclePk, { start: null, alerted: false });
+    if (wasAlerted) {
+      console.log(
+        `🟢 Vehículo ${vehiclePk} redujo velocidad, reseteando tracking`
+      );
+    }
+    return;
+  }
+
+  if (!rec.start) {
+    rec.start = now;
+    rec.alerted = false;
+    speedTrackMap.set(vehiclePk, rec);
+    console.log(
+      `🟡 Iniciando tracking de velocidad para vehículo ${vehiclePk}: ${Math.round(speedKmh)} km/h (umbral: ${SPEED_THRESHOLD_KMH} km/h, duración: ${SPEED_DURATION_SEC}s)`
+    );
+    return;
+  }
+
+  const elapsedSec = Math.floor((now - rec.start) / 1000);
+  console.log(
+    `⏱️ Vehículo ${vehiclePk} excediendo velocidad por ${elapsedSec}s (${Math.round(speedKmh)} km/h > ${SPEED_THRESHOLD_KMH} km/h) - Necesita ${SPEED_DURATION_SEC}s`
+  );
+
+  if (!rec.alerted && elapsedSec >= SPEED_DURATION_SEC) {
+    // Verificar debounce global para evitar alertas duplicadas
+    const debounceKey = `${vehiclePk}_velocidad_excesiva`;
+    const lastAlert = lastAlertTimestamp.get(debounceKey) || 0;
+    const timeSinceLastAlert = now - lastAlert;
+
+    if (timeSinceLastAlert < ALERT_DEBOUNCE_MS) {
+      console.log(
+        `⏸️ Alerta de velocidad en debounce (hace ${Math.round(timeSinceLastAlert / 1000)}s), esperando ${Math.round((ALERT_DEBOUNCE_MS - timeSinceLastAlert) / 1000)}s más`
+      );
+      return;
+    }
+
+    // Crear alerta con metadata completa
+    try {
+      await crearAlerta(vehiclePk, {
+        tipo_alerta: 'velocidad_excesiva',
+        mensaje: `Velocidad superior a ${SPEED_THRESHOLD_KMH} km/h sostenida por ${elapsedSec} segundos`,
+        prioridad: 'alta',
+        metadata: {
+          velocidad_actual: Math.round(speedKmh),
+          velocidad_maxima: SPEED_THRESHOLD_KMH,
+          duracion_segundos: elapsedSec,
+          ubicacion: { lat, lng },
+        },
+      });
+      rec.alerted = true;
+      lastAlertTimestamp.set(debounceKey, now);
+      speedTrackMap.set(vehiclePk, rec);
+      console.log(
+        `✅ Alerta de velocidad excesiva creada para ${vehiclePk}: ${Math.round(speedKmh)} km/h por ${elapsedSec}s`
+      );
+    } catch (e) {
+      console.warn('[alerts] Fallback crearAlerta falló:', e?.message || e);
+    }
+  }
+}
+
+async function clientSideEvaluateStop(vehiclePk, speedKmh, lat, lng) {
+  if (!vehiclePk) return;
+
+  // Obtener umbrales dinámicos
+  const thresholds = await fetchAlertThresholds();
+  const STOP_DURATION_SEC = thresholds.parada_prolongada.duracion_segundos;
+  const STOP_SPEED_THRESHOLD = thresholds.parada_prolongada.velocidad_max_kmh;
+
+  const now = Date.now();
+  const stopped = speedKmh <= STOP_SPEED_THRESHOLD;
+  const rec = stopTrackMap.get(vehiclePk) || {
+    start: null,
+    alerted: false,
+    lat: null,
+    lng: null,
+  };
+
+  if (!stopped) {
+    // Reset si se mueve
+    const wasAlerted = rec.alerted;
+    stopTrackMap.set(vehiclePk, {
+      start: null,
+      alerted: false,
+      lat: null,
+      lng: null,
+    });
+    if (wasAlerted) {
+      console.log(
+        `🟢 Vehículo ${vehiclePk} en movimiento nuevamente, reseteando tracking de parada`
+      );
+    }
+    return;
+  }
+
+  if (!rec.start) {
+    rec.start = now;
+    rec.alerted = false;
+    rec.lat = lat;
+    rec.lng = lng;
+    stopTrackMap.set(vehiclePk, rec);
+    console.log(
+      `🟡 Iniciando tracking de parada para vehículo ${vehiclePk} (umbral: ${STOP_DURATION_SEC}s, velocidad máx: ${STOP_SPEED_THRESHOLD} km/h)`
+    );
+    return;
+  }
+
+  const elapsedSec = Math.floor((now - rec.start) / 1000);
+  console.log(
+    `⏱️ Vehículo ${vehiclePk} detenido por ${elapsedSec}s (velocidad: ${Math.round(speedKmh)} km/h) - Necesita ${STOP_DURATION_SEC}s`
+  );
+
+  if (!rec.alerted && elapsedSec >= STOP_DURATION_SEC) {
+    // Verificar debounce global para evitar alertas duplicadas
+    const debounceKey = `${vehiclePk}_parada_prolongada`;
+    const lastAlert = lastAlertTimestamp.get(debounceKey) || 0;
+    const timeSinceLastAlert = now - lastAlert;
+
+    if (timeSinceLastAlert < ALERT_DEBOUNCE_MS) {
+      console.log(
+        `⏸️ Alerta de parada en debounce (hace ${Math.round(timeSinceLastAlert / 1000)}s), esperando ${Math.round((ALERT_DEBOUNCE_MS - timeSinceLastAlert) / 1000)}s más`
+      );
+      return;
+    }
+
+    // Crear alerta de parada prolongada con metadata
+    try {
+      await crearAlerta(vehiclePk, {
+        tipo_alerta: 'parada_prolongada',
+        mensaje: `Vehículo detenido por ${elapsedSec} segundos en el mismo lugar`,
+        prioridad: 'media',
+        metadata: {
+          velocidad_actual: Math.round(speedKmh),
+          duracion_segundos: elapsedSec,
+          ubicacion: { lat, lng },
+        },
+      });
+      rec.alerted = true;
+      lastAlertTimestamp.set(debounceKey, now);
+      stopTrackMap.set(vehiclePk, rec);
+      console.log(
+        `✅ Alerta de parada prolongada creada para ${vehiclePk}: ${elapsedSec}s detenido`
+      );
+    } catch (e) {
+      console.warn(
+        '[alerts] Fallback crearAlerta parada falló:',
+        e?.message || e
+      );
+    }
+  }
+}
 
 /**
  * Servicio para gestión de ubicaciones de vehículos en tiempo real
@@ -369,6 +678,51 @@ export const locationService = {
         throw new Error(`Error insertando ubicación: ${error.message}`);
       }
 
+      // Evaluar alertas en segundo plano (no bloquea el tracking)
+      // Resolver id numérico (vehicles.id) desde id o placa antes de evaluar
+      (async () => {
+        console.log(
+          `[alerts] 🔍 Resolviendo vehicle_id para: "${vehicle_id}" (tipo: ${typeof vehicle_id})`
+        );
+        const vehiclePk = await resolveVehiclePk(vehicle_id);
+        if (!vehiclePk) {
+          console.warn(
+            `[alerts] ❌ No se pudo resolver vehicles.id para "${vehicle_id}"`
+          );
+          return;
+        }
+
+        console.log(
+          `[alerts] ✅ Vehículo resuelto: ID=${vehiclePk}, velocidad=${Math.round(speed)} km/h`
+        );
+
+        try {
+          const { data, error } = await evaluarAlertasUbicacion(
+            vehiclePk,
+            speed,
+            latitude,
+            longitude
+          );
+          if (error) {
+            console.warn('[alerts] ⚠️ Error en RPC:', error.message);
+            throw error;
+          }
+          console.log('[alerts] RPC resultado:', data);
+
+          // Siempre ejecutar fallbacks en cliente para garantizar alertas
+          await clientSideEvaluateSpeed(vehiclePk, speed, latitude, longitude);
+          await clientSideEvaluateStop(vehiclePk, speed, latitude, longitude);
+        } catch (e) {
+          console.warn(
+            '[alerts] ℹ️ RPC no disponible, usando fallback en cliente.'
+          );
+          await clientSideEvaluateSpeed(vehiclePk, speed, latitude, longitude);
+          await clientSideEvaluateStop(vehiclePk, speed, latitude, longitude);
+        }
+      })().catch((err) =>
+        console.error('[alerts] 💥 Error evaluando alertas:', err)
+      );
+
       return { data, error: null };
     } catch (err) {
       console.error('Error al insertar ubicación:', err);
@@ -602,8 +956,8 @@ export const locationService = {
   watchPosition(callback, options = {}) {
     const defaultOptions = {
       enableHighAccuracy: true,
-      timeout: 5000,
-      maximumAge: 1000,
+      timeout: 10000,
+      maximumAge: 0,
       ...options,
     };
 
