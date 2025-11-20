@@ -13,6 +13,7 @@ import {
   CheckCircle,
 } from 'lucide-react';
 import { locationService } from '../services/locationService';
+import PanicButton from '../components/PanicButton';
 import { useAuth } from '../lib/supabaseClient';
 
 const VehicleTracker = () => {
@@ -639,6 +640,9 @@ const VehicleTracker = () => {
                 <span>Detener</span>
               </button>
             )}
+          </div>
+          <div className="mt-3">
+            <PanicButton vehicleId={vehicleId.trim().toUpperCase()} />
           </div>
         </div>
 
