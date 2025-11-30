@@ -522,6 +522,101 @@ export async function getActiveRoutesMonitoring() {
   }
 }
 
+/**
+ * Registra un punto de tracking GPS para una ruta en ejecución
+ * @param {Object} trackingData - Datos del punto GPS
+ * @param {number} trackingData.assignmentId - ID de la asignación
+ * @param {number} trackingData.vehicleId - ID del vehículo
+ * @param {number} trackingData.latitude - Latitud
+ * @param {number} trackingData.longitude - Longitud
+ * @param {number} [trackingData.speed] - Velocidad en km/h
+ * @param {number} [trackingData.heading] - Dirección en grados
+ * @param {number} [trackingData.accuracy] - Precisión GPS en metros
+ * @param {number} [trackingData.altitude] - Altitud en metros
+ * @returns {Promise<Object>} ID del punto insertado
+ */
+export async function insertRouteTrackingPoint(trackingData) {
+  try {
+    const { data, error } = await supabase.rpc('insert_route_tracking_point', {
+      p_assignment_id: trackingData.assignmentId,
+      p_vehicle_id: trackingData.vehicleId,
+      p_latitude: trackingData.latitude,
+      p_longitude: trackingData.longitude,
+      p_speed: trackingData.speed || 0,
+      p_heading: trackingData.heading || 0,
+      p_accuracy: trackingData.accuracy || null,
+      p_altitude: trackingData.altitude || null,
+    });
+
+    if (error) throw error;
+
+    return { data, error: null };
+  } catch (error) {
+    console.error('Error insertando punto de tracking:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Obtiene la trayectoria completa de una ruta ejecutada
+ * @param {number} assignmentId - ID de la asignación
+ * @returns {Promise<Array>} Lista de puntos GPS en orden cronológico
+ */
+export async function getRouteTrajectory(assignmentId) {
+  try {
+    const { data, error } = await supabase.rpc('get_route_trajectory', {
+      p_assignment_id: assignmentId,
+    });
+
+    if (error) throw error;
+
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('Error obteniendo trayectoria de ruta:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Obtiene eventos de una ruta
+ * @param {number} assignmentId - ID de la asignación
+ * @returns {Promise<Array>} Lista de eventos
+ */
+export async function getRouteEvents(assignmentId) {
+  try {
+    const { data, error } = await supabase.rpc('get_route_events', {
+      p_assignment_id: assignmentId,
+    });
+
+    if (error) throw error;
+
+    return { data: data || [], error: null };
+  } catch (error) {
+    console.error('Error obteniendo eventos de ruta:', error);
+    return { data: [], error };
+  }
+}
+
+/**
+ * Obtiene estadísticas de una ruta ejecutada
+ * @param {number} assignmentId - ID de la asignación
+ * @returns {Promise<Object>} Estadísticas de la ruta
+ */
+export async function getRouteStatistics(assignmentId) {
+  try {
+    const { data, error } = await supabase.rpc('get_route_statistics', {
+      p_assignment_id: assignmentId,
+    });
+
+    if (error) throw error;
+
+    return { data: data?.[0] || null, error: null };
+  } catch (error) {
+    console.error('Error obteniendo estadísticas de ruta:', error);
+    return { data: null, error };
+  }
+}
+
 export default {
   optimizeRoute,
   calculateSimpleRoute,
@@ -537,4 +632,8 @@ export default {
   getRouteProgress,
   getWaypointCheckins,
   getActiveRoutesMonitoring,
+  insertRouteTrackingPoint,
+  getRouteTrajectory,
+  getRouteEvents,
+  getRouteStatistics,
 };

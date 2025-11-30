@@ -128,13 +128,6 @@ const Sidebar = ({ isOpen, onClose }) => {
       roles: ['conductor'],
     },
     {
-      title: 'Tracker (Conductor)',
-      path: '/tracker',
-      icon: MapPin,
-      description: 'Enviar ubicación desde el dispositivo',
-      roles: ['conductor', 'operador', 'superusuario', 'admin'],
-    },
-    {
       title: 'Planificación Rutas',
       path: '/rutas/planificacion',
       icon: Navigation,
@@ -146,7 +139,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/rutas/monitoreo',
       icon: Route,
       description: 'Seguimiento de rutas en progreso',
-      roles: ['superusuario', 'admin', 'operador', 'planificador'],
+      roles: [
+        'superusuario',
+        'admin',
+        'operador',
+        'planificador',
+        'supervisor',
+      ],
     },
     {
       title: 'Combustible',

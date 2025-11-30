@@ -6,16 +6,78 @@ Este directorio contiene las migraciones SQL para la base de datos del sistema d
 
 ```
 supabase/migrations/
-├── 20240115000001_initial_schema.sql      # (Legacy) Esquema inicial con multi-tenancy
-├── 20250918051927_white_temple.sql        # (Legacy) Esquema simplificado en español
-└── 20251108000000_schema_completo_flota.sql # ✅ Esquema actual optimizado
+├── 20240115000001_initial_schema.sql           # (Legacy) Esquema inicial
+├── 20250918051927_white_temple.sql             # (Legacy) Esquema simplificado
+├── 20251108000001_add_admin_user.sql           # Usuario administrador
+├── 20251108000002_auth_functions.sql           # Funciones de autenticación
+├── 20251108000003_seed_conductores.sql         # Datos de conductores
+├── 20251111000001_vehicle_assignments.sql      # Sistema de asignaciones
+├── 20251111090000_incidents.sql                # Sistema de incidentes
+├── 20251111120000_vehicle_tracking.sql         # Sistema de tracking GPS
+├── 20251112145937_alert_rules_and_evaluation.sql # Sistema de alertas
+├── 20251112200000_routes_system.sql            # Sistema de rutas optimizadas
+├── 20251113000000_route_checkins.sql           # Check-ins de waypoints
+└── 20251120000000_route_tracking.sql           # ✨ NUEVO: Tracking y comparación de rutas
 ```
 
-## 🚀 Migración Activa
+## 🚀 Migraciones Principales
 
-**Archivo:** `20251108000000_schema_completo_flota.sql`
+### 1. Sistema de Rutas (HU10)
 
-Este es el esquema completo y optimizado que debes usar. Incluye:
+**Archivo:** `20251112200000_routes_system.sql`
+
+Tablas:
+
+- `routes` - Rutas con waypoints y optimización
+- `route_assignments` - Asignaciones a conductores
+
+### 2. Sistema de Tracking de Rutas (HU12) ⭐ NUEVO
+
+**Archivo:** `20251120000000_route_tracking.sql`
+
+Tablas:
+
+- `route_tracking` - Puntos GPS durante ejecución de rutas
+- `route_events` - Eventos importantes (inicio, fin, waypoints)
+
+Funciones:
+
+- `insert_route_tracking_point()` - Registrar punto GPS
+- `get_route_trajectory()` - Obtener trayectoria completa
+- `get_route_events()` - Listar eventos de ruta
+- `get_route_statistics()` - Estadísticas de ruta ejecutada
+
+**Documentación:**
+
+- 📖 Guía completa: `docs/GUIA_COMPARACION_RUTAS.md`
+- 🚀 Inicio rápido: `docs/INICIO_RAPIDO_COMPARACION.md`
+- ⚙️ Instalación: `docs/INSTALACION_COMPARACION_RUTAS.md`
+- 📋 Resumen: `docs/RESUMEN_COMPARACION_RUTAS.md`
+
+**Para instalar:**
+
+```sql
+-- Copiar y ejecutar en SQL Editor de Supabase:
+-- supabase/migrations/20251120000000_route_tracking.sql
+```
+
+**Verificar instalación:**
+
+```sql
+-- Debe retornar 2 tablas
+SELECT COUNT(*) FROM information_schema.tables
+WHERE table_name IN ('route_tracking', 'route_events');
+
+-- Debe retornar 5 funciones
+SELECT COUNT(*) FROM information_schema.routines
+WHERE routine_name IN (
+  'get_route_trajectory',
+  'insert_route_tracking_point',
+  'get_route_events',
+  'insert_route_event',
+  'get_route_statistics'
+);
+```
 
 ### Características
 

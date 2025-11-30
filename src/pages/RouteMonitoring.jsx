@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   MapPin,
   Navigation,
@@ -7,6 +8,7 @@ import {
   Clock,
   CheckCircle2,
   AlertCircle,
+  GitCompare,
 } from 'lucide-react';
 import mapboxgl from 'mapbox-gl';
 import 'mapbox-gl/dist/mapbox-gl.css';
@@ -27,6 +29,7 @@ const secondsToHhmm = (s) => {
 };
 
 export default function RouteMonitoring() {
+  const navigate = useNavigate();
   const mapContainer = useRef(null);
   const map = useRef(null);
   const vehicleMarkersRef = useRef({});
@@ -343,6 +346,19 @@ export default function RouteMonitoring() {
                   </span>
                 </div>
               )}
+            </div>
+
+            {/* Botón de comparación */}
+            <div className="mt-3">
+              <button
+                onClick={() =>
+                  navigate(`/rutas/comparacion/${selectedRoute.assignment_id}`)
+                }
+                className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm font-medium"
+              >
+                <GitCompare className="w-4 h-4" />
+                Comparar Ruta
+              </button>
             </div>
           </div>
         )}
