@@ -50,7 +50,19 @@ Rol: supervisor
 
 ---
 
-### 5. **OPERADOR**
+### 5. **PLANIFICADOR**
+
+```
+Email: planificador@flota.com
+Password: Planificador123!
+Rol: planificador
+```
+
+**Permisos**: Crear y optimizar rutas, asignar rutas a conductores, monitorear progreso de rutas
+
+---
+
+### 6. **OPERADOR**
 
 ```
 Email: operador@flotavehicular.com
@@ -62,7 +74,7 @@ Rol: operador
 
 ---
 
-### 6. **CONDUCTOR**
+### 7. **CONDUCTOR**
 
 ```
 Email: conductor@flota.com
@@ -123,6 +135,7 @@ VALUES (
 - `admin` - Administrador
 - `rrhh` - Recursos Humanos
 - `supervisor` - Supervisor de operaciones
+- `planificador` - Planificador de rutas
 - `operador` - Operador (solo lectura)
 - `conductor` - Conductor de vehículo
 

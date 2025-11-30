@@ -27,13 +27,13 @@ import DriverIncidents from './pages/DriverIncidents';
 import DriverPerformance from './pages/DriverPerformance';
 import UsersAdmin from './pages/UsersAdmin';
 import RealTimeMonitoring from './pages/RealTimeMonitoring';
-import VehicleTracker from './pages/VehicleTracker';
 import RoutesList from './pages/RoutesList';
 import NewRoutePage from './pages/NewRoutePage';
 import AssignRoutePage from './pages/AssignRoutePage';
 import MyRoutes from './pages/MyRoutes';
 import ConductorRouteView from './pages/ConductorRouteView';
 import RouteMonitoring from './pages/RouteMonitoring';
+import RouteComparison from './pages/RouteComparison';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -115,7 +115,19 @@ function App() {
       return <Navigate to="/operador/dashboard" replace />;
     }
 
-    // Por defecto, ir al dashboard general
+    if (userRole === 'supervisor') {
+      return <Navigate to="/rutas/monitoreo" replace />;
+    }
+
+    if (userRole === 'conductor') {
+      return <Navigate to="/conductor/mis-rutas" replace />;
+    }
+
+    if (userRole === 'planificador') {
+      return <Navigate to="/rutas/planificacion" replace />;
+    }
+
+    // Por defecto, ir al dashboard general (admin, superusuario)
     return <Navigate to="/dashboard" replace />;
   };
 
@@ -139,8 +151,22 @@ function App() {
           <main className="p-6">
             <Routes>
               <Route path="/" element={<RoleDashboardRedirect />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/rrhh/dashboard" element={<RRHHDashboard />} />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute roles={['superusuario', 'admin']}>
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rrhh/dashboard"
+                element={
+                  <ProtectedRoute roles={['rrhh', 'superusuario', 'admin']}>
+                    <RRHHDashboard />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="/operador/dashboard"
                 element={
@@ -179,16 +205,6 @@ function App() {
               <Route path="/desempeno" element={<DriverPerformance />} />
               <Route path="/usuarios" element={<UsersAdmin />} />
               <Route path="/monitoreo" element={<RealTimeMonitoring />} />
-              <Route
-                path="/tracker"
-                element={
-                  <ProtectedRoute
-                    roles={['conductor', 'operador', 'superusuario', 'admin']}
-                  >
-                    <VehicleTracker />
-                  </ProtectedRoute>
-                }
-              />
               <Route path="/rutas" element={<RoutesPage />} />
               <Route
                 path="/rutas/planificacion"
@@ -262,9 +278,25 @@ function App() {
                       'admin',
                       'operador',
                       'planificador',
+                      'supervisor',
                     ]}
                   >
                     <RouteMonitoring />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/rutas/comparacion/:assignmentId"
+                element={
+                  <ProtectedRoute
+                    roles={[
+                      'superusuario',
+                      'admin',
+                      'supervisor',
+                      'planificador',
+                    ]}
+                  >
+                    <RouteComparison />
                   </ProtectedRoute>
                 }
               />

@@ -4,7 +4,7 @@ import { Navigate } from 'react-router-dom';
 /**
  * Componente simple para proteger rutas por rol.
  * Lee el usuario actual desde localStorage (compat con mock y real).
- * Si no cumple, redirige a /dashboard.
+ * Si no cumple, redirige según el rol del usuario.
  */
 export default function ProtectedRoute({ roles = [], children }) {
   const userStr =
@@ -23,7 +23,19 @@ export default function ProtectedRoute({ roles = [], children }) {
 
   const allowed = role && (roles.length === 0 || roles.includes(role));
   if (!allowed) {
-    return <Navigate to="/dashboard" replace />;
+    // Redirigir según el rol del usuario
+    const redirectMap = {
+      rrhh: '/rrhh/dashboard',
+      operador: '/operador/dashboard',
+      supervisor: '/rutas/monitoreo',
+      conductor: '/conductor/mis-rutas',
+      planificador: '/rutas/planificacion',
+      admin: '/dashboard',
+      superusuario: '/dashboard',
+    };
+
+    const redirectTo = role ? redirectMap[role] || '/dashboard' : '/dashboard';
+    return <Navigate to={redirectTo} replace />;
   }
 
   return children;
