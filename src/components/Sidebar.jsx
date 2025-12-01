@@ -121,6 +121,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       roles: ['superusuario', 'admin', 'operador'],
     },
     {
+      title: 'Geocercas',
+      path: '/geocercas',
+      icon: MapPin,
+      description: 'Configurar y auditar geocercas',
+      roles: ['superusuario', 'admin', 'supervisor', 'operador'],
+    },
+    {
       title: 'Mis Rutas',
       path: '/conductor/mis-rutas',
       icon: Navigation,
@@ -168,7 +175,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       description: 'Incidentes y emergencias',
       badge: '2',
       badgeColor: 'bg-red-500',
-      roles: ['superusuario', 'admin', 'operador', 'rrhh'],
+      roles: ['superusuario', 'admin', 'operador', 'rrhh', 'supervisor'],
     },
     {
       title: 'Config. Alertas',

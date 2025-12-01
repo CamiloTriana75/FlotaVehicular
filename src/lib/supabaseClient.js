@@ -12,13 +12,12 @@ import { createClient } from '@supabase/supabase-js';
 // =====================================================
 
 const supabaseUrl =
-  import.meta.env.VITE_SUPABASE_URL || 'https://mock.supabase.co';
+  import.meta.env.VITE_SUPABASE_URL ||
+  'https://nqsfitpsygpwfglchihl.supabase.co';
 const supabaseAnonKey =
-  import.meta.env.VITE_SUPABASE_ANON_KEY || 'mock-anon-key';
-const isMockMode =
-  import.meta.env.VITE_MOCK_MODE === 'true' ||
-  !import.meta.env.VITE_SUPABASE_URL ||
-  import.meta.env.VITE_SUPABASE_URL === 'https://mock.supabase.co';
+  import.meta.env.VITE_SUPABASE_ANON_KEY ||
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xc2ZpdHBzeWdwd2ZnbGNoaWhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4OTc4MzAsImV4cCI6MjA3NTQ3MzgzMH0.irv8AM9lW6-pf2f0D0qmLoYH-FbHrtaml9H9qWEYfi0';
+const isMockMode = import.meta.env.VITE_MOCK_MODE === 'true';
 
 // =====================================================
 // CLIENTE SUPABASE
@@ -47,26 +46,23 @@ export const isInMockMode = () => isMockMode;
  * @returns {Promise<{connected: boolean, message: string}>}
  */
 export const checkConnection = async () => {
-  // Realiza una consulta HEAD (sin traer filas) para validar accesibilidad a una tabla base.
-  // Usamos 'conductor' porque existe en el esquema legacy que decidiste mantener.
-  // Si en algún entorno aún no existe, capturamos el error y lo reportamos.
+  // Intento rápido contra una tabla estable del nuevo esquema: 'vehicles'
+  // Usamos head + count para minimizar carga.
   try {
     const { error } = await supabase
-      .from('conductor')
-      .select('id_conductor', { count: 'exact', head: true })
+      .from('vehicles')
+      .select('id', { count: 'exact', head: true })
       .limit(1);
-
     if (error) throw error;
-
     return {
       connected: true,
-      message: 'Conexión exitosa con Supabase (tabla conductor accesible)',
+      message: 'Conexión exitosa con Supabase (tabla vehicles accesible)',
       mode: 'real',
     };
-  } catch (error) {
+  } catch (err) {
     return {
       connected: false,
-      message: `Fallo al consultar Supabase: ${error.message}`,
+      message: `Fallo al consultar Supabase: ${err.message}`,
       mode: isMockMode ? 'mock' : 'error',
     };
   }
