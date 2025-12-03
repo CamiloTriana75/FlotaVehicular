@@ -1,0 +1,13 @@
+# Eliminado a petición: este workflow automatizaba mover issues a "In Review" al abrir PR.
+name: DISABLED - Auto Move to In Review (removed)
+
+on:
+  push:
+    branches-ignore:
+      - '**'
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Workflow deshabilitado"

@@ -146,10 +146,10 @@ INSERT INTO vehicles (placa, modelo, año, marca, color, status) VALUES
 ('GHI-789', 'Toyota Corolla', 2023, 'Toyota', 'Negro', 'activo')
 ON CONFLICT (placa) DO NOTHING;
 
-INSERT INTO drivers (cedula, nombre, apellidos, telefono, email, estado) VALUES
-('12345678', 'Carlos', 'Mendoza', '3001234567', 'carlos@email.com', 'activo'),
-('87654321', 'María', 'García', '3109876543', 'maria@email.com', 'disponible'),
-('11223344', 'Luis', 'Rodríguez', '3201122334', 'luis@email.com', 'activo')
+INSERT INTO drivers (cedula, nombre, apellidos, telefono, email, numero_licencia, estado) VALUES
+('12345678', 'Carlos', 'Mendoza', '3001234567', 'carlos@email.com', '123456789', 'activo'),
+('87654321', 'María', 'García', '3109876543', 'maria@email.com', '987654321', 'disponible'),
+('11223344', 'Luis', 'Rodríguez', '3201122334', 'luis@email.com', '555555555', 'activo')
 ON CONFLICT (cedula) DO NOTHING;
 
 -- Comentarios finales

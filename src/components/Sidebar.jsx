@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -13,17 +13,61 @@ import {
   Route,
   Shield,
   X,
+  Activity,
+  Briefcase,
+  Calendar,
+  Navigation,
 } from 'lucide-react';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
+  const [currentUser, setCurrentUser] = useState(null);
 
-  const menuItems = [
+  // Cargar usuario actual
+  useEffect(() => {
+    const userStr =
+      localStorage.getItem('currentUser') || localStorage.getItem('mockUser');
+    if (userStr) {
+      try {
+        setCurrentUser(JSON.parse(userStr));
+      } catch (err) {
+        console.error('Error al parsear usuario:', err);
+      }
+    }
+  }, []);
+
+  // Obtener rol del usuario
+  const getUserRole = () => {
+    if (!currentUser) return null;
+    return (
+      currentUser.rol || currentUser.user_metadata?.role || currentUser.role
+    );
+  };
+
+  const userRole = getUserRole();
+
+  // Configuración de menús por rol
+  const allMenuItems = [
     {
-      title: 'Dashboard',
+      title: 'Dashboard General',
       path: '/dashboard',
       icon: LayoutDashboard,
       description: 'Vista general del sistema',
+      roles: ['superusuario', 'admin'], // Solo admin y superusuario
+    },
+    {
+      title: 'Panel Operador',
+      path: '/operador/dashboard',
+      icon: Activity,
+      description: 'Monitoreo de Flota',
+      roles: ['operador'], // Solo para operador
+    },
+    {
+      title: 'Dashboard RRHH',
+      path: '/rrhh/dashboard',
+      icon: Briefcase,
+      description: 'Panel de Recursos Humanos',
+      roles: ['rrhh'], // Solo para RRHH
     },
     {
       title: 'Vehículos',
@@ -31,12 +75,42 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Truck,
       description: 'Gestión de flota vehicular',
       badge: '5',
+      roles: ['superusuario', 'admin'],
     },
     {
       title: 'Conductores',
       path: '/conductores',
       icon: Users,
       description: 'Gestión de personal',
+      roles: ['superusuario', 'admin', 'rrhh'],
+    },
+    {
+      title: 'Nuevo Conductor',
+      path: '/conductores/nuevo',
+      icon: Users,
+      description: 'Crear conductor (RRHH / Superusuario)',
+      roles: ['superusuario', 'admin', 'rrhh'],
+    },
+    {
+      title: 'Asignaciones',
+      path: '/asignaciones',
+      icon: Calendar,
+      description: 'Vehículos a conductores',
+      roles: ['superusuario', 'admin', 'supervisor'],
+    },
+    {
+      title: 'Incidentes',
+      path: '/incidentes',
+      icon: AlertTriangle,
+      description: 'Historial y gestión de incidentes',
+      roles: ['superusuario', 'admin', 'supervisor'],
+    },
+    {
+      title: 'Desempeño',
+      path: '/desempeno',
+      icon: BarChart3,
+      description: 'KPIs por conductor',
+      roles: ['superusuario', 'admin', 'supervisor'],
     },
     {
       title: 'Monitoreo',
@@ -44,24 +118,55 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: MapPin,
       description: 'Tracking en tiempo real',
       badge: '3',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
-      title: 'Rutas',
-      path: '/rutas',
+      title: 'Geocercas',
+      path: '/geocercas',
+      icon: MapPin,
+      description: 'Configurar y auditar geocercas',
+      roles: ['superusuario', 'admin', 'supervisor', 'operador'],
+    },
+    {
+      title: 'Mis Rutas',
+      path: '/conductor/mis-rutas',
+      icon: Navigation,
+      description: 'Rutas asignadas (conductor)',
+      roles: ['conductor'],
+    },
+    {
+      title: 'Planificación Rutas',
+      path: '/rutas/planificacion',
+      icon: Navigation,
+      description: 'Crear y asignar rutas optimizadas',
+      roles: ['planificador'],
+    },
+    {
+      title: 'Monitoreo Rutas',
+      path: '/rutas/monitoreo',
       icon: Route,
-      description: 'Planificación de rutas',
+      description: 'Seguimiento de rutas en progreso',
+      roles: [
+        'superusuario',
+        'admin',
+        'operador',
+        'planificador',
+        'supervisor',
+      ],
     },
     {
       title: 'Combustible',
       path: '/combustible',
       icon: Fuel,
       description: 'Control de combustible',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
       title: 'Mantenimiento',
       path: '/mantenimiento',
       icon: Wrench,
       description: 'Mantenimiento predictivo',
+      roles: ['superusuario', 'admin', 'operador'],
     },
     {
       title: 'Alertas',
@@ -70,26 +175,59 @@ const Sidebar = ({ isOpen, onClose }) => {
       description: 'Incidentes y emergencias',
       badge: '2',
       badgeColor: 'bg-red-500',
+      roles: ['superusuario', 'admin', 'operador', 'rrhh', 'supervisor'],
+    },
+    {
+      title: 'Config. Alertas',
+      path: '/alertas/configuracion',
+      icon: Settings,
+      description: 'Configurar umbrales',
+      roles: ['superusuario', 'admin'],
     },
     {
       title: 'Reportes',
       path: '/reportes',
       icon: BarChart3,
       description: 'Analytics y reportes',
+      roles: ['superusuario', 'admin', 'rrhh'],
     },
     {
       title: 'Seguridad',
       path: '/seguridad',
       icon: Shield,
       description: 'Roles y permisos',
+      roles: ['superusuario', 'admin'],
+    },
+    {
+      title: 'Usuarios',
+      path: '/usuarios',
+      icon: Users,
+      description: 'Gestión de usuarios',
+      roles: ['superusuario', 'admin'],
     },
     {
       title: 'Configuración',
       path: '/configuracion',
       icon: Settings,
       description: 'Configuración del sistema',
+      roles: ['superusuario', 'admin', 'rrhh', 'operador'],
+    },
+    {
+      title: 'Estado BD',
+      path: '/health',
+      icon: Activity,
+      description: 'Verificar conexión',
+      badgeColor: 'bg-green-100 text-green-800',
+      roles: ['superusuario', 'admin'],
     },
   ];
+
+  // Filtrar menús según el rol del usuario
+  const menuItems = userRole
+    ? allMenuItems.filter(
+        (item) => !item.roles || item.roles.includes(userRole)
+      )
+    : allMenuItems;
 
   const isActive = (path) => {
     return (
@@ -104,6 +242,8 @@ const Sidebar = ({ isOpen, onClose }) => {
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
           onClick={onClose}
+          role="button"
+          aria-label="Cerrar menú"
         />
       )}
 
@@ -129,6 +269,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           <button
             onClick={onClose}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Cerrar menú"
           >
             <X className="w-5 h-5 text-gray-500" />
           </button>

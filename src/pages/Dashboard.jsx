@@ -1,6 +1,7 @@
 import React from 'react';
-import { mockVehicles, mockDrivers } from '../data/mockVehicles';
+import { mockVehicles, mockDrivers } from '../data/mockVehicles'; // TODO: Reemplazar datos mock por fuente real cuando esté disponible
 import Card from '../components/Card';
+import { Link } from 'react-router-dom';
 import MapViewer from '../components/MapViewer';
 import {
   Truck,
@@ -140,6 +141,8 @@ const Dashboard = () => {
     }
   };
 
+  const [loading] = React.useState(false);
+
   return (
     <div className="space-y-8">
       {/* Header */}
@@ -167,6 +170,7 @@ const Dashboard = () => {
           <Card
             key={index}
             className="p-6 hover:shadow-lg transition-shadow duration-200"
+            aria-label={`KPI ${kpi.title}`}
           >
             <div className="flex items-center justify-between mb-4">
               <div className={`p-3 rounded-xl bg-gradient-to-br ${kpi.color}`}>
@@ -210,6 +214,22 @@ const Dashboard = () => {
                   }}
                 />
               </div>
+              <div className="mt-3 text-right">
+                <Link
+                  to={
+                    kpi.title === 'Vehículos Activos'
+                      ? '/vehiculos'
+                      : kpi.title === 'Conductores Activos'
+                        ? '/conductores'
+                        : kpi.title === 'En Mantenimiento'
+                          ? '/mantenimiento'
+                          : '/reportes'
+                  }
+                  className="text-sm text-blue-600 hover:underline"
+                >
+                  Ver detalle
+                </Link>
+              </div>
             </div>
           </Card>
         ))}
@@ -249,7 +269,12 @@ const Dashboard = () => {
                   />
                   <div>
                     <p className="font-medium text-gray-900">
-                      {vehiculo.placa}
+                      <Link
+                        to={`/vehiculos/${vehiculo.id}`}
+                        className="text-blue-600 hover:underline"
+                      >
+                        {vehiculo.placa}
+                      </Link>
                     </p>
                     <p className="text-sm text-gray-600">{vehiculo.modelo}</p>
                     <p className="text-xs text-gray-500">
@@ -325,11 +350,18 @@ const Dashboard = () => {
           </div>
 
           <div className="h-80 rounded-xl overflow-hidden">
-            <MapViewer
-              vehicles={mockVehicles}
-              center={[4.711, -74.0721]}
-              zoom={11}
-            />
+            {loading ? (
+              <div
+                className="w-full h-full animate-pulse bg-gray-100"
+                aria-busy="true"
+              />
+            ) : (
+              <MapViewer
+                vehicles={mockVehicles}
+                center={[4.711, -74.0721]}
+                zoom={11}
+              />
+            )}
           </div>
         </Card>
       </div>
@@ -377,6 +409,26 @@ const Dashboard = () => {
               <p className="text-xs text-green-600">Sin incidentes</p>
             </div>
           </div>
+        </Card>
+      </div>
+
+      {/* Acceso rápido a gestión de usuarios */}
+      <div className="grid grid-cols-1">
+        <Card className="p-6 flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">
+              Gestión de Usuarios
+            </h2>
+            <p className="text-gray-600 mt-1">
+              Administra usuarios y roles del sistema.
+            </p>
+          </div>
+          <Link
+            to="/usuarios"
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+          >
+            Ir a Usuarios
+          </Link>
         </Card>
       </div>
     </div>

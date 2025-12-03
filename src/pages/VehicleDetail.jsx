@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { mockVehicles } from '../data/mockVehicles';
 import Card from '../components/Card';
 import MapViewer from '../components/MapViewer';
 import VehicleForm from '../components/VehicleForm';
+import { useAuth } from '../hooks/useAuth';
+import {
+  addStatusChange,
+  loadStatusHistory,
+  downloadCSV,
+} from '../shared/utils/statusHistory';
+import { exportStatusHistoryToPDF } from '../shared/utils/pdfExport';
 import {
   ArrowLeft,
   MapPin,
@@ -14,14 +21,23 @@ import {
   Edit,
   Save,
   X,
+  Download,
 } from 'lucide-react';
 
 const VehicleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user, isAuthenticated } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [vehicleData, setVehicleData] = useState(
     mockVehicles.find((v) => v.id === parseInt(id))
+  );
+  const [statusDraft, setStatusDraft] = useState(null);
+  const [statusHistory, setStatusHistory] = useState([]);
+
+  const isAdmin = useMemo(
+    () => (user?.role || '').toLowerCase() === 'admin',
+    [user]
   );
 
   if (!vehicleData) {
@@ -43,32 +59,25 @@ const VehicleDetail = () => {
     setIsEditing(false);
   };
 
-  const historialActividad = [
-    {
-      fecha: '2024-01-15 10:30',
-      evento: 'Inicio de ruta',
-      ubicacion: 'Base Central',
-    },
-    {
-      fecha: '2024-01-15 09:15',
-      evento: 'Carga de combustible',
-      ubicacion: 'Estación Shell Zona Rosa',
-    },
-    {
-      fecha: '2024-01-15 08:00',
-      evento: 'Inspección pre-operacional',
-      ubicacion: 'Base Central',
-    },
-    {
-      fecha: '2024-01-14 17:30',
-      evento: 'Fin de jornada',
-      ubicacion: 'Base Central',
-    },
-    {
-      fecha: '2024-01-14 16:45',
-      evento: 'Entrega completada',
-      ubicacion: 'Cliente Zona Norte',
-    },
+  useEffect(() => {
+    if (vehicleData?.id) {
+      setStatusHistory(loadStatusHistory(vehicleData.id));
+      setStatusDraft(vehicleData.status);
+    }
+  }, [vehicleData?.id]);
+
+  const handleChangeStatus = () => {
+    if (!isAuthenticated || !isAdmin) return;
+    if (!statusDraft || statusDraft === vehicleData.status) return;
+    const { vehicle, entry } = addStatusChange(vehicleData, statusDraft, user);
+    setVehicleData(vehicle);
+    setStatusHistory((prev) => [entry, ...prev]);
+  };
+
+  const STATUS_OPTIONS = [
+    { value: 'activo', label: 'Activo' },
+    { value: 'mantenimiento', label: 'En mantenimiento' },
+    { value: 'fuera_servicio', label: 'Fuera de servicio' },
   ];
 
   return (
@@ -191,17 +200,43 @@ const VehicleDetail = () => {
                 <div className="pt-4 border-t">
                   <div className="flex justify-between mb-2">
                     <span className="text-sm text-gray-600">Estado</span>
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${
-                        vehicleData.status === 'activo'
-                          ? 'bg-green-100 text-green-800'
-                          : vehicleData.status === 'estacionado'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {vehicleData.status}
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${
+                          vehicleData.status === 'activo'
+                            ? 'bg-green-100 text-green-800'
+                            : vehicleData.status === 'mantenimiento'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-red-100 text-red-800'
+                        }`}
+                      >
+                        {vehicleData.status}
+                      </span>
+                      {isAuthenticated && isAdmin && (
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={statusDraft || ''}
+                            onChange={(e) => setStatusDraft(e.target.value)}
+                            className="text-xs border border-gray-300 rounded px-2 py-1"
+                          >
+                            {STATUS_OPTIONS.map((opt) => (
+                              <option key={opt.value} value={opt.value}>
+                                {opt.label}
+                              </option>
+                            ))}
+                          </select>
+                          <button
+                            onClick={handleChangeStatus}
+                            disabled={
+                              !statusDraft || statusDraft === vehicleData.status
+                            }
+                            className="flex items-center px-2 py-1 text-xs bg-blue-600 disabled:bg-gray-300 text-white rounded"
+                          >
+                            <Save className="h-3 w-3 mr-1" /> Guardar
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-gray-600">Kilometraje</span>
@@ -214,23 +249,47 @@ const VehicleDetail = () => {
             )}
           </Card>
 
-          {/* Historial de Actividad */}
+          {/* Historial de Estados */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold mb-4">
-              Historial de Actividad
-            </h2>
-            <div className="space-y-3">
-              {historialActividad.map((item, index) => (
-                <div
-                  key={index}
-                  className="border-l-2 border-blue-200 pl-4 pb-3"
+            <div className="flex items-center justify-between mb-4 gap-2 flex-wrap">
+              <h2 className="text-xl font-semibold">Historial de Estados</h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => downloadCSV(statusHistory)}
+                  className="flex items-center px-3 py-1 text-sm bg-emerald-600 text-white rounded hover:bg-emerald-700"
                 >
-                  <p className="font-medium text-sm">{item.evento}</p>
-                  <p className="text-xs text-gray-600">{item.fecha}</p>
-                  <p className="text-xs text-gray-500">{item.ubicacion}</p>
-                </div>
-              ))}
+                  <Download className="h-4 w-4 mr-2" /> Exportar CSV
+                </button>
+                <button
+                  onClick={() => exportStatusHistoryToPDF(statusHistory)}
+                  className="flex items-center px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                >
+                  <Download className="h-4 w-4 mr-2" /> Exportar PDF
+                </button>
+              </div>
             </div>
+            {statusHistory.length === 0 ? (
+              <p className="text-sm text-gray-500">
+                Sin cambios de estado registrados.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {statusHistory.map((h) => (
+                  <div
+                    key={h.id}
+                    className="border-l-2 border-blue-200 pl-4 pb-3"
+                  >
+                    <p className="font-medium text-sm">
+                      {h.oldStatus} → {h.newStatus}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {new Date(h.timestamp).toLocaleString('es-CO')} ·{' '}
+                      {h.userEmail}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            )}
           </Card>
         </div>
 

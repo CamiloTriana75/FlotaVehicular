@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
@@ -40,10 +40,90 @@ const createCustomIcon = (status) => {
   });
 };
 
+const RecenterButton = ({ center }) => {
+  const map = useMap();
+  return (
+    <button
+      aria-label="Centrar mapa"
+      onClick={() => map.setView(center, map.getZoom())}
+      style={{
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        zIndex: 1000,
+        background: 'white',
+        border: '1px solid #e5e7eb',
+        borderRadius: 8,
+        padding: '6px 10px',
+        boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+      }}
+    >
+      Centrar
+    </button>
+  );
+};
+
+const Legend = () => (
+  <div
+    aria-label="Leyenda de estados"
+    style={{
+      position: 'absolute',
+      bottom: 10,
+      right: 10,
+      zIndex: 1000,
+      background: 'white',
+      border: '1px solid #e5e7eb',
+      borderRadius: 8,
+      padding: 10,
+      fontSize: 12,
+      boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
+    }}
+  >
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          background: '#10b981',
+          borderRadius: '50%',
+          marginRight: 6,
+        }}
+      />{' '}
+      Activo
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          background: '#f59e0b',
+          borderRadius: '50%',
+          marginRight: 6,
+        }}
+      />{' '}
+      Estacionado
+    </div>
+    <div style={{ display: 'flex', alignItems: 'center' }}>
+      <span
+        style={{
+          width: 10,
+          height: 10,
+          background: '#ef4444',
+          borderRadius: '50%',
+          marginRight: 6,
+        }}
+      />{' '}
+      Mantenimiento
+    </div>
+  </div>
+);
+
 const MapViewer = ({
   vehicles = [],
   center = [4.711, -74.0721],
   zoom = 11,
+  tileUrl: tileUrlProp,
+  tileAttribution: tileAttributionProp,
 }) => {
   const getDirectionText = (heading) => {
     const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
@@ -51,16 +131,42 @@ const MapViewer = ({
     return directions[index];
   };
 
+  // Soporte opcional para Mapbox vía variables de entorno, con fallback a OSM
+  const mapboxToken = import.meta.env.VITE_MAPBOX_TOKEN;
+  const mapboxStyleId = import.meta.env.VITE_MAPBOX_STYLE_ID; // e.g., mapbox/streets-v12
+  const envTileUrl = import.meta.env.VITE_MAP_TILES_URL;
+  const envTileAttr = import.meta.env.VITE_MAP_TILES_ATTRIBUTION;
+
+  let computedTileUrl = 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  let computedAttribution =
+    '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+
+  if (tileUrlProp) {
+    computedTileUrl = tileUrlProp;
+  } else if (envTileUrl) {
+    computedTileUrl = envTileUrl;
+  } else if (mapboxToken && mapboxStyleId) {
+    // Raster tiles desde Mapbox Styles API (512px con zoomOffset -1 para simular 256px)
+    computedTileUrl = `https://api.mapbox.com/styles/v1/${mapboxStyleId}/tiles/512/{z}/{x}/{y}@2x?access_token=${mapboxToken}`;
+    computedAttribution =
+      '© <a href="https://www.mapbox.com/about/maps/">Mapbox</a> © <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+  }
+
+  if (tileAttributionProp) {
+    computedAttribution = tileAttributionProp;
+  } else if (envTileAttr) {
+    computedAttribution = envTileAttr;
+  }
+
   return (
     <MapContainer
       center={center}
       zoom={zoom}
       style={{ height: '100%', width: '100%', borderRadius: '8px' }}
     >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+      <TileLayer attribution={computedAttribution} url={computedTileUrl} />
+      <RecenterButton center={center} />
+      <Legend />
 
       {vehicles.map((vehicle) => (
         <Marker

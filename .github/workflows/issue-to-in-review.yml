@@ -1,0 +1,14 @@
+name: DISABLED - Mover issues a "In review" (removed)
+
+on:
+  push:
+    branches-ignore:
+      - '**'
+
+jobs:
+  noop:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "Workflow deshabilitado"
+
+

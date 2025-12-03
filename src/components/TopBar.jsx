@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Menu,
   Bell,
@@ -13,6 +13,21 @@ import {
 
 const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Cargar usuario actual desde localStorage
+  useEffect(() => {
+    const userStr =
+      localStorage.getItem('currentUser') || localStorage.getItem('mockUser');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setCurrentUser(user);
+      } catch (err) {
+        console.error('Error al parsear usuario:', err);
+      }
+    }
+  }, []);
   const [notifications] = useState([
     {
       id: 1,
@@ -39,6 +54,39 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
     minute: '2-digit',
   });
 
+  // Obtener nombre para mostrar y rol
+  const getUserDisplayName = () => {
+    if (!currentUser) return 'Usuario';
+    return (
+      currentUser.username ||
+      currentUser.user_metadata?.full_name ||
+      currentUser.email?.split('@')[0] ||
+      'Usuario'
+    );
+  };
+
+  const getUserRole = () => {
+    if (!currentUser) return 'Usuario';
+    const rol =
+      currentUser.rol || currentUser.user_metadata?.role || currentUser.role;
+
+    // Mapear roles a nombres legibles
+    const roleMap = {
+      superusuario: 'Superusuario',
+      admin: 'Administrador',
+      rrhh: 'Recursos Humanos',
+      operador: 'Operador',
+      conductor: 'Conductor',
+    };
+
+    return roleMap[rol] || rol || 'Usuario';
+  };
+
+  const getUserEmail = () => {
+    if (!currentUser) return '';
+    return currentUser.email || 'sin-email@sistema.com';
+  };
+
   return (
     <header className="bg-white shadow-sm border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -47,6 +95,7 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
           <button
             onClick={onMenuClick}
             className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            aria-label="Abrir menú lateral"
           >
             <Menu className="w-6 h-6 text-gray-600" />
           </button>
@@ -65,6 +114,7 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
               type="text"
               placeholder="Buscar vehículos, conductores, rutas..."
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              aria-label="Buscar"
             />
           </div>
         </div>
@@ -74,14 +124,20 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
           {/* Connection Status */}
           <div className="flex items-center space-x-2">
             {isMockMode ? (
-              <div className="flex items-center space-x-1 text-orange-600">
+              <div
+                className="flex items-center space-x-1 text-yellow-600"
+                title="Sin conexión a backend real"
+              >
                 <WifiOff className="w-4 h-4" />
-                <span className="text-sm font-medium">Modo Demo</span>
+                <span className="text-sm font-medium">Offline</span>
               </div>
             ) : (
-              <div className="flex items-center space-x-1 text-green-600">
+              <div
+                className="flex items-center space-x-1 text-green-600"
+                title="Conectado a base de datos"
+              >
                 <Wifi className="w-4 h-4" />
-                <span className="text-sm font-medium">Conectado</span>
+                <span className="text-sm font-medium">Online</span>
               </div>
             )}
           </div>
@@ -93,7 +149,10 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
 
           {/* Notifications */}
           <div className="relative">
-            <button className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative">
+            <button
+              className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
+              aria-label="Notificaciones"
+            >
               <Bell className="w-6 h-6 text-gray-600" />
               {notifications.length > 0 && (
                 <span className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
@@ -108,15 +167,17 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
               className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              aria-haspopup="menu"
+              aria-expanded={showUserMenu}
             >
               <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
                 <User className="w-4 h-4 text-white" />
               </div>
               <div className="hidden sm:block text-left">
                 <p className="text-sm font-medium text-gray-900">
-                  Admin Usuario
+                  {getUserDisplayName()}
                 </p>
-                <p className="text-xs text-gray-500">Administrador</p>
+                <p className="text-xs text-gray-500">{getUserRole()}</p>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-500" />
             </button>
@@ -125,11 +186,9 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
               <div className="absolute right-0 mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
                 <div className="px-4 py-3 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900">
-                    Admin Usuario
+                    {getUserDisplayName()}
                   </p>
-                  <p className="text-xs text-gray-500">
-                    admin@fleetmanager.com
-                  </p>
+                  <p className="text-xs text-gray-500">{getUserEmail()}</p>
                 </div>
 
                 <div className="py-2">

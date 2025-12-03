@@ -5,6 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:https": "vite --https",
+    "dev:lan": "vite --host 0.0.0.0 --port 5173",
+    "dev:lan:https": "vite --https --host 0.0.0.0 --port 5173",
+    "tunnel": "lt --port 5173 --local-host 0.0.0.0",
+    "tunnel:ngrok": "ngrok http --host-header=localhost 5173",
+    "tunnel:cloudflare": "cloudflared tunnel --url http://localhost:5173",
     "build": "vite build",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
@@ -23,12 +29,16 @@
     "db:types": "supabase gen types typescript --local > src/types/database.ts",
     "prepare": "husky install",
     "commit": "git-cz",
-    "release": "standard-version"
+    "release": "standard-version",
+    "simulate:tracking": "node scripts/simulate-tracking.js ABC-123"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
+    "jspdf": "^3.0.3",
+    "jspdf-autotable": "^5.0.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^0.344.0",
+    "mapbox-gl": "^3.16.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "react-leaflet": "^4.2.1",
@@ -55,6 +65,8 @@
     "husky": "^9.0.11",
     "jsdom": "^25.0.1",
     "lint-staged": "^15.2.7",
+    "localtunnel": "^2.0.2",
+    "ngrok": "^5.0.0-beta.2",
     "postcss": "^8.4.35",
     "prettier": "^3.3.3",
     "standard-version": "^9.5.0",
@@ -63,6 +75,7 @@
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.3.0",
     "vite": "^5.4.2",
+    "vite-plugin-mkcert": "^1.17.9",
     "vitest": "^2.1.2"
   },
   "config": {
