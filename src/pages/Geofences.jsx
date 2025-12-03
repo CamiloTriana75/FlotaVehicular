@@ -12,9 +12,12 @@ export default function Geofences() {
   const load = async () => {
     setLoading(true);
     try {
+      console.log('🔍 Cargando geocercas...');
       const data = await geofenceService.list();
+      console.log('✅ Geocercas cargadas:', data);
       setItems(data);
     } catch (e) {
+      console.error('❌ Error al cargar geocercas:', e);
       setError(e.message || 'Error al cargar');
     } finally {
       setLoading(false);
