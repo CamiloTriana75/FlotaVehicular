@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import MapGeofencePicker from './MapGeofencePicker';
+import React, { Suspense, useState } from 'react';
+const MapGeofencePicker = React.lazy(() => import('./MapGeofencePicker'));
 
 export default function GeofenceFormModal({ onClose, onSave }) {
   const [tipo, setTipo] = useState('circle');
@@ -108,12 +108,20 @@ export default function GeofenceFormModal({ onClose, onSave }) {
                 </div>
               </div>
             )}
-            <MapGeofencePicker
-              tipo={tipo}
-              radius={radio}
-              onRadiusChange={setRadio}
-              onGeometryChange={setSelectedGeometry}
-            />
+            <Suspense
+              fallback={
+                <div className="w-full h-80 border rounded flex items-center justify-center text-sm text-gray-600">
+                  Cargando mapa…
+                </div>
+              }
+            >
+              <MapGeofencePicker
+                tipo={tipo}
+                radius={radio}
+                onRadiusChange={setRadio}
+                onGeometryChange={setSelectedGeometry}
+              />
+            </Suspense>
           </div>
           {error && <p className="text-sm text-red-600">{error}</p>}
           <div className="flex justify-end gap-2 pt-2">
