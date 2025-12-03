@@ -4,6 +4,7 @@ import GeofenceFormModal from '../components/GeofenceFormModal';
 import { Plus, MapPin, Trash2, TestTube2 } from 'lucide-react';
 
 export default function Geofences() {
+  console.log('🚀 Geofences component mounting...');
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');

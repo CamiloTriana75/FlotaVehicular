@@ -7,10 +7,10 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 // deno-lint-ignore no-explicit-any
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 declare const Deno: any;
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
-import booleanPointInPolygon from 'https://esm.sh/@turf/boolean-point-in-polygon@7';
-import distance from 'https://esm.sh/@turf/distance@7';
-import { point } from 'https://esm.sh/@turf/helpers@7';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2?dts';
+import booleanPointInPolygon from 'https://esm.sh/@turf/boolean-point-in-polygon@7?dts';
+import distance from 'https://esm.sh/@turf/distance@7?dts';
+import { point } from 'https://esm.sh/@turf/helpers@7?dts';
 
 const corsHeaders: HeadersInit = {
   'Access-Control-Allow-Origin': '*',
@@ -32,7 +32,11 @@ serve(async (req: Request) => {
     }
 
     const { vehicleId, position, at } = await req.json();
-    if (!vehicleId || !position?.lng || !position?.lat) {
+    if (
+      typeof vehicleId !== 'number' ||
+      typeof position?.lng !== 'number' ||
+      typeof position?.lat !== 'number'
+    ) {
       return new Response(
         JSON.stringify({ error: 'Missing vehicleId/position' }),
         {
@@ -76,6 +80,10 @@ serve(async (req: Request) => {
         const center =
           gf.geometry?.type === 'Feature' ? gf.geometry.geometry : gf.geometry;
         const coords = center?.coordinates as [number, number];
+        if (!Array.isArray(coords) || coords.length !== 2) {
+          // Coordenadas inválidas, saltar esta geocerca
+          continue;
+        }
         const dKm = distance(pt, point(coords), { units: 'kilometers' });
         inside = dKm * 1000 <= (gf.radio_m ?? 0);
       }
