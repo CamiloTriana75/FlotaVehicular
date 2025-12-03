@@ -42,8 +42,9 @@ export default function MapGeofencePicker({
   const markerRef = useRef(null);
   const [polygonCoords, setPolygonCoords] = useState([]);
   const [isClosed, setIsClosed] = useState(false);
+  const [mapError, setMapError] = useState('');
 
-  const token = import.meta.env.VITE_MAPBOX_TOKEN;
+  const token = (import.meta.env.VITE_MAPBOX_TOKEN || '').trim();
   useEffect(() => {
     if (!containerRef.current) return;
     if (!token) {
@@ -58,6 +59,16 @@ export default function MapGeofencePicker({
       zoom: initialZoom,
     });
     mapRef.current = map;
+
+    // Capturar errores de Mapbox (por ejemplo token inválido 401)
+    map.on('error', (e) => {
+      console.error('Mapbox error:', e);
+      const msg =
+        e?.error?.message ||
+        e?.message ||
+        'Error al cargar Mapbox. Verifica el token y permisos.';
+      setMapError(msg);
+    });
 
     map.on('load', () => {
       // Sources
@@ -214,6 +225,13 @@ export default function MapGeofencePicker({
       {!token && (
         <div className="p-2 text-sm text-yellow-800 bg-yellow-50 rounded">
           Falta configurar `VITE_MAPBOX_TOKEN` en tu entorno.
+        </div>
+      )}
+      {!!mapError && (
+        <div className="p-2 text-sm text-red-700 bg-red-50 rounded">
+          {mapError.includes('access token')
+            ? 'Token de Mapbox inválido o sin permisos para este dominio.'
+            : mapError}
         </div>
       )}
       <div
