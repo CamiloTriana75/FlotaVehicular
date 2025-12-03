@@ -28,7 +28,7 @@ import {
 } from '../services/routeService';
 import { locationService } from '../services/locationService';
 
-const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN;
+const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_TOKEN || '').trim();
 mapboxgl.accessToken = MAPBOX_TOKEN;
 
 const GEOFENCE_RADIUS = 40; // metros - radio para considerar llegada a waypoint

@@ -21,8 +21,12 @@ export default function ProtectedRoute({ roles = [], children }) {
     }
   }
 
+  console.log('🔒 ProtectedRoute check:', { role, allowedRoles: roles });
+
   const allowed = role && (roles.length === 0 || roles.includes(role));
+
   if (!allowed) {
+    console.warn('❌ Access denied. Role:', role, 'Required:', roles);
     // Redirigir según el rol del usuario
     const redirectMap = {
       rrhh: '/rrhh/dashboard',

@@ -4,6 +4,7 @@ import GeofenceFormModal from '../components/GeofenceFormModal';
 import { Plus, MapPin, Trash2, TestTube2 } from 'lucide-react';
 
 export default function Geofences() {
+  console.log('🚀 Geofences component mounting...');
   const [items, setItems] = useState([]);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState('');
@@ -12,9 +13,12 @@ export default function Geofences() {
   const load = async () => {
     setLoading(true);
     try {
+      console.log('🔍 Cargando geocercas...');
       const data = await geofenceService.list();
+      console.log('✅ Geocercas cargadas:', data);
       setItems(data);
     } catch (e) {
+      console.error('❌ Error al cargar geocercas:', e);
       setError(e.message || 'Error al cargar');
     } finally {
       setLoading(false);
