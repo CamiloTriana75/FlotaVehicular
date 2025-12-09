@@ -34,6 +34,7 @@ import MyRoutes from './pages/MyRoutes';
 import ConductorRouteView from './pages/ConductorRouteView';
 import RouteMonitoring from './pages/RouteMonitoring';
 import RouteComparison from './pages/RouteComparison';
+import Geofences from './pages/Geofences';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -297,6 +298,16 @@ function App() {
                     ]}
                   >
                     <RouteComparison />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/geocercas"
+                element={
+                  <ProtectedRoute
+                    roles={['superusuario', 'admin', 'operador', 'supervisor']}
+                  >
+                    <Geofences />
                   </ProtectedRoute>
                 }
               />
