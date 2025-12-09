@@ -190,7 +190,15 @@ function App() {
               />
               <Route path="/conductores/:id" element={<DriverDetail />} />
               <Route path="/asignaciones" element={<AssignmentsPage />} />
-              <Route path="/mantenimiento" element={<Maintenance />} />
+              {/* Ruta de mantenimiento - accesible para mecánicos */}
+              <Route
+                path="/mantenimiento"
+                element={
+                  <ProtectedRoute roles={['superusuario', 'admin', 'mecanico']}>
+                    <Maintenance />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/reportes" element={<Reports />} />
               <Route path="/configuracion" element={<Settings />} />
               <Route path="/alertas" element={<Alerts />} />

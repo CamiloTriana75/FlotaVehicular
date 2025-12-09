@@ -1,0 +1,72 @@
+export const mockMaintenanceOrders = [
+  {
+    id: 'mnt-001',
+    vehicleId: 1,
+    vehiclePlate: 'ABC-123',
+    title: 'Reparación sistema de frenos',
+    type: 'correctivo',
+    description:
+      'Cambio de pastillas, rectificación de discos y purga de frenos.',
+    status: 'in_progress',
+    scheduledDate: '2024-12-10',
+    actualDate: '2024-12-10',
+    odometer: 45250,
+    parts: [
+      {
+        id: 'p-1',
+        name: 'Pastillas delanteras',
+        quantity: 1,
+        unitCost: 180000,
+      },
+      { id: 'p-2', name: 'Líquido DOT4', quantity: 2, unitCost: 35000 },
+    ],
+    laborHours: 3,
+    laborRate: 75000,
+    otherCosts: 20000,
+    notes:
+      'Cliente reporta vibración leve. Revisar discos en próximo servicio.',
+    attachments: [
+      {
+        id: 'att-1',
+        name: 'Factura-1234.pdf',
+        type: 'application/pdf',
+        size: 128000,
+        url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+      },
+    ],
+    createdBy: { name: 'Mecánico Demo', role: 'mecanico' },
+    createdAt: '2024-12-10T09:00:00Z',
+  },
+  {
+    id: 'mnt-002',
+    vehicleId: 4,
+    vehiclePlate: 'JKL-012',
+    title: 'Mantenimiento preventivo trimestral',
+    type: 'preventivo',
+    description: 'Cambio de aceite, filtros y revisión general.',
+    status: 'completed',
+    scheduledDate: '2024-11-25',
+    actualDate: '2024-11-26',
+    odometer: 79010,
+    parts: [
+      { id: 'p-3', name: 'Aceite 5W30 (4L)', quantity: 1, unitCost: 140000 },
+      { id: 'p-4', name: 'Filtro de aceite', quantity: 1, unitCost: 45000 },
+      { id: 'p-5', name: 'Filtro de aire', quantity: 1, unitCost: 60000 },
+    ],
+    laborHours: 2,
+    laborRate: 65000,
+    otherCosts: 0,
+    notes: 'Se programa próximo servicio en 10.000 km.',
+    attachments: [
+      {
+        id: 'att-2',
+        name: 'Foto-factura.jpg',
+        type: 'image/jpeg',
+        size: 56000,
+        url: 'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=400&q=60',
+      },
+    ],
+    createdBy: { name: 'Mecánico Demo', role: 'mecanico' },
+    createdAt: '2024-11-26T15:30:00Z',
+  },
+];

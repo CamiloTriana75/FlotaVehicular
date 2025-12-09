@@ -5,6 +5,8 @@ import Card from '../components/Card';
 import MapViewer from '../components/MapViewer';
 import VehicleForm from '../components/VehicleForm';
 import { useAuth } from '../hooks/useAuth';
+import { useMaintenance } from '../hooks';
+import { downloadInvoice } from '../services/invoiceService';
 import {
   addStatusChange,
   loadStatusHistory,
@@ -22,12 +24,15 @@ import {
   Save,
   X,
   Download,
+  Wrench,
+  FileText,
 } from 'lucide-react';
 
 const VehicleDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuth();
+  const { getHistoryByVehicle, totalsByVehicle } = useMaintenance();
   const [isEditing, setIsEditing] = useState(false);
   const [vehicleData, setVehicleData] = useState(
     mockVehicles.find((v) => v.id === parseInt(id))
@@ -38,6 +43,17 @@ const VehicleDetail = () => {
   const isAdmin = useMemo(
     () => (user?.role || '').toLowerCase() === 'admin',
     [user]
+  );
+
+  // Obtener historial de mantenimiento
+  const maintenanceHistory = useMemo(
+    () => getHistoryByVehicle(vehicleData?.id),
+    [getHistoryByVehicle, vehicleData?.id]
+  );
+
+  const totalMaintenanceCost = useMemo(
+    () => totalsByVehicle[vehicleData?.id] || 0,
+    [totalsByVehicle, vehicleData?.id]
   );
 
   if (!vehicleData) {
@@ -288,6 +304,150 @@ const VehicleDetail = () => {
                     </p>
                   </div>
                 ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
+        {/* Historial de Mantenimiento */}
+        <div className="lg:col-span-3">
+          <Card className="p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-xl font-semibold flex items-center gap-2">
+                <Wrench className="w-5 h-5" />
+                Historial de Mantenimiento
+              </h2>
+              <div className="text-right">
+                <p className="text-sm text-gray-500">Costo Total Acumulado</p>
+                <p className="text-2xl font-bold text-blue-600">
+                  $
+                  {totalMaintenanceCost.toLocaleString('es-ES', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}
+                </p>
+              </div>
+            </div>
+
+            {maintenanceHistory.length > 0 ? (
+              <div className="space-y-4">
+                {maintenanceHistory.map((order) => (
+                  <div
+                    key={order.id}
+                    className="border rounded-lg p-4 hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 mb-2">
+                          <h3 className="font-semibold text-gray-900">
+                            {order.title}
+                          </h3>
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                              order.status === 'completada'
+                                ? 'bg-green-100 text-green-700'
+                                : order.status === 'en_proceso'
+                                  ? 'bg-yellow-100 text-yellow-700'
+                                  : order.status === 'programada'
+                                    ? 'bg-blue-100 text-blue-700'
+                                    : 'bg-gray-100 text-gray-700'
+                            }`}
+                          >
+                            {order.status}
+                          </span>
+                          <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                            {order.type}
+                          </span>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mb-2">
+                          {order.description}
+                        </p>
+
+                        <div className="flex flex-wrap gap-4 text-xs text-gray-500 mb-2">
+                          {order.scheduledDate && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Programado: {order.scheduledDate}
+                            </span>
+                          )}
+                          {order.executionDate && (
+                            <span className="flex items-center gap-1">
+                              <Calendar className="w-3 h-3" />
+                              Ejecutado: {order.executionDate}
+                            </span>
+                          )}
+                          {order.mileage && (
+                            <span className="flex items-center gap-1">
+                              <Gauge className="w-3 h-3" />
+                              {order.mileage.toLocaleString()} km
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Detalles de costos */}
+                        <div className="grid grid-cols-3 gap-2 text-xs">
+                          {order.parts && order.parts.length > 0 && (
+                            <div className="bg-blue-50 p-2 rounded">
+                              <p className="text-gray-600">Repuestos</p>
+                              <p className="font-semibold text-blue-700">
+                                $
+                                {order.parts
+                                  .reduce(
+                                    (sum, p) => sum + p.quantity * p.unitCost,
+                                    0
+                                  )
+                                  .toLocaleString('es-ES')}
+                              </p>
+                            </div>
+                          )}
+                          {order.laborHours > 0 && (
+                            <div className="bg-green-50 p-2 rounded">
+                              <p className="text-gray-600">Mano de Obra</p>
+                              <p className="font-semibold text-green-700">
+                                $
+                                {(
+                                  (order.laborHours || 0) *
+                                  (order.laborRate || 0)
+                                ).toLocaleString('es-ES')}
+                              </p>
+                            </div>
+                          )}
+                          {order.otherCosts > 0 && (
+                            <div className="bg-purple-50 p-2 rounded">
+                              <p className="text-gray-600">Otros</p>
+                              <p className="font-semibold text-purple-700">
+                                ${order.otherCosts.toLocaleString('es-ES')}
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="text-right ml-4">
+                        <p className="text-sm text-gray-500 mb-1">Total</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          $
+                          {(order.totalCost || 0).toLocaleString('es-ES', {
+                            minimumFractionDigits: 2,
+                          })}
+                        </p>
+                        <button
+                          onClick={() => downloadInvoice(order, vehicleData)}
+                          className="mt-2 px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center gap-1"
+                        >
+                          <Download className="w-3 h-3" />
+                          Factura
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <Wrench className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>No hay registros de mantenimiento para este vehículo</p>
               </div>
             )}
           </Card>

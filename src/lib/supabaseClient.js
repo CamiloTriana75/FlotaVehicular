@@ -19,6 +19,23 @@ const supabaseAnonKey =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5xc2ZpdHBzeWdwd2ZnbGNoaWhsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk4OTc4MzAsImV4cCI6MjA3NTQ3MzgzMH0.irv8AM9lW6-pf2f0D0qmLoYH-FbHrtaml9H9qWEYfi0';
 const isMockMode = import.meta.env.VITE_MOCK_MODE === 'true';
 
+const MOCK_USERS = [
+  {
+    id: 'mock-admin',
+    email: 'admin@flotavehicular.com',
+    password: 'Admin123!',
+    role: 'admin',
+    fullName: 'Administrador',
+  },
+  {
+    id: 'mock-mecanico',
+    email: 'mecanico@flotavehicular.com',
+    password: 'Mecanico123!',
+    role: 'mecanico',
+    fullName: 'Mecánico Demo',
+  },
+];
+
 // =====================================================
 // CLIENTE SUPABASE
 // =====================================================
@@ -206,24 +223,34 @@ export const mockAuth = {
   signIn: async (email, password) => {
     await new Promise((resolve) => setTimeout(resolve, 500));
 
-    if (email && password) {
-      const mockUser = {
-        id: 'mock-user-id',
-        email: email,
-        user_metadata: {
-          full_name: 'Usuario',
-        },
-        role: 'admin',
-      };
-      localStorage.setItem('mockUser', JSON.stringify(mockUser));
-      return {
-        data: { user: mockUser, session: { access_token: 'mock-token' } },
-        error: null,
-      };
+    const normalizedEmail = (email || '').toLowerCase();
+    const matchedUser = MOCK_USERS.find((u) => u.email === normalizedEmail);
+
+    if (matchedUser && matchedUser.password !== password) {
+      return { data: null, error: { message: 'Contraseña incorrecta' } };
     }
+
+    const userData = matchedUser || {
+      id: 'mock-user-id',
+      email,
+      role: 'admin',
+      fullName: email || 'Usuario',
+    };
+
+    const mockUser = {
+      id: userData.id,
+      email: userData.email,
+      role: userData.role,
+      user_metadata: {
+        full_name: userData.fullName,
+        role: userData.role,
+      },
+    };
+
+    localStorage.setItem('mockUser', JSON.stringify(mockUser));
     return {
-      data: null,
-      error: { message: 'Email y contraseña son requeridos' },
+      data: { user: mockUser, session: { access_token: 'mock-token' } },
+      error: null,
     };
   },
 
