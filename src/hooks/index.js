@@ -6,3 +6,4 @@
 export { useAuth } from './useAuth';
 export { useVehicles } from './useVehicles';
 export { useDrivers } from './useDrivers';
+export { useMaintenance } from './useMaintenance';

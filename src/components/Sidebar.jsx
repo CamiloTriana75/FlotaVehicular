@@ -166,7 +166,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/mantenimiento',
       icon: Wrench,
       description: 'Mantenimiento predictivo',
-      roles: ['superusuario', 'admin', 'operador'],
+      roles: ['superusuario', 'admin', 'operador', 'mecanico'],
     },
     {
       title: 'Alertas',

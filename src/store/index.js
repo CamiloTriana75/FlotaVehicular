@@ -13,6 +13,7 @@ export * from './types';
 export * from './actions/authActions';
 export * from './actions/vehicleActions';
 export * from './actions/driverActions';
+export * from './actions/maintenanceActions';
 
 // Reducers
 export { rootReducer, initialState } from './reducers';

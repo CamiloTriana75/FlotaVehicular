@@ -1,388 +1,785 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Card from '../components/Card';
+import { useMaintenance, useVehicles } from '../hooks';
+import { downloadInvoice, previewInvoice } from '../services/invoiceService';
 import {
-  Wrench,
   Calendar,
-  AlertTriangle,
+  Car,
   CheckCircle,
   Clock,
-  Plus,
+  DollarSign,
+  Download,
+  FileText,
   Filter,
+  Paperclip,
+  Plus,
+  Printer,
   Search,
-  Truck,
-  Settings,
+  Upload,
+  Wrench,
 } from 'lucide-react';
 
+const statusOptions = [
+  { id: 'all', label: 'Todos' },
+  { id: 'scheduled', label: 'Programados' },
+  { id: 'in_progress', label: 'En progreso' },
+  { id: 'completed', label: 'Completados' },
+];
+
+const typeOptions = [
+  { id: 'preventivo', label: 'Preventivo' },
+  { id: 'correctivo', label: 'Correctivo' },
+  { id: 'inspeccion', label: 'Inspección' },
+];
+
+const emptyForm = {
+  vehicleId: '',
+  vehiclePlate: '',
+  title: '',
+  type: 'preventivo',
+  description: '',
+  scheduledDate: '',
+  actualDate: '',
+  odometer: '',
+  laborHours: 0,
+  laborRate: 0,
+  otherCosts: 0,
+  status: 'scheduled',
+  notes: '',
+};
+
+const formatCurrency = (value = 0) =>
+  new Intl.NumberFormat('es-CO', {
+    style: 'currency',
+    currency: 'COP',
+    maximumFractionDigits: 0,
+  }).format(Number(value) || 0);
+
+const calculatePartsCost = (parts = []) =>
+  parts.reduce(
+    (acc, part) => acc + (part.quantity || 0) * (part.unitCost || 0),
+    0
+  );
+
+const calculateLaborCost = (hours, rate) =>
+  (Number(hours) || 0) * (Number(rate) || 0);
+
+const statusBadge = {
+  scheduled: 'bg-blue-100 text-blue-800',
+  in_progress: 'bg-amber-100 text-amber-800',
+  completed: 'bg-green-100 text-green-800',
+  overdue: 'bg-red-100 text-red-800',
+};
+
 const Maintenance = () => {
-  const [selectedFilter, setSelectedFilter] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const { vehicles } = useVehicles();
+  const {
+    filteredOrders,
+    orders,
+    filters,
+    setFilters,
+    addOrder,
+    updateOrder,
+    totalsByVehicle,
+  } = useMaintenance();
 
-  const maintenanceTypes = [
-    { id: 'all', name: 'Todos', count: 12 },
-    { id: 'scheduled', name: 'Programados', count: 5 },
-    { id: 'overdue', name: 'Vencidos', count: 2 },
-    { id: 'completed', name: 'Completados', count: 5 },
-  ];
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [parts, setParts] = useState([{ name: '', quantity: 1, unitCost: 0 }]);
+  const [attachments, setAttachments] = useState([]);
 
-  const mockMaintenance = [
-    {
-      id: 1,
-      vehicle: 'ABC-123',
-      type: 'Mantenimiento Preventivo',
-      description: 'Cambio de aceite y filtros',
-      scheduledDate: '2024-01-20',
-      status: 'scheduled',
-      priority: 'medium',
-      estimatedCost: 150000,
-      assignedTo: 'Juan Pérez',
-      odometer: 45000,
-    },
-    {
-      id: 2,
-      vehicle: 'DEF-456',
-      type: 'Reparación',
-      description: 'Revisión de frenos',
-      scheduledDate: '2024-01-18',
-      status: 'overdue',
-      priority: 'high',
-      estimatedCost: 300000,
-      assignedTo: 'María García',
-      odometer: 52000,
-    },
-    {
-      id: 3,
-      vehicle: 'GHI-789',
-      type: 'Inspección',
-      description: 'Inspección técnica anual',
-      scheduledDate: '2024-01-15',
-      status: 'completed',
-      priority: 'high',
-      estimatedCost: 200000,
-      assignedTo: 'Carlos López',
-      odometer: 38000,
-    },
-    {
-      id: 4,
-      vehicle: 'JKL-012',
-      type: 'Mantenimiento Correctivo',
-      description: 'Reparación de motor',
-      scheduledDate: '2024-01-25',
-      status: 'scheduled',
-      priority: 'high',
-      estimatedCost: 800000,
-      assignedTo: 'Ana Martínez',
-      odometer: 67000,
-    },
-    {
-      id: 5,
-      vehicle: 'MNO-345',
-      type: 'Mantenimiento Preventivo',
-      description: 'Revisión de neumáticos',
-      scheduledDate: '2024-01-22',
-      status: 'scheduled',
-      priority: 'low',
-      estimatedCost: 100000,
-      assignedTo: 'Diego Rodríguez',
-      odometer: 29000,
-    },
-  ];
+  const stats = useMemo(() => {
+    const totals = orders.reduce(
+      (acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        acc.totalCost += order.totalCost || 0;
+        return acc;
+      },
+      { scheduled: 0, in_progress: 0, completed: 0, overdue: 0, totalCost: 0 }
+    );
+    return totals;
+  }, [orders]);
 
-  const kpis = [
-    {
-      title: 'Mantenimientos Programados',
-      value: '5',
-      change: '+2',
-      changeType: 'positive',
-      icon: Calendar,
-    },
-    {
-      title: 'Vencidos',
-      value: '2',
-      change: '-1',
-      changeType: 'positive',
-      icon: AlertTriangle,
-    },
-    {
-      title: 'Completados',
-      value: '5',
-      change: '+3',
-      changeType: 'positive',
-      icon: CheckCircle,
-    },
-    {
-      title: 'Costo Total',
-      value: '$1.5M',
-      change: '+12%',
-      changeType: 'negative',
-      icon: Settings,
-    },
-  ];
+  const resetForm = () => {
+    setForm(emptyForm);
+    setParts([{ name: '', quantity: 1, unitCost: 0 }]);
+    setAttachments([]);
+  };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'scheduled':
-        return Clock;
-      case 'overdue':
-        return AlertTriangle;
-      case 'completed':
-        return CheckCircle;
-      default:
-        return Wrench;
+  const handleCreate = async (event) => {
+    event.preventDefault();
+    const vehicleId = Number(form.vehicleId) || form.vehicleId;
+    const vehicle = vehicles.find(
+      (v) => v.id === vehicleId || Number(v.id) === vehicleId
+    );
+
+    if (!vehicleId) {
+      alert('Por favor selecciona un vehículo');
+      return;
+    }
+    if (!form.title?.trim()) {
+      alert('Por favor ingresa un título');
+      return;
+    }
+
+    const cleanParts = parts.filter((p) => p.name.trim() !== '');
+    const orderPayload = {
+      ...form,
+      vehicleId,
+      vehiclePlate: vehicle?.placa || vehicle?.plate || form.vehiclePlate,
+      parts: cleanParts,
+      attachments,
+      laborHours: Number(form.laborHours) || 0,
+      laborRate: Number(form.laborRate) || 0,
+      otherCosts: Number(form.otherCosts) || 0,
+      mileage: Number(form.odometer) || undefined,
+      status: form.status,
+    };
+
+    const result = await addOrder(orderPayload);
+
+    if (result.success) {
+      setIsModalOpen(false);
+      resetForm();
+      alert('✅ Orden de mantenimiento creada exitosamente');
+    } else {
+      alert(`❌ Error al crear la orden: ${result.error}`);
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'scheduled':
-        return 'bg-blue-100 text-blue-800';
-      case 'overdue':
-        return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const handleAttachment = async (event) => {
+    const files = Array.from(event.target.files || []);
+    if (!files.length) return;
+
+    const mapped = files.map((file) => ({
+      id: `att-${Date.now()}-${file.name}`,
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      url: URL.createObjectURL(file),
+    }));
+    setAttachments((prev) => [...prev, ...mapped]);
   };
 
-  const getPriorityColor = (priority) => {
-    switch (priority) {
-      case 'high':
-        return 'bg-red-100 text-red-800';
-      case 'medium':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'low':
-        return 'bg-green-100 text-green-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
-    }
+  const partsCost = calculatePartsCost(parts);
+  const laborCost = calculateLaborCost(form.laborHours, form.laborRate);
+  const totalCost = partsCost + laborCost + (Number(form.otherCosts) || 0);
+
+  const updatePart = (index, field, value) => {
+    setParts((prev) =>
+      prev.map((part, idx) =>
+        idx === index
+          ? { ...part, [field]: field === 'name' ? value : Number(value) || 0 }
+          : part
+      )
+    );
   };
 
-  const filteredMaintenance = mockMaintenance.filter((item) => {
-    const matchesFilter =
-      selectedFilter === 'all' || item.status === selectedFilter;
-    const matchesSearch =
-      item.vehicle.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesFilter && matchesSearch;
-  });
+  const addPartRow = () =>
+    setParts((prev) => [...prev, { name: '', quantity: 1, unitCost: 0 }]);
+  const removePartRow = (index) =>
+    setParts((prev) =>
+      prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)
+    );
+
+  const updateStatus = async (orderId, status) => {
+    const result = await updateOrder(orderId, { status });
+    if (!result.success) {
+      alert(`Error al actualizar estado: ${result.error}`);
+    }
+  };
 
   return (
     <div className="space-y-8">
-      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Mantenimiento</h1>
           <p className="text-gray-600 mt-1">
-            Gestión de mantenimiento preventivo y correctivo
+            Registra reparaciones con repuestos, mano de obra y facturas.
+          </p>
+          <p className="text-xs text-gray-500">
+            Usuario sugerido: mecanico@flotavehicular.com / Mecanico123!
           </p>
         </div>
-        <div className="mt-4 sm:mt-0 flex items-center space-x-4">
-          <button className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            <Plus className="w-4 h-4" />
-            <span>Nuevo Mantenimiento</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="mt-4 sm:mt-0 inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Nueva orden</span>
+        </button>
       </div>
 
-      {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {kpis.map((kpi, index) => (
-          <Card key={index} className="p-6">
-            <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-gradient-to-br from-orange-500 to-red-500 rounded-xl">
-                <kpi.icon className="w-6 h-6 text-white" />
-              </div>
-              <div className="text-right">
-                <span
-                  className={`text-sm font-medium ${
-                    kpi.changeType === 'positive'
-                      ? 'text-green-600'
-                      : 'text-red-600'
-                  }`}
-                >
-                  {kpi.change}
-                </span>
-                <p className="text-xs text-gray-500">vs mes anterior</p>
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-600">{kpi.title}</p>
-              <p className="text-3xl font-bold text-gray-900">{kpi.value}</p>
-            </div>
-          </Card>
-        ))}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card className="p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">Programados</p>
+            <p className="text-2xl font-semibold">{stats.scheduled}</p>
+          </div>
+          <Calendar className="w-8 h-8 text-blue-600" />
+        </Card>
+        <Card className="p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">En progreso</p>
+            <p className="text-2xl font-semibold">{stats.in_progress}</p>
+          </div>
+          <Clock className="w-8 h-8 text-amber-600" />
+        </Card>
+        <Card className="p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">Completados</p>
+            <p className="text-2xl font-semibold">{stats.completed}</p>
+          </div>
+          <CheckCircle className="w-8 h-8 text-green-600" />
+        </Card>
+        <Card className="p-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-500">Costo total</p>
+            <p className="text-2xl font-semibold">
+              {formatCurrency(stats.totalCost)}
+            </p>
+          </div>
+          <DollarSign className="w-8 h-8 text-emerald-600" />
+        </Card>
       </div>
 
-      {/* Filters and Search */}
-      <Card className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Filter className="w-5 h-5 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">
-                Filtros:
-              </span>
-            </div>
-
-            <div className="flex space-x-2">
-              {maintenanceTypes.map((type) => (
+      <Card className="p-5 flex flex-col gap-4">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-500" />
+            <div className="flex gap-2 flex-wrap">
+              {statusOptions.map((option) => (
                 <button
-                  key={type.id}
-                  onClick={() => setSelectedFilter(type.id)}
-                  className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    selectedFilter === type.id
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  key={option.id}
+                  onClick={() => setFilters({ status: option.id })}
+                  className={`px-3 py-1 rounded-full text-sm border ${
+                    filters.status === option.id
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white text-gray-700 border-gray-200'
                   }`}
                 >
-                  {type.name} ({type.count})
+                  {option.label}
                 </button>
               ))}
             </div>
           </div>
-
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+          <div className="relative w-full md:w-80">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar por vehículo o descripción..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent w-full sm:w-80"
+              value={filters.search || ''}
+              onChange={(e) => setFilters({ search: e.target.value })}
+              placeholder="Buscar por placa o título"
+              className="w-full pl-9 pr-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
         </div>
       </Card>
 
-      {/* Maintenance List */}
       <div className="space-y-4">
-        {filteredMaintenance.map((item) => {
-          const StatusIcon = getStatusIcon(item.status);
-          return (
-            <Card
-              key={item.id}
-              className="p-6 hover:shadow-lg transition-shadow duration-200"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center space-x-4">
-                  <div className="p-3 bg-gray-100 rounded-lg">
-                    <Truck className="w-6 h-6 text-gray-600" />
-                  </div>
-                  <div>
+        {filteredOrders.map((order) => (
+          <Card key={order.id} className="p-6">
+            <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+              <div className="flex items-start gap-4">
+                <div className="p-3 bg-gray-100 rounded-lg">
+                  <Car className="w-6 h-6 text-gray-700" />
+                </div>
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {item.vehicle}
+                      {order.vehiclePlate || 'Vehículo'}
                     </h3>
-                    <p className="text-sm text-gray-600">{item.type}</p>
-                    <p className="text-sm text-gray-500">{item.description}</p>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${statusBadge[order.status] || 'bg-gray-100 text-gray-700'}`}
+                    >
+                      {order.status}
+                    </span>
+                    <span className="px-2 py-1 rounded-full text-xs font-semibold bg-gray-100 text-gray-700">
+                      {order.type}
+                    </span>
                   </div>
+                  <p className="text-sm text-gray-700 font-medium">
+                    {order.title}
+                  </p>
+                  <p className="text-sm text-gray-500">{order.description}</p>
+                  <div className="flex flex-wrap gap-3 text-xs text-gray-500">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar className="w-3 h-3" /> Programado:{' '}
+                      {order.scheduledDate}
+                    </span>
+                    {order.actualDate && (
+                      <span className="inline-flex items-center gap-1">
+                        <Clock className="w-3 h-3" /> Ejecutado:{' '}
+                        {order.actualDate}
+                      </span>
+                    )}
+                    {order.odometer && (
+                      <span className="inline-flex items-center gap-1">
+                        <Car className="w-3 h-3" />{' '}
+                        {order.odometer.toLocaleString()} km
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Costo acumulado vehículo:{' '}
+                    {formatCurrency(
+                      totalsByVehicle[order.vehicleId] || order.totalCost || 0
+                    )}
+                  </p>
                 </div>
-                <div className="flex items-center space-x-2">
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(item.status)}`}
+              </div>
+
+              <div className="text-right space-y-2 min-w-[180px]">
+                <p className="text-sm text-gray-500">Costo total</p>
+                <p className="text-2xl font-semibold text-gray-900">
+                  {formatCurrency(order.totalCost || 0)}
+                </p>
+                <select
+                  value={order.status}
+                  onChange={(e) => updateStatus(order.id, e.target.value)}
+                  className="w-full border border-gray-200 rounded-lg text-sm py-2 px-3 focus:ring-2 focus:ring-blue-500"
+                >
+                  {statusOptions
+                    .filter((o) => o.id !== 'all')
+                    .map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.label}
+                      </option>
+                    ))}
+                </select>
+
+                {/* Botones de factura */}
+                <div className="flex gap-2 mt-2">
+                  <button
+                    onClick={() => {
+                      const vehicle = vehicles.find(
+                        (v) => v.id === order.vehicleId
+                      );
+                      downloadInvoice(order, vehicle);
+                    }}
+                    className="flex-1 px-3 py-2 rounded-lg border border-blue-600 text-blue-600 hover:bg-blue-50 text-xs font-medium flex items-center justify-center gap-1"
+                    title="Descargar factura PDF"
                   >
-                    {item.status}
-                  </span>
-                  <span
-                    className={`px-2 py-1 text-xs font-medium rounded-full ${getPriorityColor(item.priority)}`}
+                    <Download className="w-3 h-3" />
+                    PDF
+                  </button>
+                  <button
+                    onClick={() => {
+                      const vehicle = vehicles.find(
+                        (v) => v.id === order.vehicleId
+                      );
+                      previewInvoice(order, vehicle);
+                    }}
+                    className="flex-1 px-3 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-50 text-xs font-medium flex items-center justify-center gap-1"
+                    title="Imprimir factura"
                   >
-                    {item.priority}
-                  </span>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-gray-500">Fecha Programada</p>
-                  <p className="font-medium text-gray-900">
-                    {new Date(item.scheduledDate).toLocaleDateString('es-ES')}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Asignado a</p>
-                  <p className="font-medium text-gray-900">{item.assignedTo}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Kilometraje</p>
-                  <p className="font-medium text-gray-900">
-                    {item.odometer.toLocaleString()} km
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Costo Estimado</p>
-                  <p className="font-medium text-gray-900">
-                    ${item.estimatedCost.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                  <StatusIcon className="w-4 h-4" />
-                  <span>
-                    {item.status === 'scheduled' && 'Programado para'}
-                    {item.status === 'overdue' && 'Vencido desde'}
-                    {item.status === 'completed' && 'Completado el'}
-                  </span>
-                  <span className="font-medium">
-                    {new Date(item.scheduledDate).toLocaleDateString('es-ES')}
-                  </span>
-                </div>
-
-                <div className="flex items-center space-x-2">
-                  <button className="px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                    Ver Detalles
-                  </button>
-                  <button className="px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                    {item.status === 'completed' ? 'Ver Reporte' : 'Actualizar'}
+                    <Printer className="w-3 h-3" />
+                    Imprimir
                   </button>
                 </div>
               </div>
-            </Card>
-          );
-        })}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+              <div className="border rounded-lg p-4 border-gray-100 bg-gray-50">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <Wrench className="w-4 h-4" /> Repuestos
+                </h4>
+                <ul className="text-sm text-gray-700 space-y-1">
+                  {order.parts?.map((part) => (
+                    <li
+                      key={part.id || part.name}
+                      className="flex justify-between"
+                    >
+                      <span>
+                        {part.name} ({part.quantity} u)
+                      </span>
+                      <span className="text-gray-900">
+                        {formatCurrency(
+                          (part.quantity || 0) * (part.unitCost || 0)
+                        )}
+                      </span>
+                    </li>
+                  ))}
+                  {!order.parts?.length && (
+                    <li className="text-gray-500">Sin repuestos</li>
+                  )}
+                </ul>
+              </div>
+
+              <div className="border rounded-lg p-4 border-gray-100 bg-gray-50">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <FileText className="w-4 h-4" /> Mano de obra
+                </h4>
+                <p className="text-sm text-gray-700">
+                  {order.laborHours} h x {formatCurrency(order.laborRate)} =
+                  <span className="font-semibold text-gray-900">
+                    {' '}
+                    {formatCurrency(order.laborCost)}
+                  </span>
+                </p>
+                {order.otherCosts ? (
+                  <p className="text-sm text-gray-700">
+                    Otros: {formatCurrency(order.otherCosts)}
+                  </p>
+                ) : (
+                  <p className="text-sm text-gray-500">
+                    Sin costos adicionales
+                  </p>
+                )}
+                <p className="text-xs text-gray-500 mt-1">
+                  Notas: {order.notes || 'N/A'}
+                </p>
+              </div>
+
+              <div className="border rounded-lg p-4 border-gray-100 bg-gray-50">
+                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
+                  <Paperclip className="w-4 h-4" /> Facturas e imágenes
+                </h4>
+                <ul className="text-sm text-blue-600 space-y-1">
+                  {order.attachments?.map((file) => (
+                    <li key={file.id}>
+                      <a
+                        className="hover:underline"
+                        href={file.url}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {file.name}
+                      </a>
+                    </li>
+                  ))}
+                  {!order.attachments?.length && (
+                    <li className="text-gray-500">Sin adjuntos</li>
+                  )}
+                </ul>
+              </div>
+            </div>
+          </Card>
+        ))}
+
+        {!filteredOrders.length && (
+          <Card className="p-8 text-center text-gray-500">
+            No hay órdenes con los filtros actuales.
+          </Card>
+        )}
       </div>
 
-      {/* Quick Actions */}
-      <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 mb-6">
-          Acciones Rápidas
-        </h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="p-2 bg-green-100 rounded-lg">
-              <Calendar className="w-5 h-5 text-green-600" />
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl p-6 max-h-[90vh] overflow-auto">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold text-gray-900">
+                Nueva orden de mantenimiento
+              </h3>
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  resetForm();
+                }}
+                className="text-gray-500 hover:text-gray-700"
+              >
+                Cerrar
+              </button>
             </div>
-            <div className="text-left">
-              <p className="font-medium text-gray-900">
-                Programar Mantenimiento
-              </p>
-              <p className="text-sm text-gray-500">Crear nueva tarea</p>
-            </div>
-          </button>
 
-          <button className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="p-2 bg-blue-100 rounded-lg">
-              <AlertTriangle className="w-5 h-5 text-blue-600" />
-            </div>
-            <div className="text-left">
-              <p className="font-medium text-gray-900">
-                Alertas de Mantenimiento
-              </p>
-              <p className="text-sm text-gray-500">Configurar notificaciones</p>
-            </div>
-          </button>
+            <form className="space-y-4" onSubmit={handleCreate}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Vehículo</label>
+                  <select
+                    required
+                    value={form.vehicleId}
+                    onChange={(e) =>
+                      setForm({ ...form, vehicleId: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Selecciona un vehículo</option>
+                    {vehicles.map((v) => (
+                      <option key={v.id} value={v.id}>
+                        {v.placa || v.plate} - {v.modelo || v.model || ''}
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
-          <button className="flex items-center space-x-3 p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <div className="p-2 bg-purple-100 rounded-lg">
-              <Settings className="w-5 h-5 text-purple-600" />
-            </div>
-            <div className="text-left">
-              <p className="font-medium text-gray-900">Configuración</p>
-              <p className="text-sm text-gray-500">Parámetros del sistema</p>
-            </div>
-          </button>
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Tipo</label>
+                  <select
+                    value={form.type}
+                    onChange={(e) => setForm({ ...form, type: e.target.value })}
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  >
+                    {typeOptions.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Título</label>
+                  <input
+                    required
+                    type="text"
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm({ ...form, title: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej. Reparación frenos delanteros"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Estado</label>
+                  <select
+                    value={form.status}
+                    onChange={(e) =>
+                      setForm({ ...form, status: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  >
+                    {statusOptions
+                      .filter((o) => o.id !== 'all')
+                      .map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">
+                    Fecha programada
+                  </label>
+                  <input
+                    required
+                    type="date"
+                    value={form.scheduledDate}
+                    onChange={(e) =>
+                      setForm({ ...form, scheduledDate: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">
+                    Fecha de ejecución
+                  </label>
+                  <input
+                    type="date"
+                    value={form.actualDate}
+                    onChange={(e) =>
+                      setForm({ ...form, actualDate: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Kilometraje</label>
+                  <input
+                    type="number"
+                    value={form.odometer}
+                    onChange={(e) =>
+                      setForm({ ...form, odometer: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    placeholder="Ej. 45250"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Notas</label>
+                  <input
+                    type="text"
+                    value={form.notes}
+                    onChange={(e) =>
+                      setForm({ ...form, notes: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                    placeholder="Indicaciones adicionales"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm text-gray-600">Descripción</label>
+                <textarea
+                  value={form.description}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
+                  rows={3}
+                  className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  placeholder="Detalles de la intervención"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-sm font-semibold text-gray-800">
+                    Repuestos
+                  </h4>
+                  <button
+                    type="button"
+                    onClick={addPartRow}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Añadir repuesto
+                  </button>
+                </div>
+                <div className="space-y-2">
+                  {parts.map((part, index) => (
+                    <div
+                      key={index}
+                      className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center"
+                    >
+                      <input
+                        type="text"
+                        value={part.name}
+                        onChange={(e) =>
+                          updatePart(index, 'name', e.target.value)
+                        }
+                        placeholder="Repuesto"
+                        className="md:col-span-2 border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="number"
+                        value={part.quantity}
+                        onChange={(e) =>
+                          updatePart(index, 'quantity', e.target.value)
+                        }
+                        placeholder="Cantidad"
+                        className="border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <input
+                        type="number"
+                        value={part.unitCost}
+                        onChange={(e) =>
+                          updatePart(index, 'unitCost', e.target.value)
+                        }
+                        placeholder="Costo unitario"
+                        className="md:col-span-2 border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removePartRow(index)}
+                        className="text-sm text-red-500 hover:underline"
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Horas</label>
+                  <input
+                    type="number"
+                    value={form.laborHours}
+                    onChange={(e) =>
+                      setForm({ ...form, laborHours: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Valor hora</label>
+                  <input
+                    type="number"
+                    value={form.laborRate}
+                    onChange={(e) =>
+                      setForm({ ...form, laborRate: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-sm text-gray-600">Otros costos</label>
+                  <input
+                    type="number"
+                    value={form.otherCosts}
+                    onChange={(e) =>
+                      setForm({ ...form, otherCosts: e.target.value })
+                    }
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+              </div>
+
+              <Card className="p-4 bg-gray-50 border border-gray-100">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <p className="text-sm text-gray-700">
+                    Repuestos:{' '}
+                    <span className="font-semibold">
+                      {formatCurrency(partsCost)}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-700">
+                    Mano de obra:{' '}
+                    <span className="font-semibold">
+                      {formatCurrency(laborCost)}
+                    </span>
+                  </p>
+                  <p className="text-sm text-gray-900 font-semibold">
+                    Total estimado: {formatCurrency(totalCost)}
+                  </p>
+                </div>
+              </Card>
+
+              <div className="space-y-2">
+                <label className="text-sm text-gray-600 flex items-center gap-2">
+                  <Upload className="w-4 h-4" /> Adjuntar factura o imagen
+                </label>
+                <input
+                  type="file"
+                  multiple
+                  accept="image/*,.pdf,.jpg,.jpeg,.png"
+                  onChange={handleAttachment}
+                  className="w-full border border-dashed border-gray-300 rounded-lg px-3 py-2"
+                />
+                {attachments.length > 0 && (
+                  <ul className="text-sm text-gray-700 space-y-1">
+                    {attachments.map((file) => (
+                      <li key={file.id} className="flex items-center gap-2">
+                        <Paperclip className="w-4 h-4 text-gray-500" />{' '}
+                        {file.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    resetForm();
+                  }}
+                  className="px-4 py-2 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Guardar orden
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-      </Card>
+      )}
     </div>
   );
 };
