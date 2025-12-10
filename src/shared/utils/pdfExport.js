@@ -1,6 +1,6 @@
 // Utilidad para exportar historial de estados a PDF usando jsPDF
 import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import autoTable from 'jspdf-autotable';
 import { formatDate } from './index';
 
 export function exportStatusHistoryToPDF(
@@ -18,7 +18,7 @@ export function exportStatusHistoryToPDF(
     h.oldStatus,
     h.newStatus,
   ]);
-  doc.autoTable({
+  autoTable(doc, {
     head: [['Fecha', 'Hora', 'Usuario', 'Estado anterior', 'Estado nuevo']],
     body: tableData,
     startY: 24,
