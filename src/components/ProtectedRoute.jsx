@@ -34,6 +34,7 @@ export default function ProtectedRoute({ roles = [], children }) {
       supervisor: '/rutas/monitoreo',
       conductor: '/conductor/mis-rutas',
       planificador: '/rutas/planificacion',
+      gerente: '/dashboard',
       admin: '/dashboard',
       superusuario: '/dashboard',
     };

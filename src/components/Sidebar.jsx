@@ -53,7 +53,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/dashboard',
       icon: LayoutDashboard,
       description: 'Vista general del sistema',
-      roles: ['superusuario', 'admin'], // Solo admin y superusuario
+      roles: ['superusuario', 'admin', 'gerente'], // Admin, superusuario y gerente
     },
     {
       title: 'Panel Operador',
@@ -68,6 +68,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       icon: Briefcase,
       description: 'Panel de Recursos Humanos',
       roles: ['rrhh'], // Solo para RRHH
+    },
+    {
+      title: 'Reportes',
+      path: '/reportes',
+      icon: BarChart3,
+      description: 'Reportes agregados de incidentes',
+      roles: ['superusuario', 'admin', 'gerente'],
     },
     {
       title: 'Vehículos',
@@ -191,13 +198,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       description: 'Configurar umbrales',
       roles: ['superusuario', 'admin'],
     },
-    {
-      title: 'Reportes',
-      path: '/reportes',
-      icon: BarChart3,
-      description: 'Analytics y reportes',
-      roles: ['superusuario', 'admin', 'rrhh'],
-    },
+
     {
       title: 'Seguridad',
       path: '/seguridad',
