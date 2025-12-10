@@ -129,7 +129,7 @@ function App() {
       return <Navigate to="/rutas/planificacion" replace />;
     }
 
-    // Por defecto, ir al dashboard general (admin, superusuario)
+    // Por defecto, ir al dashboard general (admin, superusuario, gerente)
     return <Navigate to="/dashboard" replace />;
   };
 
@@ -156,7 +156,7 @@ function App() {
               <Route
                 path="/dashboard"
                 element={
-                  <ProtectedRoute roles={['superusuario', 'admin']}>
+                  <ProtectedRoute roles={['superusuario', 'admin', 'gerente']}>
                     <Dashboard />
                   </ProtectedRoute>
                 }

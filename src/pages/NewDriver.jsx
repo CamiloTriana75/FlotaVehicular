@@ -16,8 +16,9 @@ export default function NewDriver() {
     try {
       // 1) Si se solicitó cuenta de acceso, crear usuario con rol 'conductor'
       if (formData._createAccount) {
-        const fullName = (formData.nombre_completo || '').trim();
-        const username = fullName || (formData.email || '').split('@')[0];
+        // Usar cédula como username para evitar duplicados (más único que el nombre)
+        const username =
+          formData.cedula || (formData.email || '').split('@')[0];
         const password = formData._password || 'Temporal2025$';
         const email = formData.email || null;
 

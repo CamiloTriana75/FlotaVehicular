@@ -353,7 +353,7 @@ const Reports = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="flex flex-col space-y-8 min-h-screen">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -534,8 +534,8 @@ const Reports = () => {
               {incidentsByType.length} categorías
             </span>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%' }}>
+            <ResponsiveContainer width="100%" height={256}>
               <BarChart data={incidentsByType}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis
@@ -567,8 +567,8 @@ const Reports = () => {
               {incidentsBySeverity.length} niveles
             </span>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%' }}>
+            <ResponsiveContainer width="100%" height={256}>
               <RePieChart>
                 <Pie
                   data={incidentsBySeverity}
@@ -598,8 +598,8 @@ const Reports = () => {
               Top {incidentsByZone.length}
             </span>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%' }}>
+            <ResponsiveContainer width="100%" height={256}>
               <BarChart data={incidentsByZone} layout="vertical">
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis type="number" allowDecimals={false} />
@@ -621,8 +621,8 @@ const Reports = () => {
               {incidentsTimeline.length} días
             </span>
           </div>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
+          <div style={{ width: '100%' }}>
+            <ResponsiveContainer width="100%" height={256}>
               <LineChart data={incidentsTimeline}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="date" minTickGap={20} />
