@@ -1,14 +1,17 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   getIncidents,
-  createIncident,
+  updateIncident,
   deleteIncident,
   getIncidentComments,
   addIncidentComment,
+  INCIDENT_TYPES_LABELS,
+  INCIDENT_SEVERITY_LABELS,
+  INCIDENT_STATUS_LABELS,
 } from '../services/incidentService';
 import { driverService } from '../services/driverService';
 import { vehicleService } from '../services/vehicleService';
-import { FileDown, Plus, Trash2, MessageSquare, X } from 'lucide-react';
+import { FileDown, MessageSquare, X, Trash2, FileText } from 'lucide-react';
 
 const toDateInput = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
 
@@ -30,6 +33,7 @@ export default function DriverIncidents() {
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [supervisorName, setSupervisorName] = useState('');
+  const [viewMode, setViewMode] = useState('active'); // 'active' o 'resolved'
 
   useEffect(() => {
     (async () => {
@@ -63,7 +67,9 @@ export default function DriverIncidents() {
 
   const load = async () => {
     setLoading(true);
-    const { data } = await getIncidents(filters);
+    const statusFilter =
+      viewMode === 'resolved' ? 'resolved,closed' : 'reported,investigating';
+    const { data } = await getIncidents({ ...filters, status: statusFilter });
     setIncidents(data || []);
     setLoading(false);
   };
@@ -77,6 +83,7 @@ export default function DriverIncidents() {
     filters.severity,
     filters.startDate,
     filters.endDate,
+    viewMode,
   ]);
 
   const openComments = async (incident) => {
@@ -118,6 +125,10 @@ export default function DriverIncidents() {
         'Título',
         'Fecha',
         'Estado',
+        'Descripción',
+        'Ubicación',
+        'Latitud',
+        'Longitud',
       ],
       ...incidents.map((i) => [
         i.id,
@@ -125,11 +136,15 @@ export default function DriverIncidents() {
         i.vehicle
           ? `${i.vehicle.placa} ${i.vehicle.marca} ${i.vehicle.modelo}`
           : '',
-        i.type,
-        i.severity,
+        INCIDENT_TYPES_LABELS[i.type] || i.type,
+        INCIDENT_SEVERITY_LABELS[i.severity] || i.severity,
         i.title,
         new Date(i.occurred_at).toLocaleString(),
-        i.status,
+        INCIDENT_STATUS_LABELS[i.status] || i.status,
+        i.description || '',
+        i.location || '',
+        i.location_lat || '',
+        i.location_lng || '',
       ]),
     ];
     const csv = rows
@@ -141,31 +156,143 @@ export default function DriverIncidents() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = 'incidentes.csv';
+    const filename =
+      viewMode === 'resolved'
+        ? 'incidentes_resueltos.csv'
+        : 'incidentes_activos.csv';
+    a.download = filename;
     a.click();
     URL.revokeObjectURL(url);
   };
 
-  const handleQuickCreate = async () => {
-    if (!filters.driverId) {
-      alert('Seleccione un conductor para crear incidente rápido');
-      return;
+  const exportPDF = async () => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const autoTable = (await import('jspdf-autotable')).default;
+
+      const doc = new jsPDF({
+        orientation: 'landscape',
+        unit: 'mm',
+        format: 'a4',
+      });
+
+      const title =
+        viewMode === 'resolved'
+          ? 'Reporte de Incidentes Resueltos'
+          : 'Reporte de Incidentes Activos';
+
+      doc.setFontSize(16);
+      doc.text(title, 14, 12);
+      doc.setFontSize(9);
+      doc.text(`Generado: ${new Date().toLocaleString('es-CO')}`, 14, 18);
+
+      const filterSummary = [];
+      if (filters.driverId) {
+        const driver = drivers.find((d) => d.id == filters.driverId);
+        filterSummary.push(`Conductor: ${driver?.nombre} ${driver?.apellidos}`);
+      }
+      if (filters.vehicleId) {
+        const vehicle = vehicles.find((v) => v.id == filters.vehicleId);
+        filterSummary.push(`Vehículo: ${vehicle?.placa}`);
+      }
+      if (filters.type)
+        filterSummary.push(
+          `Tipo: ${INCIDENT_TYPES_LABELS[filters.type] || filters.type}`
+        );
+      if (filters.severity)
+        filterSummary.push(
+          `Severidad: ${INCIDENT_SEVERITY_LABELS[filters.severity] || filters.severity}`
+        );
+      if (filters.startDate)
+        filterSummary.push(
+          `Desde: ${new Date(filters.startDate).toLocaleDateString('es-CO')}`
+        );
+      if (filters.endDate)
+        filterSummary.push(
+          `Hasta: ${new Date(filters.endDate).toLocaleDateString('es-CO')}`
+        );
+
+      doc.setFontSize(8);
+      doc.text(
+        filterSummary.length ? filterSummary : ['Sin filtros aplicados'],
+        14,
+        24
+      );
+
+      const tableData = incidents.map((i) => [
+        String(i.id),
+        i.driver ? `${i.driver.nombre} ${i.driver.apellidos}` : 'Sin asignar',
+        i.vehicle ? i.vehicle.placa : 'Sin asignar',
+        INCIDENT_TYPES_LABELS[i.type] || i.type,
+        INCIDENT_SEVERITY_LABELS[i.severity] || i.severity,
+        i.title,
+        i.location || '-',
+        new Date(i.occurred_at).toLocaleDateString('es-CO'),
+        INCIDENT_STATUS_LABELS[i.status] || i.status,
+      ]);
+
+      autoTable(doc, {
+        startY: 28,
+        head: [
+          [
+            'ID',
+            'Conductor',
+            'Vehículo',
+            'Tipo',
+            'Severidad',
+            'Título',
+            'Ubicación',
+            'Fecha',
+            'Estado',
+          ],
+        ],
+        body: tableData,
+        styles: { fontSize: 8, cellPadding: 3 },
+        headStyles: { fillColor: [25, 118, 210], textColor: 255 },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        columnStyles: {
+          0: { cellWidth: 10 },
+          1: { cellWidth: 28 },
+          2: { cellWidth: 18 },
+          3: { cellWidth: 18 },
+          4: { cellWidth: 18 },
+          5: { cellWidth: 40 },
+          6: { cellWidth: 25 },
+          7: { cellWidth: 18 },
+          8: { cellWidth: 18 },
+        },
+        didDrawPage: (data) => {
+          const pageWidth = doc.internal.pageSize.getWidth();
+          const pageHeight = doc.internal.pageSize.getHeight();
+          doc.setFontSize(8);
+          doc.text(
+            `Página ${data.pageNumber} de ${doc.getNumberOfPages()}`,
+            pageWidth / 2,
+            pageHeight - 5,
+            { align: 'center' }
+          );
+        },
+      });
+
+      const filename =
+        viewMode === 'resolved'
+          ? `reporte_incidentes_resueltos_${Date.now()}.pdf`
+          : `reporte_incidentes_activos_${Date.now()}.pdf`;
+      doc.save(filename);
+    } catch (err) {
+      console.error('Error exportando PDF:', err);
+      alert('Error al generar PDF: ' + err.message);
     }
-    const payload = {
-      driver_id: Number(filters.driverId),
-      type: 'other',
-      severity: 'low',
-      title: 'Incidente reportado',
-      occurred_at: new Date().toISOString(),
-      status: 'reported',
-    };
-    await createIncident(payload);
-    await load();
   };
 
   const handleDelete = async (id) => {
     if (!window.confirm('¿Eliminar incidente?')) return;
     await deleteIncident(id);
+    await load();
+  };
+
+  const handleChangeStatus = async (id, newStatus) => {
+    await updateIncident(id, { status: newStatus });
     await load();
   };
 
@@ -186,18 +313,42 @@ export default function DriverIncidents() {
         <h1 className="text-2xl font-bold">Incidentes</h1>
         <div className="flex gap-2">
           <button
-            onClick={exportCSV}
-            className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-md flex items-center gap-2"
+            onClick={exportPDF}
+            className="px-3 py-2 bg-red-600 text-white hover:bg-red-700 rounded-md flex items-center gap-2"
           >
-            <FileDown size={16} /> Exportar CSV
+            <FileText size={16} /> Exportar PDF
           </button>
           <button
-            onClick={handleQuickCreate}
-            className="px-3 py-2 bg-blue-600 text-white rounded-md flex items-center gap-2"
+            onClick={exportCSV}
+            className="px-3 py-2 bg-green-600 text-white hover:bg-green-700 rounded-md flex items-center gap-2"
           >
-            <Plus size={16} /> Nuevo rápido
+            <FileDown size={16} /> Exportar Excel
           </button>
         </div>
+      </div>
+
+      {/* Pestañas para cambiar vista */}
+      <div className="flex gap-2 border-b">
+        <button
+          onClick={() => setViewMode('active')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            viewMode === 'active'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Incidentes Activos
+        </button>
+        <button
+          onClick={() => setViewMode('resolved')}
+          className={`px-4 py-2 font-medium transition-colors ${
+            viewMode === 'resolved'
+              ? 'border-b-2 border-blue-600 text-blue-600'
+              : 'text-gray-600 hover:text-gray-800'
+          }`}
+        >
+          Incidentes Resueltos
+        </button>
       </div>
 
       <div className="bg-white border rounded-lg p-4 grid grid-cols-1 md:grid-cols-6 gap-3">
@@ -278,7 +429,11 @@ export default function DriverIncidents() {
         {loading ? (
           <div className="p-12 text-center text-gray-500">Cargando...</div>
         ) : incidents.length === 0 ? (
-          <div className="p-12 text-center text-gray-500">Sin incidentes</div>
+          <div className="p-12 text-center text-gray-500">
+            {viewMode === 'resolved'
+              ? 'No hay incidentes resueltos'
+              : 'No hay incidentes activos'}
+          </div>
         ) : (
           <ul className="divide-y">
             {incidents.map((i) => (
@@ -288,8 +443,9 @@ export default function DriverIncidents() {
               >
                 <div>
                   <div className="text-sm text-gray-500">
-                    {new Date(i.occurred_at).toLocaleString()} • {i.type} •{' '}
-                    {i.severity}
+                    {new Date(i.occurred_at).toLocaleString()} •{' '}
+                    {INCIDENT_TYPES_LABELS[i.type] || i.type} •{' '}
+                    {INCIDENT_SEVERITY_LABELS[i.severity] || i.severity}
                   </div>
                   <div className="font-medium">{i.title}</div>
                   <div className="text-sm text-gray-600">
@@ -304,6 +460,33 @@ export default function DriverIncidents() {
                       {i.description}
                     </div>
                   )}
+                  {(typeof i.location_lat === 'number' &&
+                    typeof i.location_lng === 'number') ||
+                  i.location ? (
+                    <div className="text-xs text-blue-600 mt-1 flex items-center gap-2">
+                      {typeof i.location_lat === 'number' &&
+                      typeof i.location_lng === 'number' ? (
+                        <span>
+                          📍 Lat {i.location_lat.toFixed(4)}, Lng{' '}
+                          {i.location_lng.toFixed(4)}
+                        </span>
+                      ) : null}
+                      {i.location ? <span>{i.location}</span> : null}
+                      <a
+                        className="underline"
+                        href={`https://www.google.com/maps?q=${
+                          typeof i.location_lat === 'number' &&
+                          typeof i.location_lng === 'number'
+                            ? `${i.location_lat},${i.location_lng}`
+                            : encodeURIComponent(i.location || '')
+                        }`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Abrir mapa
+                      </a>
+                    </div>
+                  ) : null}
                 </div>
                 <div className="flex items-center gap-2">
                   <button
@@ -313,6 +496,32 @@ export default function DriverIncidents() {
                   >
                     <MessageSquare size={16} />
                   </button>
+                  {viewMode === 'active' && (
+                    <select
+                      value={i.status}
+                      onChange={(e) => handleChangeStatus(i.id, e.target.value)}
+                      className="text-sm border rounded px-2 py-1"
+                      title="Cambiar estado"
+                    >
+                      <option value="reported">
+                        {INCIDENT_STATUS_LABELS.reported}
+                      </option>
+                      <option value="investigating">
+                        {INCIDENT_STATUS_LABELS.investigating}
+                      </option>
+                      <option value="resolved">
+                        {INCIDENT_STATUS_LABELS.resolved}
+                      </option>
+                      <option value="closed">
+                        {INCIDENT_STATUS_LABELS.closed}
+                      </option>
+                    </select>
+                  )}
+                  {viewMode === 'resolved' && (
+                    <span className="text-xs px-2 py-1 bg-green-100 text-green-800 rounded">
+                      {INCIDENT_STATUS_LABELS[i.status] || i.status}
+                    </span>
+                  )}
                   <button
                     onClick={() => handleDelete(i.id)}
                     className="text-red-600 hover:bg-red-50 rounded-md p-2"

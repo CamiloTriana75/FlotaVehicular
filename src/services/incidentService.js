@@ -8,13 +8,37 @@ export const INCIDENT_TYPES = [
   'near_miss',
   'other',
 ];
+
+export const INCIDENT_TYPES_LABELS = {
+  accident: 'Accidente',
+  breakdown: 'Avería',
+  violation: 'Infracción',
+  near_miss: 'Casi accidente',
+  other: 'Otro',
+};
+
 export const INCIDENT_SEVERITY = ['low', 'medium', 'high', 'critical'];
+
+export const INCIDENT_SEVERITY_LABELS = {
+  low: 'Baja',
+  medium: 'Media',
+  high: 'Alta',
+  critical: 'Crítica',
+};
+
 export const INCIDENT_STATUS = [
   'reported',
   'investigating',
   'resolved',
   'closed',
 ];
+
+export const INCIDENT_STATUS_LABELS = {
+  reported: 'Reportado',
+  investigating: 'Investigando',
+  resolved: 'Resuelto',
+  closed: 'Cerrado',
+};
 
 // Helpers
 const toDateISO = (d) => (d ? new Date(d).toISOString() : null);
@@ -26,6 +50,7 @@ export async function getIncidents(filters = {}) {
       .select(
         `
         id, driver_id, vehicle_id, type, severity, title, description, location,
+        location_lat, location_lng,
         occurred_at, status, km_at_incident, avg_speed, created_at, updated_at,
         driver:drivers(id, nombre, apellidos, numero_licencia),
         vehicle:vehicles(id, placa, marca, modelo)
@@ -37,7 +62,17 @@ export async function getIncidents(filters = {}) {
     if (filters.vehicleId) query = query.eq('vehicle_id', filters.vehicleId);
     if (filters.type) query = query.eq('type', filters.type);
     if (filters.severity) query = query.eq('severity', filters.severity);
-    if (filters.status) query = query.eq('status', filters.status);
+
+    // Manejar múltiples estados separados por coma
+    if (filters.status) {
+      const statuses = filters.status.split(',').map((s) => s.trim());
+      if (statuses.length === 1) {
+        query = query.eq('status', statuses[0]);
+      } else {
+        query = query.in('status', statuses);
+      }
+    }
+
     if (filters.startDate)
       query = query.gte('occurred_at', toDateISO(filters.startDate));
     if (filters.endDate)
@@ -57,7 +92,15 @@ export async function createIncident(payload) {
     const { data, error } = await supabase
       .from('incidents')
       .insert([payload])
-      .select()
+      .select(
+        `
+        id, driver_id, vehicle_id, type, severity, title, description, location,
+        location_lat, location_lng,
+        occurred_at, status, km_at_incident, avg_speed, created_at, updated_at,
+        driver:drivers(id, nombre, apellidos, numero_licencia),
+        vehicle:vehicles(id, placa, marca, modelo)
+      `
+      )
       .single();
     if (error) throw error;
     return { data, error: null };

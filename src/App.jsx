@@ -35,6 +35,7 @@ import ConductorRouteView from './pages/ConductorRouteView';
 import RouteMonitoring from './pages/RouteMonitoring';
 import RouteComparison from './pages/RouteComparison';
 import Geofences from './pages/Geofences';
+import ReportIncident from './pages/ReportIncident';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -210,7 +211,24 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/incidentes" element={<DriverIncidents />} />
+              <Route
+                path="/incidentes"
+                element={
+                  <ProtectedRoute
+                    roles={['supervisor', 'admin', 'superusuario']}
+                  >
+                    <DriverIncidents />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/conductor/reportar-incidente"
+                element={
+                  <ProtectedRoute roles={['conductor']}>
+                    <ReportIncident />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/desempeno" element={<DriverPerformance />} />
               <Route path="/usuarios" element={<UsersAdmin />} />
               <Route path="/monitoreo" element={<RealTimeMonitoring />} />

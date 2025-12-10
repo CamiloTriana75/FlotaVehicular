@@ -5,8 +5,11 @@
  */
 
 import { suscribirseAAlertas } from './alertService';
+import { supabase } from '../lib/supabaseClient';
+import { markIncidentChannelStatus } from './incidentNotificationService';
 
 let subscription = null;
+let incidentSubscription = null;
 let isInitialized = false;
 
 /**
@@ -47,6 +50,75 @@ const showTestNotification = () => {
     requireInteraction: false,
     tag: 'test-notification',
   });
+};
+
+/**
+ * Mostrar notificación para incidentes (HU20)
+ */
+const showIncidentNotification = async (incident) => {
+  if (Notification.permission !== 'granted') return;
+
+  const {
+    id,
+    type,
+    severity,
+    title,
+    description,
+    location,
+    location_lat,
+    location_lng,
+    occurred_at,
+  } = incident;
+
+  const typeLabel = (type || '').replace(/_/g, ' ') || 'Incidente';
+  const severityEmoji =
+    { low: 'ℹ️', medium: '⚠️', high: '🚨', critical: '🛑' }[severity] || '🔔';
+  const coords =
+    typeof location_lat === 'number' && typeof location_lng === 'number'
+      ? { lat: location_lat, lng: location_lng }
+      : null;
+
+  const mapUrl = coords
+    ? `https://www.google.com/maps?q=${coords.lat},${coords.lng}`
+    : location
+      ? `https://www.google.com/maps?q=${encodeURIComponent(location)}`
+      : null;
+
+  const cuerpoLines = [];
+  cuerpoLines.push(`📝 ${description || title || 'Incidente reportado'}`);
+  if (coords)
+    cuerpoLines.push(
+      `📍 Lat ${coords.lat.toFixed(4)}, Lng ${coords.lng.toFixed(4)}`
+    );
+  if (!coords && location) cuerpoLines.push(`📍 ${location}`);
+  if (occurred_at)
+    cuerpoLines.push(`🕐 ${new Date(occurred_at).toLocaleString()}`);
+  if (mapUrl) cuerpoLines.push('➡️ Abrir mapa');
+
+  const notification = new Notification(
+    `${severityEmoji} Incidente ${typeLabel}`,
+    {
+      body: cuerpoLines.join('\n'),
+      icon: '/logo.png',
+      badge: '/logo.png',
+      tag: `incident-${id}`,
+      requireInteraction: severity === 'critical',
+      data: { incidentId: id, mapUrl },
+    }
+  );
+
+  notification.onclick = () => {
+    window.focus();
+    if (mapUrl) window.open(mapUrl, '_blank');
+    notification.close();
+  };
+
+  // Marcar como enviada en trazabilidad si existe
+  try {
+    await markIncidentChannelStatus(id, 'webpush', 'sent');
+  } catch (e) {
+    console.warn('No se pudo marcar notificación de incidente como enviada', e);
+  }
 };
 
 /**
@@ -216,6 +288,19 @@ export const initializeNotifications = async () => {
     await showAlertNotification(nuevaAlerta);
   });
 
+  // Suscribirse a nuevos incidentes (INSERT realtime)
+  incidentSubscription = supabase
+    .channel('incidents_changes')
+    .on(
+      'postgres_changes',
+      { event: 'INSERT', schema: 'public', table: 'incidents' },
+      async (payload) => {
+        console.log('🆕 Nuevo incidente recibido:', payload.new);
+        await showIncidentNotification(payload.new);
+      }
+    )
+    .subscribe();
+
   isInitialized = true;
   console.log('✅ Servicio de notificaciones globales activo');
 };
@@ -229,6 +314,10 @@ export const stopNotifications = () => {
     subscription = null;
     isInitialized = false;
     console.log('🔕 Servicio de notificaciones detenido');
+  }
+  if (incidentSubscription) {
+    incidentSubscription.unsubscribe();
+    incidentSubscription = null;
   }
 };
 
