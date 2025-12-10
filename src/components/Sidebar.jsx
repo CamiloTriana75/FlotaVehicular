@@ -102,7 +102,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       title: 'Incidentes',
       path: '/incidentes',
       icon: AlertTriangle,
-      description: 'Historial y gestión de incidentes',
+      description: 'Gestión de incidentes (solo lectura)',
       roles: ['superusuario', 'admin', 'supervisor'],
     },
     {
@@ -132,6 +132,13 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/conductor/mis-rutas',
       icon: Navigation,
       description: 'Rutas asignadas (conductor)',
+      roles: ['conductor'],
+    },
+    {
+      title: 'Reportar incidente',
+      path: '/conductor/reportar-incidente',
+      icon: AlertTriangle,
+      description: 'Enviar incidente con ubicación',
       roles: ['conductor'],
     },
     {

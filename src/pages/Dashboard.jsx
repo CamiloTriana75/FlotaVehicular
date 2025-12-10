@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { mockVehicles, mockDrivers } from '../data/mockVehicles'; // TODO: Reemplazar datos mock por fuente real cuando esté disponible
 import Card from '../components/Card';
 import { Link } from 'react-router-dom';
@@ -16,8 +16,19 @@ import {
   Zap,
   Shield,
 } from 'lucide-react';
+import { getIncidentNotifications } from '../services/incidentNotificationService';
 
 const Dashboard = () => {
+  const [incidentNotifications, setIncidentNotifications] = useState([]);
+  const [incidentLoading, setIncidentLoading] = useState(true);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await getIncidentNotifications({ limit: 5 });
+      setIncidentNotifications(data || []);
+      setIncidentLoading(false);
+    })();
+  }, []);
   const vehiculosActivos = mockVehicles.filter(
     (v) => v.status === 'activo'
   ).length;
@@ -163,6 +174,96 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Notificaciones de incidentes en tiempo real */}
+      <Card className="p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-5 h-5 text-red-500" />
+              <h2 className="text-lg font-semibold text-gray-900">
+                Notificaciones de incidentes
+              </h2>
+            </div>
+            <p className="text-sm text-gray-600">
+              Últimas alertas recibidas con ubicación y estado de envío
+            </p>
+          </div>
+          <Link
+            to="/incidentes"
+            className="text-sm text-blue-600 hover:underline"
+          >
+            Ver incidentes
+          </Link>
+        </div>
+
+        {incidentLoading ? (
+          <div className="text-sm text-gray-500">
+            Cargando notificaciones...
+          </div>
+        ) : incidentNotifications.length === 0 ? (
+          <div className="text-sm text-gray-500">
+            Sin notificaciones recientes
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {incidentNotifications.slice(0, 3).map((n) => {
+              const payload = n.payload || {};
+              const mapUrl =
+                typeof payload.location_lat === 'number' &&
+                typeof payload.location_lng === 'number'
+                  ? `https://www.google.com/maps?q=${payload.location_lat},${payload.location_lng}`
+                  : payload.location
+                    ? `https://www.google.com/maps?q=${encodeURIComponent(payload.location)}`
+                    : null;
+
+              return (
+                <div
+                  key={n.id}
+                  className="flex items-start justify-between border rounded-lg p-3"
+                >
+                  <div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      {payload.title || 'Incidente reportado'}
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {payload.type || 'incidente'} • Severidad:{' '}
+                      {payload.severity || 'N/D'}
+                    </div>
+                    {mapUrl ? (
+                      <a
+                        href={mapUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs text-blue-600 underline"
+                      >
+                        Abrir mapa
+                      </a>
+                    ) : null}
+                  </div>
+                  <div className="text-right text-xs text-gray-500">
+                    <div className="font-medium text-gray-700">{n.channel}</div>
+                    <div
+                      className={
+                        n.status === 'sent'
+                          ? 'text-green-600'
+                          : n.status === 'failed'
+                            ? 'text-red-600'
+                            : 'text-gray-600'
+                      }
+                    >
+                      {n.status}
+                    </div>
+                    <div>
+                      {new Date(n.created_at).toLocaleTimeString('es-ES')}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
 
       {/* KPIs Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
