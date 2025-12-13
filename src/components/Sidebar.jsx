@@ -17,7 +17,13 @@ import {
   Briefcase,
   Calendar,
   Navigation,
+  TrendingUp,
+  Zap,
+  Database,
+  Lock,
 } from 'lucide-react';
+import NavLink from './NavLink';
+import NavGroup from './NavGroup';
 
 const Sidebar = ({ isOpen, onClose }) => {
   const location = useLocation();
@@ -243,6 +249,98 @@ const Sidebar = ({ isOpen, onClose }) => {
     );
   };
 
+  // Organizar items por grupo funcional
+  const getGroupedMenuItems = () => {
+    const groups = {
+      dashboards: {
+        title: 'Dashboards',
+        icon: LayoutDashboard,
+        items: [],
+      },
+      flota: {
+        title: 'Flota',
+        icon: Truck,
+        items: [],
+      },
+      operaciones: {
+        title: 'Operaciones',
+        icon: Navigation,
+        items: [],
+      },
+      recursos: {
+        title: 'Recursos',
+        icon: Users,
+        items: [],
+      },
+      gestion: {
+        title: 'Gestión',
+        icon: AlertTriangle,
+        items: [],
+      },
+      admin: {
+        title: 'Administración',
+        icon: Settings,
+        items: [],
+      },
+    };
+
+    // Clasificar items en grupos
+    menuItems.forEach((item) => {
+      if (
+        ['/dashboard', '/operador/dashboard', '/rrhh/dashboard'].includes(
+          item.path
+        )
+      ) {
+        groups.dashboards.items.push(item);
+      } else if (
+        [
+          '/vehiculos',
+          '/vehiculos/nuevo',
+          '/conductores',
+          '/conductores/nuevo',
+          '/mantenimiento',
+          '/combustible',
+        ].includes(item.path) ||
+        item.path.startsWith('/asignaciones')
+      ) {
+        groups.flota.items.push(item);
+      } else if (
+        [
+          '/monitoreo',
+          '/rutas/planificacion',
+          '/rutas/monitoreo',
+          '/geocercas',
+          '/conductor/mis-rutas',
+        ].includes(item.path) ||
+        item.path.startsWith('/conductor/')
+      ) {
+        groups.operaciones.items.push(item);
+      } else if (['/desempeno'].includes(item.path)) {
+        groups.recursos.items.push(item);
+      } else if (
+        [
+          '/incidentes',
+          '/alertas',
+          '/alertas/configuracion',
+          '/reportes',
+        ].includes(item.path)
+      ) {
+        groups.gestion.items.push(item);
+      } else if (
+        ['/usuarios', '/seguridad', '/configuracion', '/health'].includes(
+          item.path
+        )
+      ) {
+        groups.admin.items.push(item);
+      }
+    });
+
+    // Retornar solo grupos que tienen items
+    return Object.values(groups).filter((group) => group.items.length > 0);
+  };
+
+  const groupedMenuItems = getGroupedMenuItems();
+
   return (
     <>
       {/* Overlay para móvil */}
@@ -258,13 +356,14 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <div
         className={`
-        fixed inset-y-0 left-0 z-50 w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out
+        fixed inset-y-0 left-0 z-50 w-72 md:w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out
+        flex flex-col
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:inset-0
+        lg:translate-x-0 lg:static lg:inset-0 lg:h-screen
       `}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center justify-between px-4 md:px-6 py-4 md:py-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Truck className="w-6 h-6 text-white" />
@@ -284,71 +383,33 @@ const Sidebar = ({ isOpen, onClose }) => {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto py-6">
-          <div className="px-4 space-y-2">
-            {menuItems.map((item) => {
-              const Icon = item.icon;
-              const active = isActive(item.path);
+        <nav className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 py-3 md:py-4">
+          {groupedMenuItems.map((group) => (
+            <NavGroup key={group.title} title={group.title} icon={group.icon}>
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const active = isActive(item.path);
 
-              return (
-                <Link
-                  key={item.path}
-                  to={item.path}
-                  onClick={onClose}
-                  className={`
-                    group flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200
-                    ${
-                      active
-                        ? 'bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-200 shadow-sm'
-                        : 'hover:bg-gray-50 hover:shadow-sm'
-                    }
-                  `}
-                >
-                  <div className="flex items-center space-x-3">
-                    <div
-                      className={`
-                      p-2 rounded-lg transition-colors
-                      ${
-                        active
-                          ? 'bg-gradient-to-br from-blue-500 to-purple-500 text-white'
-                          : 'bg-gray-100 text-gray-600 group-hover:bg-gray-200'
-                      }
-                    `}
-                    >
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p
-                        className={`font-medium ${active ? 'text-blue-900' : 'text-gray-900'}`}
-                      >
-                        {item.title}
-                      </p>
-                      <p
-                        className={`text-xs ${active ? 'text-blue-600' : 'text-gray-500'}`}
-                      >
-                        {item.description}
-                      </p>
-                    </div>
-                  </div>
-
-                  {item.badge && (
-                    <span
-                      className={`
-                      px-2 py-1 text-xs font-medium rounded-full
-                      ${item.badgeColor || 'bg-blue-100 text-blue-800'}
-                    `}
-                    >
-                      {item.badge}
-                    </span>
-                  )}
-                </Link>
-              );
-            })}
-          </div>
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    icon={Icon}
+                    title={item.title}
+                    description={item.description}
+                    active={active}
+                    badge={item.badge}
+                    badgeColor={item.badgeColor}
+                    onClick={onClose}
+                  />
+                );
+              })}
+            </NavGroup>
+          ))}
         </nav>
 
         {/* Footer */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-3 md:p-4 border-t border-gray-200 bg-white flex-shrink-0">
           <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-xl p-4">
             <div className="flex items-center space-x-3">
               <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
