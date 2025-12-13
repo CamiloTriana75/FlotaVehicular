@@ -200,7 +200,14 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/reportes" element={<Reports />} />
+              <Route
+                path="/reportes"
+                element={
+                  <ProtectedRoute roles={['analista', 'superusuario']}>
+                    <Reports />
+                  </ProtectedRoute>
+                }
+              />
               <Route path="/configuracion" element={<Settings />} />
               <Route path="/alertas" element={<Alerts />} />
               <Route

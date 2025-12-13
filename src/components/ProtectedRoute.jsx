@@ -17,16 +17,22 @@ export default function ProtectedRoute({ roles = [], children }) {
       const user = JSON.parse(userStr);
       role = user.rol || user.user_metadata?.role || user.role || null;
     } catch (e) {
+      console.error('Error parsing user from localStorage:', e);
       // ignore parse error
     }
   }
 
-  console.log('🔒 ProtectedRoute check:', { role, allowedRoles: roles });
+  // Debug: mostrar qué estamos comparando
+  console.log('🔒 ProtectedRoute check:', {
+    role: role ? `'${role}'` : 'null/undefined',
+    allowedRoles: JSON.stringify(roles),
+    isAllowed: role && (roles.length === 0 || roles.includes(role)),
+  });
 
   const allowed = role && (roles.length === 0 || roles.includes(role));
 
   if (!allowed) {
-    console.warn('❌ Access denied. Role:', role, 'Required:', roles);
+    console.warn('❌ Access denied for role:', role, '| Allowed roles:', roles);
     // Redirigir según el rol del usuario
     const redirectMap = {
       rrhh: '/rrhh/dashboard',
@@ -35,11 +41,13 @@ export default function ProtectedRoute({ roles = [], children }) {
       conductor: '/conductor/mis-rutas',
       planificador: '/rutas/planificacion',
       gerente: '/dashboard',
+      analista: '/reportes',
       admin: '/dashboard',
       superusuario: '/dashboard',
     };
 
     const redirectTo = role ? redirectMap[role] || '/dashboard' : '/dashboard';
+    console.log('Redirecting to:', redirectTo);
     return <Navigate to={redirectTo} replace />;
   }
 

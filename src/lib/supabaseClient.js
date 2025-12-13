@@ -34,6 +34,20 @@ const MOCK_USERS = [
     role: 'mecanico',
     fullName: 'Mecánico Demo',
   },
+  {
+    id: 'mock-analista',
+    email: 'analista@flotavehicular.com',
+    password: 'Analista123!',
+    role: 'analista',
+    fullName: 'Analista de Reportes',
+  },
+  {
+    id: 'mock-superusuario',
+    email: 'superusuario@flotavehicular.com',
+    password: 'Superusuario123!',
+    role: 'superusuario',
+    fullName: 'Super Usuario',
+  },
 ];
 
 // =====================================================
@@ -240,7 +254,8 @@ export const mockAuth = {
     const mockUser = {
       id: userData.id,
       email: userData.email,
-      role: userData.role,
+      rol: userData.role, // Usar 'rol' (español) como clave principal
+      role: userData.role, // Mantener 'role' para compatibilidad
       user_metadata: {
         full_name: userData.fullName,
         role: userData.role,
