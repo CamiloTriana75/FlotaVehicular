@@ -139,18 +139,18 @@ function App() {
 
   return (
     <Router>
-      <div className="min-h-screen bg-gray-50 flex">
+      <div className="min-h-screen bg-gray-50 flex overflow-hidden">
         <Sidebar
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <TopBar
             onMenuClick={() => setIsSidebarOpen(true)}
             onLogout={handleLogout}
             isMockMode={auth.isMockMode}
           />
-          <main className="p-6">
+          <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6">
             <Routes>
               <Route path="/" element={<RoleDashboardRedirect />} />
               <Route
