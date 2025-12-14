@@ -36,6 +36,8 @@ import RouteMonitoring from './pages/RouteMonitoring';
 import RouteComparison from './pages/RouteComparison';
 import Geofences from './pages/Geofences';
 import ReportIncident from './pages/ReportIncident';
+import DriverDashboard from './pages/DriverDashboard';
+import SupervisorPanicCenter from './pages/SupervisorPanicCenter';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -345,6 +347,23 @@ function App() {
                 }
               />
               <Route path="/health" element={<HealthCheck />} />
+              {/* Rutas de Pánico - Sistema de Emergencia */}
+              <Route
+                path="/conductor/dashboard"
+                element={
+                  <ProtectedRoute roles={['conductor']}>
+                    <DriverDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/supervisor/centro-control"
+                element={
+                  <ProtectedRoute roles={['supervisor', 'gerente', 'admin']}>
+                    <SupervisorPanicCenter />
+                  </ProtectedRoute>
+                }
+              />
             </Routes>
           </main>
         </div>
