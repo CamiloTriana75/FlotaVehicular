@@ -155,6 +155,22 @@ const Sidebar = ({ isOpen, onClose }) => {
       roles: ['conductor'],
     },
     {
+      title: 'Dashboard Conductor',
+      path: '/conductor/dashboard',
+      icon: Activity,
+      description: 'Mi información y botón de pánico',
+      roles: ['conductor'],
+    },
+    {
+      title: 'Centro de Control',
+      path: '/supervisor/centro-control',
+      icon: Shield,
+      description: 'Gestionar alertas de pánico',
+      badge: '🚨',
+      badgeColor: 'bg-red-500',
+      roles: ['supervisor', 'gerente', 'admin'],
+    },
+    {
       title: 'Planificación Rutas',
       path: '/rutas/planificacion',
       icon: Navigation,
@@ -287,9 +303,12 @@ const Sidebar = ({ isOpen, onClose }) => {
     // Clasificar items en grupos
     menuItems.forEach((item) => {
       if (
-        ['/dashboard', '/operador/dashboard', '/rrhh/dashboard'].includes(
-          item.path
-        )
+        [
+          '/dashboard',
+          '/operador/dashboard',
+          '/rrhh/dashboard',
+          '/conductor/dashboard',
+        ].includes(item.path)
       ) {
         groups.dashboards.items.push(item);
       } else if (
@@ -311,6 +330,8 @@ const Sidebar = ({ isOpen, onClose }) => {
           '/rutas/monitoreo',
           '/geocercas',
           '/conductor/mis-rutas',
+          '/conductor/dashboard',
+          '/supervisor/centro-control',
         ].includes(item.path) ||
         item.path.startsWith('/conductor/')
       ) {
@@ -323,6 +344,7 @@ const Sidebar = ({ isOpen, onClose }) => {
           '/alertas',
           '/alertas/configuracion',
           '/reportes',
+          '/supervisor/centro-control',
         ].includes(item.path)
       ) {
         groups.gestion.items.push(item);

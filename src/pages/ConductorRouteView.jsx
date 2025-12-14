@@ -27,6 +27,7 @@ import {
   // updateRouteAssignmentStatus, // opcional: habilitar si se desea cambiar estado
 } from '../services/routeService';
 import { locationService } from '../services/locationService';
+import PanicButton from '../components/PanicButton';
 
 const MAPBOX_TOKEN = (import.meta.env.VITE_MAPBOX_TOKEN || '').trim();
 mapboxgl.accessToken = MAPBOX_TOKEN;
@@ -93,6 +94,13 @@ export default function ConductorRouteView() {
   const [isMapFullscreen, setIsMapFullscreen] = useState(false);
   const [showSteps, setShowSteps] = useState(false);
   const [showStats, setShowStats] = useState(false);
+
+  // IDs derivados para el botón de pánico
+  const driverId =
+    assignment?.driver_id ||
+    assignment?.driver?.id ||
+    assignment?.driver?.user_id;
+  const vehicleId = assignment?.vehicle_id || assignment?.vehicle?.id;
 
   // Helpers
   const formatDistance = (m) =>
@@ -249,11 +257,17 @@ export default function ConductorRouteView() {
         });
 
         // Waypoints
-        const wpFeatures = (assignment.route.waypoints || []).map((wp) => ({
-          type: 'Feature',
-          properties: { number: wp.number || wp.order + 1 || 1 },
-          geometry: { type: 'Point', coordinates: [wp.lng, wp.lat] },
-        }));
+        const wpFeatures = (assignment.route.waypoints || []).map((wp) => {
+          const wpNum = wp.number || wp.order + 1 || 1;
+          return {
+            type: 'Feature',
+            properties: {
+              number: wpNum,
+              completed: checkedWaypointsRef.current.has(wpNum),
+            },
+            geometry: { type: 'Point', coordinates: [wp.lng, wp.lat] },
+          };
+        });
         map.current.addSource('wps', {
           type: 'geojson',
           data: { type: 'FeatureCollection', features: wpFeatures },
@@ -265,7 +279,7 @@ export default function ConductorRouteView() {
           paint: {
             'circle-color': [
               'case',
-              ['get', 'completed'],
+              ['boolean', ['get', 'completed'], false],
               '#22c55e', // verde si está completado
               '#2563eb', // azul si está pendiente
             ],
@@ -848,6 +862,17 @@ export default function ConductorRouteView() {
           </div>
         )}
       </div>
+
+      {/* Botón de pánico flotante visible en cualquier ruta */}
+      {assignment && (
+        <PanicButton
+          driverId={driverId}
+          vehicleId={vehicleId}
+          onAlertSent={() => {
+            console.log('Panic alert sent from route view');
+          }}
+        />
+      )}
 
       {/* Panel inferior tipo bottom sheet para móvil */}
       <div
