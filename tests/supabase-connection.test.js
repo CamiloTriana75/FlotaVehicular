@@ -7,7 +7,10 @@ describe('Supabase connectivity', () => {
     const url = import.meta.env.VITE_SUPABASE_URL;
     const anon = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    expect(url, 'VITE_SUPABASE_URL debe estar definida').toBeTruthy();
+    expect(
+      import.meta.env.VITE_SUPABASE_URL,
+      'VITE_SUPABASE_URL debe estar definida'
+    ).toBeTruthy();
     expect(anon, 'VITE_SUPABASE_ANON_KEY debe estar definida').toBeTruthy();
 
     const supabase = createClient(url, anon);
