@@ -67,9 +67,69 @@ export const conductorService = {
    */
   create: async (conductorData) => {
     try {
+      // Validar campos obligatorios
+      const required = ['cedula', 'nombre_completo', 'email'];
+      const missing = required.filter(
+        (f) => !conductorData[f] || String(conductorData[f]).trim() === ''
+      );
+      if (missing.length) {
+        return {
+          data: null,
+          error: new Error(`Faltan campos requeridos: ${missing.join(', ')}`),
+        };
+      }
+
+      // Checar duplicados específicos (cedula, email, numero_licencia si existe)
+      const [cedulaDup, emailDup, licenciaDup] = await Promise.all([
+        conductorData.cedula
+          ? supabase
+              .from('conductor')
+              .select('id_conductor')
+              .eq('cedula', conductorData.cedula)
+              .maybeSingle()
+          : { data: null, error: null },
+        conductorData.email
+          ? supabase
+              .from('conductor')
+              .select('id_conductor')
+              .eq('email', conductorData.email)
+              .maybeSingle()
+          : { data: null, error: null },
+        conductorData.numero_licencia
+          ? supabase
+              .from('conductor')
+              .select('id_conductor')
+              .eq('numero_licencia', conductorData.numero_licencia)
+              .maybeSingle()
+          : { data: null, error: null },
+      ]);
+
+      if (cedulaDup.error) throw cedulaDup.error;
+      if (emailDup.error) throw emailDup.error;
+      if (licenciaDup.error) throw licenciaDup.error;
+
+      const conflicts = [];
+      if (cedulaDup.data) conflicts.push('cédula');
+      if (emailDup.data) conflicts.push('email');
+      if (licenciaDup.data) conflicts.push('número de licencia');
+
+      if (conflicts.length > 0) {
+        return {
+          data: null,
+          error: new Error(
+            `No se creó el conductor: ya existe ${conflicts.join(', ')}`
+          ),
+        };
+      }
+
+      const payload = {
+        ...conductorData,
+        estado: conductorData.estado || 'disponible',
+      };
+
       const { data, error } = await supabase
         .from('conductor')
-        .insert([conductorData])
+        .insert([payload])
         .select()
         .single();
 
@@ -77,6 +137,15 @@ export const conductorService = {
 
       return { data, error: null };
     } catch (error) {
+      if (error?.code === '23505') {
+        return {
+          data: null,
+          error: new Error(
+            'No se creó el conductor: cédula o email ya están registrados'
+          ),
+        };
+      }
+
       console.error('Error al crear conductor:', error);
       return { data: null, error };
     }

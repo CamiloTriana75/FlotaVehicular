@@ -55,10 +55,39 @@ export const userService = {
   async create({ username, email, rol, password }) {
     const payload = sanitizeUserPayload({ username, email, rol });
 
+    // Validación básica en cliente
+    if (!payload.username) {
+      return {
+        data: null,
+        error: new Error('El nombre de usuario es obligatorio'),
+      };
+    }
+    if (!payload.email) {
+      return { data: null, error: new Error('El email es obligatorio') };
+    }
+
     if (isInMockMode()) {
-      // Guardar también en mock para entorno sin backend
+      // Guardar en mock para entorno sin backend
       const raw = localStorage.getItem('usersMockList');
       const list = raw ? JSON.parse(raw) : [];
+
+      // Validar duplicados en mock
+      const usernameDup = list.find((u) => u.name === payload.username);
+      const emailDup = list.find((u) => u.email === payload.email);
+
+      const conflicts = [];
+      if (usernameDup) conflicts.push('nombre de usuario');
+      if (emailDup) conflicts.push('email');
+
+      if (conflicts.length > 0) {
+        return {
+          data: null,
+          error: new Error(
+            `No se creó el usuario: ya existe ${conflicts.join(', ')}`
+          ),
+        };
+      }
+
       const user = {
         id: Date.now(),
         name: payload.username,
@@ -71,6 +100,36 @@ export const userService = {
       return { data: { id_usuario: user.id, ...user }, error: null };
     }
 
+    // Validar duplicados por username o email antes de RPC (solo en modo real)
+    const [usernameDup, emailDup] = await Promise.all([
+      supabase
+        .from('usuario')
+        .select('id_usuario')
+        .eq('username', payload.username)
+        .maybeSingle(),
+      supabase
+        .from('usuario')
+        .select('id_usuario')
+        .eq('email', payload.email)
+        .maybeSingle(),
+    ]);
+
+    if (usernameDup.error) return { data: null, error: usernameDup.error };
+    if (emailDup.error) return { data: null, error: emailDup.error };
+
+    const conflicts = [];
+    if (usernameDup.data) conflicts.push('nombre de usuario');
+    if (emailDup.data) conflicts.push('email');
+
+    if (conflicts.length > 0) {
+      return {
+        data: null,
+        error: new Error(
+          `No se creó el usuario: ya existe ${conflicts.join(', ')}`
+        ),
+      };
+    }
+
     // Usar la RPC con password del formulario
     try {
       const pwd = password || 'Temporal2025$'; // Fallback en caso de llamada sin password
@@ -80,9 +139,43 @@ export const userService = {
         p_rol: payload.rol,
         p_password: pwd,
       });
-      if (error) throw error;
+      if (error) {
+        // Manejar errores de clave única (email duplicado)
+        if (
+          error.code === '23505' ||
+          (typeof error.message === 'string' &&
+            (error.message.includes('usuario_email_key') ||
+              error.message.includes('usuario_username_key')))
+        ) {
+          return {
+            data: null,
+            error: new Error(
+              error.message.includes('username')
+                ? 'Ya existe un usuario con ese nombre de usuario'
+                : 'Ya existe un usuario con ese email'
+            ),
+          };
+        }
+        throw error;
+      }
       return { data, error: null };
     } catch (e) {
+      // Fallback de mensaje amigable
+      if (
+        e?.code === '23505' ||
+        (typeof e?.message === 'string' &&
+          (e.message.includes('usuario_email_key') ||
+            e.message.includes('usuario_username_key')))
+      ) {
+        return {
+          data: null,
+          error: new Error(
+            e.message.includes('username')
+              ? 'Ya existe un usuario con ese nombre de usuario'
+              : 'Ya existe un usuario con ese email'
+          ),
+        };
+      }
       return { data: null, error: e };
     }
   },

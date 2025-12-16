@@ -10,6 +10,25 @@ export const driverService = {
    * @param {Object} formData
    */
   createFromForm: async (formData) => {
+    // Validación básica de campos obligatorios
+    const requiredFields = {
+      cedula: formData.cedula,
+      numero_licencia: formData.numero_licencia,
+      nombre_completo: formData.nombre_completo,
+      email: formData.email,
+    };
+
+    const missing = Object.entries(requiredFields)
+      .filter(([, v]) => !v || String(v).trim() === '')
+      .map(([k]) => k);
+
+    if (missing.length > 0) {
+      return {
+        data: null,
+        error: new Error(`Faltan campos requeridos: ${missing.join(', ')}`),
+      };
+    }
+
     // Separar nombre y apellidos a partir de nombre_completo
     const raw = (formData.nombre_completo || '').trim().replace(/\s+/g, ' ');
     let nombre = raw;
@@ -28,7 +47,7 @@ export const driverService = {
       email: formData.email || null,
       direccion: formData.direccion || null,
       numero_licencia: formData.numero_licencia || null,
-      estado: formData.estado || 'activo',
+      estado: formData.estado || 'disponible',
     };
 
     // Asegurar que no se envían flags internos
@@ -37,6 +56,49 @@ export const driverService = {
     const cleaned = { ...payload }; // payload ya sólo contiene columnas válidas
 
     try {
+      // Validar unicidad específica (cedula, email, numero_licencia)
+      const [cedulaDup, emailDup, licenciaDup] = await Promise.all([
+        payload.cedula
+          ? supabase
+              .from('drivers')
+              .select('id')
+              .eq('cedula', payload.cedula)
+              .maybeSingle()
+          : { data: null, error: null },
+        payload.email
+          ? supabase
+              .from('drivers')
+              .select('id')
+              .eq('email', payload.email)
+              .maybeSingle()
+          : { data: null, error: null },
+        payload.numero_licencia
+          ? supabase
+              .from('drivers')
+              .select('id')
+              .eq('numero_licencia', payload.numero_licencia)
+              .maybeSingle()
+          : { data: null, error: null },
+      ]);
+
+      if (cedulaDup.error) throw cedulaDup.error;
+      if (emailDup.error) throw emailDup.error;
+      if (licenciaDup.error) throw licenciaDup.error;
+
+      const conflicts = [];
+      if (cedulaDup.data) conflicts.push('cédula');
+      if (emailDup.data) conflicts.push('email');
+      if (licenciaDup.data) conflicts.push('número de licencia');
+
+      if (conflicts.length > 0) {
+        return {
+          data: null,
+          error: new Error(
+            `No se creó el conductor: ya existe ${conflicts.join(', ')}`
+          ),
+        };
+      }
+
       const { data, error } = await supabase
         .from('drivers')
         .insert([cleaned])
@@ -46,6 +108,16 @@ export const driverService = {
       if (error) throw error;
       return { data, error: null };
     } catch (error) {
+      // Manejo de error amigable para violaciones de unicidad
+      if (error?.code === '23505') {
+        return {
+          data: null,
+          error: new Error(
+            'No se creó el conductor: cédula, email o licencia ya están registrados'
+          ),
+        };
+      }
+
       console.error('Error al crear driver en tabla drivers:', error);
       return { data: null, error };
     }
