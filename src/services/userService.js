@@ -66,7 +66,41 @@ export const userService = {
       return { data: null, error: new Error('El email es obligatorio') };
     }
 
-    // Validar duplicados por username o email antes de RPC
+    if (isInMockMode()) {
+      // Guardar en mock para entorno sin backend
+      const raw = localStorage.getItem('usersMockList');
+      const list = raw ? JSON.parse(raw) : [];
+
+      // Validar duplicados en mock
+      const usernameDup = list.find((u) => u.name === payload.username);
+      const emailDup = list.find((u) => u.email === payload.email);
+
+      const conflicts = [];
+      if (usernameDup) conflicts.push('nombre de usuario');
+      if (emailDup) conflicts.push('email');
+
+      if (conflicts.length > 0) {
+        return {
+          data: null,
+          error: new Error(
+            `No se creó el usuario: ya existe ${conflicts.join(', ')}`
+          ),
+        };
+      }
+
+      const user = {
+        id: Date.now(),
+        name: payload.username,
+        email: payload.email,
+        role: payload.rol,
+        createdAt: new Date().toISOString(),
+      };
+      const updated = [user, ...list];
+      localStorage.setItem('usersMockList', JSON.stringify(updated));
+      return { data: { id_usuario: user.id, ...user }, error: null };
+    }
+
+    // Validar duplicados por username o email antes de RPC (solo en modo real)
     const [usernameDup, emailDup] = await Promise.all([
       supabase
         .from('usuario')
@@ -94,22 +128,6 @@ export const userService = {
           `No se creó el usuario: ya existe ${conflicts.join(', ')}`
         ),
       };
-    }
-
-    if (isInMockMode()) {
-      // Guardar también en mock para entorno sin backend
-      const raw = localStorage.getItem('usersMockList');
-      const list = raw ? JSON.parse(raw) : [];
-      const user = {
-        id: Date.now(),
-        name: payload.username,
-        email: payload.email,
-        role: payload.rol,
-        createdAt: new Date().toISOString(),
-      };
-      const updated = [user, ...list];
-      localStorage.setItem('usersMockList', JSON.stringify(updated));
-      return { data: { id_usuario: user.id, ...user }, error: null };
     }
 
     // Usar la RPC con password del formulario
