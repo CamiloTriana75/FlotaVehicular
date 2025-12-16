@@ -10,7 +10,7 @@
  * @property {string} license - Número de licencia
  * @property {string} phone - Teléfono de contacto
  * @property {string} email - Email del conductor
- * @property {string} status - Estado del conductor (activo, en_viaje, descansando, inactivo)
+ * @property {string} status - Estado del conductor (disponible, activo, en_viaje, descansando, inactivo)
  * @property {number} experience - Años de experiencia
  * @property {string|null} assignedVehicle - ID del vehículo asignado
  * @property {string} createdAt - Fecha de creación
@@ -27,7 +27,7 @@ export class Driver {
     license,
     phone,
     email,
-    status = 'activo',
+    status = 'disponible',
     experience = 0,
     assignedVehicle = null,
     createdAt = new Date().toISOString(),
@@ -50,7 +50,7 @@ export class Driver {
    * @returns {boolean}
    */
   isAvailable() {
-    return this.status === 'activo' && !this.assignedVehicle;
+    return this.status === 'disponible' && !this.assignedVehicle;
   }
 
   /**
@@ -70,7 +70,7 @@ export class Driver {
       throw new Error('El conductor ya tiene un vehículo asignado');
     }
     this.assignedVehicle = vehicleId;
-    this.status = 'en_viaje';
+    this.status = 'activo';
     this.updatedAt = new Date().toISOString();
   }
 
@@ -79,7 +79,7 @@ export class Driver {
    */
   unassignVehicle() {
     this.assignedVehicle = null;
-    this.status = 'activo';
+    this.status = 'disponible';
     this.updatedAt = new Date().toISOString();
   }
 

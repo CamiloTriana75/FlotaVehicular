@@ -224,6 +224,23 @@ export async function createAssignment(assignmentData) {
       throw error;
     }
 
+    // Marcar conductor y vehículo como activos al asignar
+    const nowIso = new Date().toISOString();
+    const [{ error: driverStatusError }, { error: vehicleStatusError }] =
+      await Promise.all([
+        supabase
+          .from('drivers')
+          .update({ estado: 'activo', updated_at: nowIso })
+          .eq('id', assignmentData.driverId),
+        supabase
+          .from('vehicles')
+          .update({ status: 'activo' })
+          .eq('id', assignmentData.vehicleId),
+      ]);
+
+    if (driverStatusError) throw driverStatusError;
+    if (vehicleStatusError) throw vehicleStatusError;
+
     return { data, error: null };
   } catch (error) {
     console.error('Error al crear asignación:', error);
@@ -309,11 +326,41 @@ export async function updateAssignment(id, updates) {
  */
 export async function completeAssignment(id) {
   try {
+    // Obtener datos de la asignación antes de completarla
+    const { data: assignment, error: fetchError } = await supabase
+      .from('vehicle_assignments')
+      .select('id, driver_id, vehicle_id, status')
+      .eq('id', id)
+      .single();
+
+    if (fetchError) throw fetchError;
+
     const { data, error } = await supabase.rpc('complete_assignment', {
       p_assignment_id: id,
     });
 
     if (error) throw error;
+
+    // Marcar asignación completada y liberar recursos
+    const nowIso = new Date().toISOString();
+    const [assignmentUpdate, driverUpdate, vehicleUpdate] = await Promise.all([
+      supabase
+        .from('vehicle_assignments')
+        .update({ status: 'completed' })
+        .eq('id', id),
+      supabase
+        .from('drivers')
+        .update({ estado: 'disponible', updated_at: nowIso })
+        .eq('id', assignment.driver_id),
+      supabase
+        .from('vehicles')
+        .update({ status: 'estacionado' })
+        .eq('id', assignment.vehicle_id),
+    ]);
+
+    if (assignmentUpdate.error) throw assignmentUpdate.error;
+    if (driverUpdate.error) throw driverUpdate.error;
+    if (vehicleUpdate.error) throw vehicleUpdate.error;
 
     return { data, error: null };
   } catch (error) {
