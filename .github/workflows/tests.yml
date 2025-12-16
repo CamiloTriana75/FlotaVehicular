@@ -20,7 +20,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm install
 
       - name: Run unit tests
-        run: npm run test -- --runInBand
+        run: npm test -- --run --no-threads
