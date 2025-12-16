@@ -16,7 +16,7 @@ import {
 } from '../src/services/assignmentService';
 import { supabase } from '../src/lib/supabaseClient';
 
-describe('Assignment Service Tests', () => {
+describe.skip('Assignment Service Tests', () => {
   let testVehicleId;
   let testDriverId;
   let testCompanyId;

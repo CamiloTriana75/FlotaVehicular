@@ -22,7 +22,7 @@ const memoryStore = (() => {
   };
 })();
 
-global.localStorage = global.localStorage || memoryStore;
+global.localStorage = memoryStore;
 
 describe('statusHistory utils', () => {
   beforeEach(() => {

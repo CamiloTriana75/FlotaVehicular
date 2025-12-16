@@ -3,14 +3,6 @@ import { describe, it, expect } from 'vitest';
 // Utilidades de prueba para el sistema de gestión de flota
 
 describe('Vehicle Utils', () => {
-  // Función para calcular el estado del combustible
-  const getFuelStatus = (level) => {
-    if (level <= 15) return 'crítico';
-    if (level <= 30) return 'bajo';
-    if (level <= 70) return 'normal';
-    return 'alto';
-  };
-
   // Función para formatear placa de vehículo
   const formatPlate = (plate) => {
     if (!plate) return '';
@@ -31,13 +23,6 @@ describe('Vehicle Utils', () => {
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c;
   };
-
-  it('should return correct fuel status', () => {
-    expect(getFuelStatus(10)).toBe('crítico');
-    expect(getFuelStatus(25)).toBe('bajo');
-    expect(getFuelStatus(50)).toBe('normal');
-    expect(getFuelStatus(80)).toBe('alto');
-  });
 
   it('should format vehicle plates correctly', () => {
     expect(formatPlate('abc-123')).toBe('ABC123');

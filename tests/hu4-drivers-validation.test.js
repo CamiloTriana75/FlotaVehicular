@@ -13,7 +13,7 @@ describe('Driver form validation', () => {
 
       expect(errors.nombre_completo).toBeDefined();
       expect(errors.cedula).toBeDefined();
-      expect(errors.fecha_venc_licencia).toBeDefined();
+      expect(errors.numero_licencia).toBeDefined();
     });
 
     it('debe aceptar datos válidos sin errores', () => {
@@ -24,6 +24,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'Juan Pérez',
         cedula: '1234567890',
         fecha_venc_licencia: hoyMas1Mes.toISOString().split('T')[0],
+        numero_licencia: 'ABC123',
       };
 
       const errors = validateDriverData(data);
@@ -33,13 +34,11 @@ describe('Driver form validation', () => {
 
   describe('Validación de fecha de vencimiento de licencia', () => {
     it('debe rechazar una fecha de vencimiento pasada', () => {
-      const ayer = new Date();
-      ayer.setDate(ayer.getDate() - 1);
-
       const data = {
         nombre_completo: 'Test Driver',
         cedula: '1234',
-        fecha_venc_licencia: ayer.toISOString().split('T')[0],
+        fecha_venc_licencia: '2000-01-01',
+        numero_licencia: 'ABC123',
       };
 
       const errors = validateDriverData(data);
@@ -54,6 +53,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'Test Driver',
         cedula: '1234',
         fecha_venc_licencia: hoy.toISOString().split('T')[0],
+        numero_licencia: 'ABC123',
       };
 
       const errors = validateDriverData(data);
@@ -68,6 +68,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'Test Driver',
         cedula: '1234',
         fecha_venc_licencia: futuro.toISOString().split('T')[0],
+        numero_licencia: 'ABC123',
       };
 
       const errors = validateDriverData(data);
@@ -79,6 +80,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'Test Driver',
         cedula: '1234',
         fecha_venc_licencia: 'fecha-invalida',
+        numero_licencia: 'ABC123',
       };
 
       const errors = validateDriverData(data);
@@ -92,6 +94,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'Test Driver',
         cedula: '1234',
         fecha_venc_licencia: '2026-12-31',
+        numero_licencia: 'ABC123',
         email: 'test@example.com',
       };
 
@@ -104,6 +107,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'Test Driver',
         cedula: '1234',
         fecha_venc_licencia: '2026-12-31',
+        numero_licencia: 'ABC123',
         email: 'email-invalido',
       };
 
@@ -116,6 +120,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'Test Driver',
         cedula: '1234',
         fecha_venc_licencia: '2026-12-31',
+        numero_licencia: 'ABC123',
         email: '',
       };
 
@@ -132,6 +137,7 @@ describe('Driver form validation', () => {
         telefono: '3001234567',
         email: 'carlos.mendoza@email.com',
         fecha_venc_licencia: '2026-06-15',
+        numero_licencia: 'LIC-123',
         estado: 'activo',
         direccion: 'Calle 100 # 15-45, Bogotá',
         fecha_ingreso: '2025-01-15',
@@ -150,6 +156,7 @@ describe('Driver form validation', () => {
         nombre_completo: 'María García',
         cedula: '2015678901',
         fecha_venc_licencia: en15Dias.toISOString().split('T')[0],
+        numero_licencia: 'ABC123',
       };
 
       const errors = validateDriverData(data);

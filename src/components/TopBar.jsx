@@ -118,7 +118,7 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
           {/* Title - Hidden on mobile */}
           <div className="hidden md:block flex-shrink-0">
             <h2 className="text-xl lg:text-2xl font-bold text-gray-900 whitespace-nowrap">
-              FleetManager
+              FleetManager 🚀
             </h2>
           </div>
 
