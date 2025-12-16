@@ -23,7 +23,7 @@ jobs:
         run: npm install
 
       - name: Run unit tests (Vitest)
-        run: npm test -- --run --no-threads
+        run: npm test -- --run
 
   deploy:
     needs: test
