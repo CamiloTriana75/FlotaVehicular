@@ -42,7 +42,7 @@ Sistema integral para la gestión, monitoreo y optimización de flota vehicular 
 - HU17: Como mecánico, quiero registrar intervenciones de mantenimiento con detalles de repuestos y mano de obra.
 - HU18: Como administrador, quiero visualizar el historial completo de mantenimiento por vehículo con costos asociados.
 
-### Épica 7: Gestión de Incidentes y Emergencias
+### Épica 7: Gestión de Incidentes y Emergencias.
 
 - HU19: Como conductor, quiero poder reportar incidentes o emergencias con un botón de pánico que envíe alerta inmediata.
 - HU20: Como supervisor, quiero recibir notificaciones inmediatas de incidentes con ubicación exacta y datos del vehículo.
