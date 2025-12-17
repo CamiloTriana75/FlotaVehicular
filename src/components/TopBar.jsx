@@ -274,17 +274,6 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
                   </div>
 
                   <div className="py-2">
-                    <button className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <User className="w-4 h-4 flex-shrink-0" />
-                      <span>Perfil</span>
-                    </button>
-                    <button className="flex items-center gap-3 w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
-                      <Settings className="w-4 h-4 flex-shrink-0" />
-                      <span>Configuración</span>
-                    </button>
-                  </div>
-
-                  <div className="border-t border-gray-200 py-2">
                     <button
                       onClick={() => {
                         onLogout();

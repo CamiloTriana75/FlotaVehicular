@@ -213,40 +213,70 @@ const ReportIncident = () => {
           )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Conductor */}
+            {/* Conductor - Solo lectura si hay asignación */}
             <div>
               <label className="text-sm text-gray-600">Conductor</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.driver_id}
-                onChange={(e) => handleChange('driver_id', e.target.value)}
-                required
-              >
-                <option value="">Seleccionar conductor</option>
-                {drivers.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nombre} {d.apellidos}
-                  </option>
-                ))}
-              </select>
+              {activeAssignment ? (
+                <input
+                  type="text"
+                  className="w-full border rounded p-2 bg-gray-50"
+                  value={
+                    drivers.find((d) => d.id == form.driver_id)
+                      ? `${drivers.find((d) => d.id == form.driver_id).nombre} ${
+                          drivers.find((d) => d.id == form.driver_id).apellidos
+                        }`
+                      : 'No disponible'
+                  }
+                  disabled
+                />
+              ) : (
+                <select
+                  className="w-full border rounded p-2"
+                  value={form.driver_id}
+                  onChange={(e) => handleChange('driver_id', e.target.value)}
+                  required
+                >
+                  <option value="">Seleccionar conductor</option>
+                  {drivers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.nombre} {d.apellidos}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
-            {/* Vehículo */}
+            {/* Vehículo - Solo lectura si hay asignación */}
             <div>
               <label className="text-sm text-gray-600">Vehículo</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.vehicle_id}
-                onChange={(e) => handleChange('vehicle_id', e.target.value)}
-                required
-              >
-                <option value="">Seleccionar vehículo</option>
-                {vehicles.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.placa} - {v.marca} {v.modelo}
-                  </option>
-                ))}
-              </select>
+              {activeAssignment ? (
+                <input
+                  type="text"
+                  className="w-full border rounded p-2 bg-gray-50"
+                  value={
+                    vehicles.find((v) => v.id == form.vehicle_id)?.placa
+                      ? `${vehicles.find((v) => v.id == form.vehicle_id).placa} - ${
+                          vehicles.find((v) => v.id == form.vehicle_id).marca
+                        } ${vehicles.find((v) => v.id == form.vehicle_id).modelo}`
+                      : 'No disponible'
+                  }
+                  disabled
+                />
+              ) : (
+                <select
+                  className="w-full border rounded p-2"
+                  value={form.vehicle_id}
+                  onChange={(e) => handleChange('vehicle_id', e.target.value)}
+                  required
+                >
+                  <option value="">Seleccionar vehículo</option>
+                  {vehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.placa} - {v.marca} {v.modelo}
+                    </option>
+                  ))}
+                </select>
+              )}
             </div>
 
             {/* Tipo de incidente */}

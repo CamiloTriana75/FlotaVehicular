@@ -165,18 +165,21 @@ export const createMaintenanceOrder = async (orderData, parts = []) => {
       const partsToInsert = parts.map((part) => ({
         maintenance_order_id: order.id,
         part_name: part.name,
-        part_number: part.partNumber,
+        part_number: part.partNumber || null,
         quantity: part.quantity || 1,
         unit_cost: part.unitCost || 0,
-        supplier: part.supplier,
-        notes: part.notes,
+        supplier: part.supplier || null,
+        notes: part.notes || null,
       }));
 
       const { error: partsError } = await supabase
         .from('maintenance_parts')
         .insert(partsToInsert);
 
-      if (partsError) throw partsError;
+      if (partsError) {
+        console.error('Error insertando partes:', partsError);
+        throw partsError;
+      }
     }
 
     // Obtener la orden completa con partes
