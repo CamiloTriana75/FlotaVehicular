@@ -8,7 +8,7 @@ import { AUTH_ACTIONS } from '../types';
 export const initialAuthState = {
   user: null,
   isAuthenticated: false,
-  isMockMode: true,
+  isMockMode: false,
   loading: false,
   error: null,
 };

@@ -217,6 +217,44 @@ export const updateMaintenanceOrder = async (orderId, updates) => {
 
     if (error) throw error;
 
+    // Si la orden cambia a 'in_progress', cancelar asignaciones activas del vehículo y quitar conductor
+    if (updates.status === 'in_progress' && data?.vehicle_id) {
+      try {
+        // 1) Cancelar asignaciones activas del vehículo
+        const { data: activeAssignments } = await supabase
+          .from('vehicle_assignments')
+          .select('id, driver_id')
+          .eq('vehicle_id', data.vehicle_id)
+          .eq('status', 'active');
+
+        if (activeAssignments && activeAssignments.length > 0) {
+          for (const a of activeAssignments) {
+            // RPC para cancelar la asignación
+            await supabase.rpc('cancel_assignment', { p_assignment_id: a.id });
+            // Liberar conductor (disponible)
+            await supabase
+              .from('drivers')
+              .update({
+                estado: 'disponible',
+                updated_at: new Date().toISOString(),
+              })
+              .eq('id', a.driver_id);
+          }
+        }
+
+        // 2) Poner vehículo en estado mantenimiento y remover conductor actual si existe
+        await supabase
+          .from('vehicles')
+          .update({ status: 'mantenimiento', current_driver_id: null })
+          .eq('id', data.vehicle_id);
+      } catch (e) {
+        console.warn(
+          '⚠️ Error al cancelar asignaciones por mantenimiento:',
+          e?.message || e
+        );
+      }
+    }
+
     return { data, error: null };
   } catch (error) {
     console.error('Error al actualizar orden de mantenimiento:', error);

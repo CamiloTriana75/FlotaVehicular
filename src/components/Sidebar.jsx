@@ -55,18 +55,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   // Configuración de menús por rol
   const allMenuItems = [
     {
-      title: 'Dashboard General',
-      path: '/dashboard',
-      icon: LayoutDashboard,
-      description: 'Vista general del sistema',
-      roles: ['superusuario', 'admin', 'gerente'], // Admin, superusuario y gerente
-    },
-    {
       title: 'Panel Operador',
       path: '/operador/dashboard',
       icon: Activity,
       description: 'Monitoreo de Flota',
-      roles: ['operador'], // Solo para operador
+      roles: ['operador', 'admin', 'superusuario', 'gerente'], // Operador y admins
     },
     {
       title: 'Dashboard RRHH',
@@ -378,8 +371,8 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <div
         className={`
-        fixed inset-y-0 left-0 z-50 w-72 md:w-80 bg-white shadow-xl transform transition-transform duration-300 ease-in-out
-        flex flex-col
+        fixed inset-y-0 left-0 z-50 w-72 md:w-80 bg-white shadow-xl transform transition-all duration-300 ease-in-out
+        flex flex-col border-r border-gray-200
         ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:inset-0 lg:h-screen
       `}
@@ -387,11 +380,13 @@ const Sidebar = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between px-4 md:px-6 py-4 md:py-6 border-b border-gray-200 flex-shrink-0">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center shadow-lg">
               <Truck className="w-6 h-6 text-white" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">FleetManager</h1>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                FleetManager
+              </h1>
               <p className="text-sm text-gray-500">Sistema de Gestión</p>
             </div>
           </div>

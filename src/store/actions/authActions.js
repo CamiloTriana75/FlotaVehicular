@@ -4,7 +4,7 @@
  */
 
 import { AUTH_ACTIONS } from '../types';
-import { mockAuth } from '../../lib/supabaseClient';
+import { mockAuth, customAuth, isInMockMode } from '../../lib/supabaseClient';
 
 /**
  * Acción para realizar login
@@ -15,22 +15,24 @@ import { mockAuth } from '../../lib/supabaseClient';
 export const loginAction = (email, password) => async (dispatch) => {
   try {
     dispatch({ type: AUTH_ACTIONS.SET_LOADING, payload: true });
-
-    const { data, error } = await mockAuth.signIn(email, password);
+    const useMock = isInMockMode();
+    const authClient = useMock ? mockAuth : customAuth;
+    const { data, error } = await authClient.signIn(email, password);
 
     if (error) {
       dispatch({ type: AUTH_ACTIONS.SET_ERROR, payload: error.message });
       return { success: false, error: error.message };
     }
 
-    // Guardar usuario en localStorage
+    // Guardar usuario en localStorage (compatibilidad)
     localStorage.setItem('mockUser', JSON.stringify(data.user));
+    localStorage.setItem('currentUser', JSON.stringify(data.user));
 
     dispatch({
       type: AUTH_ACTIONS.LOGIN,
       payload: {
         user: data.user,
-        isMockMode: true,
+        isMockMode: useMock,
       },
     });
 
