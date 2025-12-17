@@ -38,6 +38,7 @@ import Geofences from './pages/Geofences';
 import ReportIncident from './pages/ReportIncident';
 import DriverDashboard from './pages/DriverDashboard';
 import SupervisorPanicCenter from './pages/SupervisorPanicCenter';
+import ChatbotWidget from './components/ChatbotWidget';
 import Sidebar from './components/Sidebar';
 import TopBar from './components/TopBar';
 import { useAuth } from './lib/supabaseClient';
@@ -368,6 +369,8 @@ function App() {
               />
             </Routes>
           </main>
+          {/* Widget flotante del asistente (n8n + Ollama) */}
+          <ChatbotWidget />
         </div>
       </div>
     </Router>
