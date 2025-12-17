@@ -5,6 +5,8 @@ import { getActiveAssignments } from '../services/assignmentService';
 import { supabase } from '../lib/supabaseClient';
 import Card from '../components/Card';
 import Table from '../components/Table';
+import { conductorService } from '../services/conductorService';
+import { HR_CONFIG } from '../shared/constants';
 import {
   Search,
   Users,
@@ -22,6 +24,10 @@ const DriversList = () => {
   const [conductores, setConductores] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [licenseSummary, setLicenseSummary] = useState({
+    expiring: 0,
+    expired: 0,
+  });
 
   // Cargar conductores desde la base de datos
   useEffect(() => {
@@ -52,16 +58,19 @@ const DriversList = () => {
     setError(null);
     try {
       // Cargar conductores y asignaciones en paralelo
-      const [driversResult, assignmentsResult] = await Promise.all([
-        driverService.getAll(),
-        getActiveAssignments(),
-      ]);
+      const [driversResult, assignmentsResult, conductoresAll] =
+        await Promise.all([
+          driverService.getAll(),
+          getActiveAssignments(),
+          conductorService.getAll(),
+        ]);
 
       if (driversResult.error) throw driversResult.error;
       if (assignmentsResult.error) throw assignmentsResult.error;
 
       const drivers = driversResult.data || [];
       const assignments = assignmentsResult.data || [];
+      const conductores = conductoresAll.data || [];
 
       // Crear un mapa de asignaciones por driver_id
       // Priorizar asignaciones que están activas AHORA (start_time <= now <= end_time)
@@ -107,6 +116,51 @@ const DriversList = () => {
       });
 
       setConductores(enrichedDrivers);
+
+      // Calcular resumen de licencias desde enrichedDrivers (tabla drivers)
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      const thresholdDays = HR_CONFIG.LICENSE_EXPIRY_THRESHOLD_DAYS;
+
+      console.log('🔍 DEBUG - Calculando alertas de licencias:');
+      console.log('Fecha hoy:', hoy.toISOString());
+      console.log('Threshold días:', thresholdDays);
+      console.log('Total drivers:', enrichedDrivers.length);
+
+      const expiring = enrichedDrivers.filter((d) => {
+        if (!d.fecha_vencimiento_licencia) return false;
+        const fecha = new Date(d.fecha_vencimiento_licencia);
+        const dias = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+
+        const shouldInclude = dias >= 0 && dias <= thresholdDays;
+        if (d.fecha_vencimiento_licencia) {
+          console.log(`Driver ${d.nombre} ${d.apellidos}:`, {
+            fecha_vencimiento: d.fecha_vencimiento_licencia,
+            dias_restantes: dias,
+            incluir_en_expiring: shouldInclude,
+          });
+        }
+
+        return shouldInclude;
+      }).length;
+
+      const expired = enrichedDrivers.filter((d) => {
+        if (!d.fecha_vencimiento_licencia) return false;
+        const fecha = new Date(d.fecha_vencimiento_licencia);
+        const isExpired = fecha < hoy;
+
+        if (isExpired) {
+          console.log(`Driver VENCIDO ${d.nombre} ${d.apellidos}:`, {
+            fecha_vencimiento: d.fecha_vencimiento_licencia,
+            fecha_obj: fecha.toISOString(),
+          });
+        }
+
+        return isExpired;
+      }).length;
+
+      console.log('📊 Resultado:', { expiring, expired });
+      setLicenseSummary({ expiring, expired });
     } catch (err) {
       console.error('Error cargando conductores:', err);
       setError(err.message);
@@ -209,11 +263,38 @@ const DriversList = () => {
     {
       header: 'Licencia',
       accessor: 'numero_licencia',
-      cell: (value) => (
-        <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
-          {value || 'N/A'}
-        </span>
-      ),
+      cell: (value, row) => {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const thresholdDays = HR_CONFIG.LICENSE_EXPIRY_THRESHOLD_DAYS;
+
+        let alertMessage = null;
+        let alertClass = '';
+
+        if (row.fecha_vencimiento_licencia) {
+          const fecha = new Date(row.fecha_vencimiento_licencia);
+          const dias = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+
+          if (dias < 0) {
+            alertMessage = `🚫 Vencida hace ${Math.abs(dias)} día${Math.abs(dias) !== 1 ? 's' : ''}`;
+            alertClass = 'text-red-600 font-semibold';
+          } else if (dias <= thresholdDays) {
+            alertMessage = `⚠️ Vence en ${dias} día${dias !== 1 ? 's' : ''}`;
+            alertClass = 'text-yellow-600 font-semibold';
+          }
+        }
+
+        return (
+          <div className="flex flex-col gap-1">
+            <span className="font-mono text-sm bg-gray-100 px-2 py-1 rounded">
+              {value || 'N/A'}
+            </span>
+            {alertMessage && (
+              <span className={`text-xs ${alertClass}`}>{alertMessage}</span>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: 'Acciones',
@@ -318,7 +399,7 @@ const DriversList = () => {
           </div>
         </Card>
 
-        <Card className="p-6">
+        <Card className="p-6" data-testid="card-licencias-por-vencer">
           <div className="flex items-center">
             <div className="p-3 bg-red-100 rounded-full">
               <Calendar className="h-6 w-6 text-red-600" />
@@ -326,17 +407,24 @@ const DriversList = () => {
             <div className="ml-4">
               <p className="text-sm text-gray-600">Licencias por Vencer</p>
               <p className="text-2xl font-bold text-red-600">
-                {
-                  conductores.filter((d) => {
-                    if (!d.fecha_venc_licencia) return false;
-                    const fecha = new Date(d.fecha_venc_licencia);
-                    const hoy = new Date();
-                    const diasRestantes = Math.ceil(
-                      (fecha - hoy) / (1000 * 60 * 60 * 24)
-                    );
-                    return diasRestantes >= 0 && diasRestantes <= 30;
-                  }).length
-                }
+                {licenseSummary.expiring}
+              </p>
+              <p className="text-xs text-gray-500">
+                Umbral: {HR_CONFIG.LICENSE_EXPIRY_THRESHOLD_DAYS} días
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-6" data-testid="card-licencias-vencidas">
+          <div className="flex items-center">
+            <div className="p-3 bg-red-100 rounded-full">
+              <Calendar className="h-6 w-6 text-red-700" />
+            </div>
+            <div className="ml-4">
+              <p className="text-sm text-gray-600">Licencias Vencidas</p>
+              <p className="text-2xl font-bold text-red-700">
+                {licenseSummary.expired}
               </p>
             </div>
           </div>

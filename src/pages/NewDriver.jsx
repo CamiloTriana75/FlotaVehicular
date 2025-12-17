@@ -4,6 +4,7 @@ import { Users } from 'lucide-react';
 import DriverForm from '../components/DriverForm';
 import { driverService } from '../services/driverService';
 import { userService } from '../services/userService';
+import { HR_CONFIG } from '../shared/constants';
 
 /**
  * Página para crear un nuevo conductor
@@ -109,7 +110,8 @@ export default function NewDriver() {
             futura
           </li>
           <li>
-            • Se mostrará una alerta si la licencia vence en menos de 30 días
+            • Se mostrará una alerta si la licencia vence en menos de{' '}
+            {HR_CONFIG.LICENSE_EXPIRY_THRESHOLD_DAYS} días
           </li>
           <li>
             • Los datos se guardarán en formato ISO para compatibilidad

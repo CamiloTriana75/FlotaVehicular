@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { conductorService } from '../services/conductorService';
+import { driverService } from '../services/driverService';
 import Card from '../components/Card';
 import {
   Users,
@@ -11,6 +11,7 @@ import {
   TrendingUp,
   Plus,
 } from 'lucide-react';
+import { HR_CONFIG } from '../shared/constants';
 
 /**
  * Dashboard específico para el rol RRHH
@@ -34,8 +35,16 @@ const RRHHDashboard = () => {
   const cargarDatos = async () => {
     setLoading(true);
     try {
-      // Obtener todos los conductores
-      const { data: conductores } = await conductorService.getAll();
+      // Obtener todos los conductores desde la tabla drivers
+      const { data: conductores } = await driverService.getAll();
+
+      console.log(
+        '🔍 RRHH Dashboard - Conductores cargados:',
+        conductores?.length
+      );
+      if (conductores && conductores.length > 0) {
+        console.log('Muestra de conductor:', conductores[0]);
+      }
 
       // Calcular estadísticas
       const total = conductores?.length || 0;
@@ -46,16 +55,19 @@ const RRHHDashboard = () => {
       const disponibles =
         conductores?.filter((c) => c.estado === 'disponible').length || 0;
 
-      // Licencias próximas a vencer (30 días)
+      // Licencias próximas a vencer (threshold configurable)
       const hoy = new Date();
-      const en30Dias = new Date();
-      en30Dias.setDate(hoy.getDate() + 30);
+      hoy.setHours(0, 0, 0, 0);
+      const thresholdDays = HR_CONFIG.LICENSE_EXPIRY_THRESHOLD_DAYS;
+      const enThresholdDias = new Date();
+      enThresholdDias.setDate(hoy.getDate() + thresholdDays);
 
       const licenciasVenciendo =
         conductores?.filter((c) => {
-          if (!c.fecha_venc_licencia) return false;
-          const fecha = new Date(c.fecha_venc_licencia);
-          return fecha >= hoy && fecha <= en30Dias;
+          if (!c.fecha_vencimiento_licencia) return false;
+          const fecha = new Date(c.fecha_vencimiento_licencia);
+          const dias = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+          return dias >= 0 && dias <= thresholdDays;
         }).length || 0;
 
       setStats({ total, activos, disponibles, licenciasVenciendo });
@@ -74,13 +86,15 @@ const RRHHDashboard = () => {
       const proximas =
         conductores
           ?.filter((c) => {
-            if (!c.fecha_venc_licencia) return false;
-            const fecha = new Date(c.fecha_venc_licencia);
-            return fecha >= hoy && fecha <= en30Dias;
+            if (!c.fecha_vencimiento_licencia) return false;
+            const fecha = new Date(c.fecha_vencimiento_licencia);
+            const dias = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
+            return dias >= 0 && dias <= thresholdDays;
           })
           .sort(
             (a, b) =>
-              new Date(a.fecha_venc_licencia) - new Date(b.fecha_venc_licencia)
+              new Date(a.fecha_vencimiento_licencia) -
+              new Date(b.fecha_vencimiento_licencia)
           )
           .slice(0, 5) || [];
       setLicenciasProximas(proximas);
@@ -193,7 +207,9 @@ const RRHHDashboard = () => {
               <p className="text-3xl font-bold text-yellow-900 mt-1">
                 {stats.licenciasVenciendo}
               </p>
-              <p className="text-xs text-yellow-600 mt-1">Próximos 30 días</p>
+              <p className="text-xs text-yellow-600 mt-1">
+                Próximos {HR_CONFIG.LICENSE_EXPIRY_THRESHOLD_DAYS} días
+              </p>
             </div>
             <div className="p-3 bg-yellow-200 rounded-full">
               <AlertTriangle className="h-8 w-8 text-yellow-700" />
@@ -272,14 +288,14 @@ const RRHHDashboard = () => {
             <div className="space-y-3">
               {conductoresRecientes.map((conductor) => (
                 <Link
-                  key={conductor.id_conductor || conductor.id}
-                  to={`/conductores/${conductor.id_conductor || conductor.id}`}
+                  key={conductor.id}
+                  to={`/conductores/${conductor.id}`}
                   className="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div className="flex justify-between items-start">
                     <div>
                       <p className="font-medium text-gray-900">
-                        {conductor.nombre_completo}
+                        {conductor.nombre} {conductor.apellidos}
                       </p>
                       <p className="text-sm text-gray-600">
                         CC: {conductor.cedula}
@@ -317,23 +333,23 @@ const RRHHDashboard = () => {
             <div className="space-y-3">
               {licenciasProximas.map((conductor) => {
                 const diasRestantes = calcularDiasRestantes(
-                  conductor.fecha_venc_licencia
+                  conductor.fecha_vencimiento_licencia
                 );
                 return (
                   <Link
-                    key={conductor.id_conductor || conductor.id}
-                    to={`/conductores/${conductor.id_conductor || conductor.id}`}
+                    key={conductor.id}
+                    to={`/conductores/${conductor.id}`}
                     className="block p-3 bg-yellow-50 rounded-lg hover:bg-yellow-100 transition-colors border border-yellow-200"
                   >
                     <div className="flex justify-between items-start">
                       <div>
                         <p className="font-medium text-gray-900">
-                          {conductor.nombre_completo}
+                          {conductor.nombre} {conductor.apellidos}
                         </p>
                         <p className="text-sm text-gray-600">
                           Vence:{' '}
                           {new Date(
-                            conductor.fecha_venc_licencia
+                            conductor.fecha_vencimiento_licencia
                           ).toLocaleDateString('es-CO')}
                         </p>
                       </div>

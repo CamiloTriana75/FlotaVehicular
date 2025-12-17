@@ -67,6 +67,21 @@ export const conductorService = {
    */
   create: async (conductorData) => {
     try {
+      // Regla de negocio: no permitir fecha de vencimiento en el pasado
+      if (conductorData.fecha_venc_licencia) {
+        const hoy = new Date();
+        hoy.setHours(0, 0, 0, 0);
+        const fecha = new Date(conductorData.fecha_venc_licencia);
+        if (!isNaN(fecha.getTime()) && fecha < hoy) {
+          return {
+            data: null,
+            error: new Error(
+              'La fecha de vencimiento de licencia debe ser hoy o futura'
+            ),
+          };
+        }
+      }
+
       // Validar campos obligatorios
       const required = ['cedula', 'nombre_completo', 'email'];
       const missing = required.filter(

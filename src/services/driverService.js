@@ -47,8 +47,13 @@ export const driverService = {
       email: formData.email || null,
       direccion: formData.direccion || null,
       numero_licencia: formData.numero_licencia || null,
+      categoria_licencia: formData.categoria_licencia || null,
+      fecha_expedicion_licencia: formData.fecha_expedicion_licencia || null,
+      fecha_vencimiento_licencia: formData.fecha_vencimiento_licencia || null,
       estado: formData.estado || 'disponible',
     };
+
+    console.log('🔍 DEBUG createFromForm - payload a enviar:', payload);
 
     // Asegurar que no se envían flags internos
     // (Supabase error: Could not find the '_createAccount' column of 'drivers')
@@ -128,7 +133,7 @@ export const driverService = {
       const { data, error } = await supabase
         .from('drivers')
         .select(
-          'id, cedula, nombre, apellidos, numero_licencia, telefono, email, estado'
+          'id, cedula, nombre, apellidos, numero_licencia, categoria_licencia, fecha_vencimiento_licencia, telefono, email, estado'
         )
         .order('id', { ascending: false });
       if (error) throw error;
@@ -144,7 +149,7 @@ export const driverService = {
       const { data, error } = await supabase
         .from('drivers')
         .select(
-          'id, cedula, nombre, apellidos, numero_licencia, telefono, email, direccion, estado'
+          'id, cedula, nombre, apellidos, numero_licencia, categoria_licencia, fecha_expedicion_licencia, fecha_vencimiento_licencia, telefono, email, direccion, estado'
         )
         .eq('id', id)
         .single();
@@ -177,7 +182,6 @@ export const driverService = {
       }
       // Limpiar campos no presentes en drivers
       delete updatePayload.nombre_completo;
-      delete updatePayload.fecha_venc_licencia; // no existe en drivers
       delete updatePayload.fecha_ingreso; // no existe en drivers
       // Limpiar flags internos del formulario
       delete updatePayload._createAccount;
