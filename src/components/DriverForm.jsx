@@ -83,12 +83,7 @@ export function validateDriverData(data) {
  * Formulario de Conductor (Crear/Editar)
  * Componente reutilizable con validaciones
  */
-export default function DriverForm({
-  initialData = {},
-  onSubmit,
-  onCancel,
-  mode = 'create',
-}) {
+function DriverForm({ initialData = {}, onSubmit, onCancel, mode = 'create' }) {
   const [formData, setFormData] = useState({
     nombre_completo: initialData.nombre_completo || '',
     cedula: initialData.cedula || '',
@@ -509,3 +504,5 @@ export default function DriverForm({
     </form>
   );
 }
+
+export default DriverForm;
