@@ -212,74 +212,76 @@ const ReportIncident = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Conductor */}
-            <div>
-              <label className="text-sm text-gray-600">Conductor</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.driver_id}
-                onChange={(e) => handleChange('driver_id', e.target.value)}
-                required
-              >
-                <option value="">Seleccionar conductor</option>
-                {drivers.map((d) => (
-                  <option key={d.id} value={d.id}>
-                    {d.nombre} {d.apellidos}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {!activeAssignment && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Conductor */}
+              <div>
+                <label className="text-sm text-gray-600">Conductor</label>
+                <select
+                  className="w-full border rounded p-2"
+                  value={form.driver_id}
+                  onChange={(e) => handleChange('driver_id', e.target.value)}
+                  required
+                >
+                  <option value="">Seleccionar conductor</option>
+                  {drivers.map((d) => (
+                    <option key={d.id} value={d.id}>
+                      {d.nombre} {d.apellidos}
+                    </option>
+                  ))}
+                </select>
+              </div>
 
-            {/* Vehículo */}
-            <div>
-              <label className="text-sm text-gray-600">Vehículo</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.vehicle_id}
-                onChange={(e) => handleChange('vehicle_id', e.target.value)}
-                required
-              >
-                <option value="">Seleccionar vehículo</option>
-                {vehicles.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.placa} - {v.marca} {v.modelo}
-                  </option>
-                ))}
-              </select>
+              {/* Vehículo */}
+              <div>
+                <label className="text-sm text-gray-600">Vehículo</label>
+                <select
+                  className="w-full border rounded p-2"
+                  value={form.vehicle_id}
+                  onChange={(e) => handleChange('vehicle_id', e.target.value)}
+                  required
+                >
+                  <option value="">Seleccionar vehículo</option>
+                  {vehicles.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.placa} - {v.marca} {v.modelo}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
+          )}
 
-            {/* Tipo de incidente */}
-            <div>
-              <label className="text-sm text-gray-600">Tipo</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.type}
-                onChange={(e) => handleChange('type', e.target.value)}
-              >
-                {INCIDENT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {INCIDENT_TYPES_LABELS[t] || t}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Tipo de incidente */}
+          <div>
+            <label className="text-sm text-gray-600">Tipo</label>
+            <select
+              className="w-full border rounded p-2"
+              value={form.type}
+              onChange={(e) => handleChange('type', e.target.value)}
+            >
+              {INCIDENT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {INCIDENT_TYPES_LABELS[t] || t}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {/* Severidad */}
-            <div>
-              <label className="text-sm text-gray-600">Severidad</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.severity}
-                onChange={(e) => handleChange('severity', e.target.value)}
-              >
-                {SEVERITIES.map((s) => (
-                  <option key={s} value={s}>
-                    {INCIDENT_SEVERITY_LABELS[s] || s}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Severidad */}
+          <div>
+            <label className="text-sm text-gray-600">Severidad</label>
+            <select
+              className="w-full border rounded p-2"
+              value={form.severity}
+              onChange={(e) => handleChange('severity', e.target.value)}
+            >
+              {SEVERITIES.map((s) => (
+                <option key={s} value={s}>
+                  {INCIDENT_SEVERITY_LABELS[s] || s}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Título */}

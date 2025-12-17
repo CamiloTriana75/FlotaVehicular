@@ -68,7 +68,7 @@ export default function ChatbotWidget() {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-[9999]" style={{ zIndex: 9999 }}>
+    <div className="fixed bottom-6 left-6 z-[9999]" style={{ zIndex: 9999 }}>
       {open && (
         <div className="mb-4 w-80 md:w-96 h-[500px] bg-white shadow-2xl rounded-lg flex flex-col border-2 border-blue-500 animate-in slide-in-from-bottom duration-300">
           <div className="px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg flex items-center justify-between">

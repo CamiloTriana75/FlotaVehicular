@@ -25,7 +25,7 @@ import {
 import NavLink from './NavLink';
 import NavGroup from './NavGroup';
 
-const Sidebar = ({ isOpen, onClose }) => {
+const Sidebar = ({ isOpen, onClose, align = 'left' }) => {
   const location = useLocation();
   const [currentUser, setCurrentUser] = useState(null);
 
@@ -73,7 +73,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       path: '/reportes',
       icon: BarChart3,
       description: 'Reportes agregados de incidentes',
-      roles: ['superusuario', 'admin', 'gerente'],
+      roles: ['analista', 'superusuario', 'admin', 'gerente'],
     },
     {
       title: 'Vehículos',
@@ -147,13 +147,7 @@ const Sidebar = ({ isOpen, onClose }) => {
       description: 'Enviar incidente con ubicación',
       roles: ['conductor'],
     },
-    {
-      title: 'Dashboard Conductor',
-      path: '/conductor/dashboard',
-      icon: Activity,
-      description: 'Mi información y botón de pánico',
-      roles: ['conductor'],
-    },
+    // Dashboard Conductor eliminado
     {
       title: 'Centro de Control',
       path: '/supervisor/centro-control',
@@ -296,12 +290,9 @@ const Sidebar = ({ isOpen, onClose }) => {
     // Clasificar items en grupos
     menuItems.forEach((item) => {
       if (
-        [
-          '/dashboard',
-          '/operador/dashboard',
-          '/rrhh/dashboard',
-          '/conductor/dashboard',
-        ].includes(item.path)
+        ['/dashboard', '/operador/dashboard', '/rrhh/dashboard'].includes(
+          item.path
+        )
       ) {
         groups.dashboards.items.push(item);
       } else if (
@@ -323,7 +314,6 @@ const Sidebar = ({ isOpen, onClose }) => {
           '/rutas/monitoreo',
           '/geocercas',
           '/conductor/mis-rutas',
-          '/conductor/dashboard',
           '/supervisor/centro-control',
         ].includes(item.path) ||
         item.path.startsWith('/conductor/')
@@ -371,9 +361,9 @@ const Sidebar = ({ isOpen, onClose }) => {
       {/* Sidebar */}
       <div
         className={`
-        fixed inset-y-0 left-0 z-50 w-72 md:w-80 bg-white shadow-xl transform transition-all duration-300 ease-in-out
+        fixed inset-y-0 ${align === 'right' ? 'right-0' : 'left-0'} z-50 w-72 md:w-80 bg-white shadow-xl transform transition-all duration-300 ease-in-out
         flex flex-col border-r border-gray-200
-        ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        ${isOpen ? 'translate-x-0' : align === 'right' ? 'translate-x-full' : '-translate-x-full'}
         lg:translate-x-0 lg:static lg:inset-0 lg:h-screen
       `}
       >

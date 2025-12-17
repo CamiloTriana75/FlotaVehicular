@@ -35,7 +35,7 @@ import RouteMonitoring from './pages/RouteMonitoring';
 import RouteComparison from './pages/RouteComparison';
 import Geofences from './pages/Geofences';
 import ReportIncident from './pages/ReportIncident';
-import DriverDashboard from './pages/DriverDashboard';
+// Eliminado: los conductores no tienen dashboard principal
 import SupervisorPanicCenter from './pages/SupervisorPanicCenter';
 import ChatbotWidget from './components/ChatbotWidget';
 import Sidebar from './components/Sidebar';
@@ -98,6 +98,8 @@ function App() {
     if (auth.isMockMode) {
       console.log('Sesión cerrada en modo mock');
     }
+    // Forzar recarga completa para limpiar estado y navegación
+    window.location.href = '/';
   };
 
   // Debug: Mostrar estado de autenticación
@@ -105,47 +107,35 @@ function App() {
   console.log('App render - auth.isMockMode:', auth.isMockMode);
   console.log('App render - currentUser:', currentUser);
 
-  // Componente para redirección basada en rol
-  const RoleDashboardRedirect = () => {
-    const userRole =
-      currentUser?.rol || currentUser?.user_metadata?.role || currentUser?.role;
-
-    // Redirección según el rol
-    if (userRole === 'rrhh') {
-      return <Navigate to="/rrhh/dashboard" replace />;
-    }
-
-    if (userRole === 'operador') {
-      return <Navigate to="/operador/dashboard" replace />;
-    }
-
-    if (userRole === 'supervisor') {
-      return <Navigate to="/rutas/monitoreo" replace />;
-    }
-
-    if (userRole === 'conductor') {
-      return <Navigate to="/conductor/mis-rutas" replace />;
-    }
-
-    if (userRole === 'planificador') {
-      return <Navigate to="/rutas/planificacion" replace />;
-    }
-
-    // Por defecto, ir a una vista general accesible
-    return <Navigate to="/vehiculos" replace />;
-  };
+  // No redirigir automáticamente - dejar que el usuario elija desde el sidebar
 
   if (!isAuthenticated) {
     return <LoginPage onLogin={handleLogin} />;
   }
 
+  const getUserRole = () => {
+    const userStr =
+      localStorage.getItem('currentUser') || localStorage.getItem('mockUser');
+    if (!userStr) return null;
+    try {
+      const u = JSON.parse(userStr);
+      return u.rol || u.user_metadata?.role || u.role || null;
+    } catch (err) {
+      console.warn('No se pudo determinar el rol del usuario:', err);
+      return null;
+    }
+  };
+  const userRole = getUserRole();
+
   return (
     <Router>
       <div className="min-h-screen bg-gray-50 flex overflow-hidden">
-        <Sidebar
-          isOpen={isSidebarOpen}
-          onClose={() => setIsSidebarOpen(false)}
-        />
+        {userRole !== 'analista' && (
+          <Sidebar
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        )}
         <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
           <TopBar
             onMenuClick={() => setIsSidebarOpen(true)}
@@ -154,7 +144,21 @@ function App() {
           />
           <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6">
             <Routes>
-              <Route path="/" element={<RoleDashboardRedirect />} />
+              <Route
+                path="/"
+                element={
+                  <div className="max-w-4xl mx-auto">
+                    <div className="bg-white border border-gray-200 rounded-lg p-6 text-center">
+                      <h2 className="text-xl font-semibold text-gray-900">
+                        Bienvenido
+                      </h2>
+                      <p className="mt-2 text-gray-600">
+                        Selecciona una opción en la barra lateral para comenzar.
+                      </p>
+                    </div>
+                  </div>
+                }
+              />
               {/* Ruta /dashboard eliminada */}
               <Route
                 path="/rrhh/dashboard"
@@ -342,15 +346,7 @@ function App() {
                 }
               />
               <Route path="/health" element={<HealthCheck />} />
-              {/* Rutas de Pánico - Sistema de Emergencia */}
-              <Route
-                path="/conductor/dashboard"
-                element={
-                  <ProtectedRoute roles={['conductor']}>
-                    <DriverDashboard />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Dashboard de Conductor eliminado por decisión de producto */}
               <Route
                 path="/supervisor/centro-control"
                 element={
@@ -364,6 +360,13 @@ function App() {
           {/* Widget flotante del asistente (n8n + Ollama) */}
           <ChatbotWidget />
         </div>
+        {userRole === 'analista' && (
+          <Sidebar
+            align="right"
+            isOpen={isSidebarOpen}
+            onClose={() => setIsSidebarOpen(false)}
+          />
+        )}
       </div>
     </Router>
   );

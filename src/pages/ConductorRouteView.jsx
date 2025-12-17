@@ -730,7 +730,7 @@ export default function ConductorRouteView() {
             ) : (
               <>
                 <Locate className="w-4 h-4" />
-                <span className="hidden sm:inline">Iniciar</span>
+                <span className="hidden sm:inline">Iniciar Tracking</span>
               </>
             )}
           </button>
@@ -895,48 +895,16 @@ export default function ConductorRouteView() {
           className={`px-4 pb-4 ${isBottomSheetExpanded ? 'overflow-y-auto h-[calc(70vh-40px)]' : ''}`}
         >
           {/* Acciones rápidas */}
-          <div className="flex gap-2 mb-3">
+          <div className="mb-3">
             <a
               href={externalNav.gmaps}
               target="_blank"
               rel="noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium text-sm shadow-md transition-colors"
+              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium text-sm shadow-md transition-colors"
             >
               <MapPin className="w-4 h-4" />
-              Google Maps
+              Abrir en Google Maps
             </a>
-            <a
-              href={externalNav.waze}
-              target="_blank"
-              rel="noreferrer"
-              className="flex-1 flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white py-3 rounded-xl font-medium text-sm shadow-md transition-colors"
-            >
-              <Navigation className="w-4 h-4" />
-              Waze
-            </a>
-          </div>
-
-          {/* Sección de instrucciones de voz */}
-          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-3 mb-3 border border-purple-100">
-            <label className="flex items-center justify-between cursor-pointer">
-              <div className="flex items-center gap-2">
-                <Phone className="w-5 h-5 text-purple-600" />
-                <span className="font-medium text-gray-900 text-sm">
-                  Asistente de voz
-                </span>
-              </div>
-              <input
-                type="checkbox"
-                checked={voiceEnabled}
-                onChange={(e) => setVoiceEnabled(e.target.checked)}
-                className="w-5 h-5 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-              />
-            </label>
-            {voiceEnabled && (
-              <div className="mt-2 text-xs text-purple-700 bg-purple-100/50 rounded-lg px-2 py-1.5">
-                ✓ Te avisaremos al acercarte a los puntos
-              </div>
-            )}
           </div>
 
           {/* Información de ruta */}
