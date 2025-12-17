@@ -19,25 +19,25 @@ export function validateDriverData(data) {
     errors.cedula = 'La cédula es obligatoria';
   }
 
-  // Fecha de vencimiento de licencia (opcional): validar solo si viene
-  if (data.fecha_venc_licencia) {
-    const parts = String(data.fecha_venc_licencia).split('-');
-    let fecha;
-    if (parts.length === 3) {
-      const [y, m, d] = parts.map((p) => parseInt(p, 10));
-      fecha = new Date(y, m - 1, d);
-    } else {
-      fecha = new Date(data.fecha_venc_licencia);
-    }
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (isNaN(fecha.getTime())) {
+  // Fecha de vencimiento de licencia (opcional): validar si se proporciona
+  const fechaVenc =
+    data.fecha_venc_licencia || data.fecha_vencimiento_licencia || null;
+  if (fechaVenc) {
+    const value = String(fechaVenc);
+    const isoPattern = /^\d{4}-\d{2}-\d{2}$/;
+    if (!isoPattern.test(value)) {
       errors.fecha_venc_licencia = 'Formato de fecha inválido';
-    } else if (fecha < hoy) {
-      errors.fecha_venc_licencia =
-        'La fecha de vencimiento debe ser hoy o una fecha futura';
+    } else {
+      const [y, m, d] = value.split('-').map((p) => parseInt(p, 10));
+      const fecha = new Date(y, m - 1, d);
+      const hoy = new Date();
+      hoy.setHours(0, 0, 0, 0);
+      if (isNaN(fecha.getTime())) {
+        errors.fecha_venc_licencia = 'Formato de fecha inválido';
+      } else if (fecha < hoy) {
+        errors.fecha_venc_licencia =
+          'La fecha de vencimiento debe ser hoy o una fecha futura';
+      }
     }
   }
 
