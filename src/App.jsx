@@ -6,7 +6,6 @@ import {
   Navigate,
 } from 'react-router-dom';
 import LoginPage from './pages/LoginPage';
-import Dashboard from './pages/Dashboard';
 import VehiclesList from './pages/VehiclesList';
 import NewVehiclePage from './pages/NewVehiclePage';
 import DriversList from './pages/DriversList';
@@ -132,8 +131,8 @@ function App() {
       return <Navigate to="/rutas/planificacion" replace />;
     }
 
-    // Por defecto, ir al dashboard general (admin, superusuario, gerente)
-    return <Navigate to="/dashboard" replace />;
+    // Por defecto, ir a una vista general accesible
+    return <Navigate to="/vehiculos" replace />;
   };
 
   if (!isAuthenticated) {
@@ -156,14 +155,7 @@ function App() {
           <main className="flex-1 overflow-y-auto px-4 md:px-6 py-4 md:py-6">
             <Routes>
               <Route path="/" element={<RoleDashboardRedirect />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute roles={['superusuario', 'admin', 'gerente']}>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+              {/* Ruta /dashboard eliminada */}
               <Route
                 path="/rrhh/dashboard"
                 element={

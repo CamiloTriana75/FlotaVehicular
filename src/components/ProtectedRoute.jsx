@@ -40,13 +40,13 @@ export default function ProtectedRoute({ roles = [], children }) {
       supervisor: '/rutas/monitoreo',
       conductor: '/conductor/mis-rutas',
       planificador: '/rutas/planificacion',
-      gerente: '/dashboard',
+      gerente: '/vehiculos',
       analista: '/reportes',
-      admin: '/dashboard',
-      superusuario: '/dashboard',
+      admin: '/vehiculos',
+      superusuario: '/vehiculos',
     };
 
-    const redirectTo = role ? redirectMap[role] || '/dashboard' : '/dashboard';
+    const redirectTo = role ? redirectMap[role] || '/vehiculos' : '/vehiculos';
     console.log('Redirecting to:', redirectTo);
     return <Navigate to={redirectTo} replace />;
   }
