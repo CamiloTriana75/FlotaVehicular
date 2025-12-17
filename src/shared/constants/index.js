@@ -121,6 +121,13 @@ export const DATE_FORMATS = {
 };
 
 /**
+ * Configuración de RRHH
+ */
+export const HR_CONFIG = {
+  LICENSE_EXPIRY_THRESHOLD_DAYS: 30,
+};
+
+/**
  * Mensajes de error comunes
  */
 export const ERROR_MESSAGES = {

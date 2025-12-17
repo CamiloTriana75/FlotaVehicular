@@ -30,7 +30,9 @@
     "prepare": "husky install",
     "commit": "git-cz",
     "release": "standard-version",
-    "simulate:tracking": "node scripts/simulate-tracking.js ABC-123"
+    "simulate:tracking": "node scripts/simulate-tracking.js ABC-123",
+    "test:e2e": "npx playwright test",
+    "test:e2e:ui": "npx playwright test --ui"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",
@@ -51,6 +53,7 @@
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
     "@eslint/js": "^9.9.1",
+    "@playwright/test": "^1.57.0",
     "@testing-library/jest-dom": "^6.5.0",
     "@testing-library/react": "^16.0.1",
     "@types/react": "^18.3.5",

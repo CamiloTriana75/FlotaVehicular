@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { AlertCircle } from 'lucide-react';
+import { HR_CONFIG } from '../shared/constants';
 
 /**
  * Valida los datos del conductor
@@ -20,23 +21,25 @@ export function validateDriverData(data) {
   }
 
   // Fecha de vencimiento de licencia (opcional): validar solo si viene
-  if (data.fecha_venc_licencia) {
-    const parts = String(data.fecha_venc_licencia).split('-');
+  // Soportar ambos nombres de campo: fecha_vencimiento_licencia (drivers) y fecha_venc_licencia (conductor)
+  const fechaVenc = data.fecha_vencimiento_licencia || data.fecha_venc_licencia;
+  if (fechaVenc) {
+    const parts = String(fechaVenc).split('-');
     let fecha;
     if (parts.length === 3) {
       const [y, m, d] = parts.map((p) => parseInt(p, 10));
       fecha = new Date(y, m - 1, d);
     } else {
-      fecha = new Date(data.fecha_venc_licencia);
+      fecha = new Date(fechaVenc);
     }
 
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
     if (isNaN(fecha.getTime())) {
-      errors.fecha_venc_licencia = 'Formato de fecha inválido';
+      errors.fecha_vencimiento_licencia = 'Formato de fecha inválido';
     } else if (fecha < hoy) {
-      errors.fecha_venc_licencia =
+      errors.fecha_vencimiento_licencia =
         'La fecha de vencimiento debe ser hoy o una fecha futura';
     }
   }
@@ -73,7 +76,12 @@ export default function DriverForm({
     telefono: initialData.telefono || '',
     email: initialData.email || '',
     numero_licencia: initialData.numero_licencia || '',
-    fecha_venc_licencia: initialData.fecha_venc_licencia || '',
+    categoria_licencia: initialData.categoria_licencia || '',
+    fecha_expedicion_licencia: initialData.fecha_expedicion_licencia || '',
+    fecha_vencimiento_licencia:
+      initialData.fecha_vencimiento_licencia ||
+      initialData.fecha_venc_licencia ||
+      '',
     estado: initialData.estado || 'activo',
     direccion: initialData.direccion || '',
     fecha_ingreso:
@@ -88,18 +96,21 @@ export default function DriverForm({
 
   useEffect(() => {
     // Verificar si la licencia vence pronto
-    if (formData.fecha_venc_licencia) {
+    if (formData.fecha_vencimiento_licencia) {
       const hoy = new Date();
-      const fecha = new Date(formData.fecha_venc_licencia);
+      const fecha = new Date(formData.fecha_vencimiento_licencia);
       const diasRestantes = Math.ceil((fecha - hoy) / (1000 * 60 * 60 * 24));
 
-      if (diasRestantes >= 0 && diasRestantes <= 30) {
+      if (
+        diasRestantes >= 0 &&
+        diasRestantes <= HR_CONFIG.LICENSE_EXPIRY_THRESHOLD_DAYS
+      ) {
         setLicenciaWarning(diasRestantes);
       } else {
         setLicenciaWarning(null);
       }
     }
-  }, [formData.fecha_venc_licencia]);
+  }, [formData.fecha_vencimiento_licencia]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -294,6 +305,47 @@ export default function DriverForm({
               </p>
             )}
           </div>
+          {/* Categoría de Licencia */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Categoría de Licencia
+            </label>
+            <select
+              name="categoria_licencia"
+              value={formData.categoria_licencia}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="A1">A1 - Motocicletas hasta 125cc</option>
+              <option value="A2">A2 - Motocicletas superiores a 125cc</option>
+              <option value="B1">
+                B1 - Automóviles, motocarros y cuatrimotos
+              </option>
+              <option value="B2">B2 - Camionetas y microbuses</option>
+              <option value="B3">B3 - Vehículos de más de 5 toneladas</option>
+              <option value="C1">
+                C1 - Automóviles, camperos y camionetas de servicio público
+              </option>
+              <option value="C2">
+                C2 - Camiones, buses y busetas de servicio público
+              </option>
+              <option value="C3">C3 - Vehículos articulados</option>
+            </select>
+          </div>
+          {/* Fecha Expedición Licencia */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Fecha Expedición Licencia
+            </label>
+            <input
+              type="date"
+              name="fecha_expedicion_licencia"
+              value={formData.fecha_expedicion_licencia}
+              onChange={handleChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
           {/* Fecha Vencimiento Licencia */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -301,21 +353,21 @@ export default function DriverForm({
             </label>
             <input
               type="date"
-              name="fecha_venc_licencia"
-              value={formData.fecha_venc_licencia}
+              name="fecha_vencimiento_licencia"
+              value={formData.fecha_vencimiento_licencia}
               onChange={handleChange}
               className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                errors.fecha_venc_licencia
+                errors.fecha_vencimiento_licencia
                   ? 'border-red-500'
                   : 'border-gray-300'
               }`}
             />
-            {errors.fecha_venc_licencia && (
+            {errors.fecha_vencimiento_licencia && (
               <p className="text-xs text-red-600 mt-1">
-                {errors.fecha_venc_licencia}
+                {errors.fecha_vencimiento_licencia}
               </p>
             )}
-            {licenciaWarning !== null && !errors.fecha_venc_licencia && (
+            {licenciaWarning !== null && !errors.fecha_vencimiento_licencia && (
               <p className="text-xs text-yellow-700 mt-1 flex items-center gap-1">
                 <AlertCircle className="h-3 w-3" />
                 ⚠️ Licencia vence en {licenciaWarning} días
