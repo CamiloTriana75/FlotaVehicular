@@ -50,6 +50,16 @@ const AssignmentsPage = () => {
     loadAssignments();
   }, [filters]);
 
+  // Auto-refrescar cada minuto para detectar asignaciones expiradas
+  useEffect(() => {
+    const interval = setInterval(() => {
+      loadAssignments();
+      loadStats();
+    }, 60000); // 60 segundos
+
+    return () => clearInterval(interval);
+  }, [filters]);
+
   // Scroll al formulario cuando se abre
   useEffect(() => {
     if (showForm && formRef.current) {

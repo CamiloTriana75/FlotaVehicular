@@ -15,7 +15,8 @@ import {
 import { mockVehicles, mockDrivers } from '../../data/mockVehicles';
 import { mockMaintenanceOrders } from '../../data/mockMaintenance';
 import { calculateMaintenanceTotals } from '../utils/maintenanceTotals';
-import { supabase } from '../../lib/supabaseClient';
+import { supabase, isInMockMode } from '../../lib/supabaseClient';
+import { conductorService } from '../../services/conductorService';
 import { getMaintenanceOrders } from '../../services/maintenanceService';
 
 const AppContext = createContext();
@@ -34,13 +35,14 @@ export const AppProvider = ({ children }) => {
   useEffect(() => {
     const loadInitialData = async () => {
       // Cargar usuario de localStorage si existe
-      const savedUser = localStorage.getItem('mockUser');
+      const savedUser =
+        localStorage.getItem('currentUser') || localStorage.getItem('mockUser');
       if (savedUser) {
         dispatch({
           type: AUTH_ACTIONS.LOGIN,
           payload: {
             user: JSON.parse(savedUser),
-            isMockMode: true,
+            isMockMode: isInMockMode(),
           },
         });
       }
@@ -88,11 +90,31 @@ export const AppProvider = ({ children }) => {
         });
       }
 
-      // Cargar conductores mock
-      dispatch({
-        type: DRIVER_ACTIONS.SET_DRIVERS,
-        payload: mockDrivers,
-      });
+      // Cargar conductores desde Supabase con fallback a mock
+      try {
+        const { data: driversData, error: driversError } =
+          await conductorService.getAll();
+        if (!driversError && driversData && driversData.length > 0) {
+          dispatch({
+            type: DRIVER_ACTIONS.SET_DRIVERS,
+            payload: driversData,
+          });
+        } else {
+          dispatch({
+            type: DRIVER_ACTIONS.SET_DRIVERS,
+            payload: mockDrivers,
+          });
+        }
+      } catch (e) {
+        console.warn(
+          '⚠️ Error cargando conductores, usando mock:',
+          e?.message || e
+        );
+        dispatch({
+          type: DRIVER_ACTIONS.SET_DRIVERS,
+          payload: mockDrivers,
+        });
+      }
 
       // Cargar órdenes de mantenimiento desde Supabase
       try {

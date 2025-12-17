@@ -6,6 +6,68 @@
 import { supabase } from '../lib/supabaseClient';
 
 /**
+ * Función auxiliar: Auto-completa asignaciones que ya pasaron su fecha de fin
+ * Se ejecuta automáticamente antes de retornar asignaciones activas
+ * @returns {Promise<number>} Número de asignaciones completadas
+ */
+async function autoCompleteExpiredAssignments() {
+  try {
+    const now = new Date().toISOString();
+
+    // Buscar asignaciones activas que ya pasaron su end_time
+    const { data: expired, error: queryError } = await supabase
+      .from('vehicle_assignments')
+      .select('id, driver_id, vehicle_id')
+      .eq('status', 'active')
+      .lt('end_time', now);
+
+    if (queryError) throw queryError;
+
+    if (!expired || expired.length === 0) {
+      return 0;
+    }
+
+    console.log(
+      `🕐 Auto-completando ${expired.length} asignaciones expiradas...`
+    );
+
+    // Completar cada asignación expirada
+    for (const assignment of expired) {
+      try {
+        // Actualizar estado a completed
+        await supabase
+          .from('vehicle_assignments')
+          .update({ status: 'completed' })
+          .eq('id', assignment.id);
+
+        // Liberar conductor y vehículo
+        await Promise.all([
+          supabase
+            .from('drivers')
+            .update({ estado: 'disponible', updated_at: now })
+            .eq('id', assignment.driver_id),
+          supabase
+            .from('vehicles')
+            .update({ status: 'estacionado' })
+            .eq('id', assignment.vehicle_id),
+        ]);
+
+        console.log(
+          `✅ Asignación ${assignment.id} completada automáticamente`
+        );
+      } catch (err) {
+        console.error(`Error completando asignación ${assignment.id}:`, err);
+      }
+    }
+
+    return expired.length;
+  } catch (error) {
+    console.error('Error en autoCompleteExpiredAssignments:', error);
+    return 0;
+  }
+}
+
+/**
  * Obtiene todas las asignaciones con filtros opcionales
  * @param {Object} filters - Filtros de búsqueda
  * @param {number} filters.vehicleId - ID del vehículo
@@ -17,6 +79,9 @@ import { supabase } from '../lib/supabaseClient';
  */
 export async function getAssignments(filters = {}) {
   try {
+    // Auto-completar asignaciones expiradas antes de consultar
+    await autoCompleteExpiredAssignments();
+
     let query = supabase
       .from('vehicle_assignments')
       .select(
@@ -62,10 +127,15 @@ export async function getAssignments(filters = {}) {
 
 /**
  * Obtiene asignaciones activas usando la vista optimizada
+ * Completa automáticamente asignaciones que ya pasaron su fecha de fin
  * @returns {Promise<Object>} Objeto con data y error
  */
 export async function getActiveAssignments() {
   try {
+    // Auto-completar asignaciones expiradas antes de consultar
+    await autoCompleteExpiredAssignments();
+
+    // Obtener asignaciones activas (después de completar expiradas)
     const { data, error } = await supabase
       .from('vehicle_assignments')
       .select(
@@ -188,6 +258,20 @@ export async function createAssignment(assignmentData) {
     if (endTime <= startTime) {
       throw new Error(
         'La fecha de fin debe ser posterior a la fecha de inicio'
+      );
+    }
+
+    // Bloquear asignación si el vehículo está en mantenimiento en progreso
+    const { data: maintCheck, error: maintErr } = await supabase
+      .from('maintenance_orders')
+      .select('id, status')
+      .eq('vehicle_id', assignmentData.vehicleId)
+      .eq('status', 'in_progress');
+
+    if (maintErr) throw maintErr;
+    if (maintCheck && maintCheck.length > 0) {
+      throw new Error(
+        'El vehículo está en mantenimiento (in_progress) y no puede ser asignado'
       );
     }
 

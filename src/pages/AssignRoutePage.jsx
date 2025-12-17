@@ -14,6 +14,7 @@ import {
 import { getRouteById, assignRouteToDriver } from '../services/routeService';
 import { driverService } from '../services/driverService';
 import { getActiveAssignments } from '../services/assignmentService';
+import { supabase } from '../lib/supabaseClient';
 
 const AssignRoutePage = () => {
   const { routeId } = useParams();
@@ -24,6 +25,7 @@ const AssignRoutePage = () => {
   const [vehicleAssignments, setVehicleAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [blockedVehicles, setBlockedVehicles] = useState(new Set());
 
   // Formulario
   const [selectedDriver, setSelectedDriver] = useState('');
@@ -45,6 +47,31 @@ const AssignRoutePage = () => {
       if (routeResult.data) setRoute(routeResult.data);
       if (driversResult.data) setDrivers(driversResult.data);
       if (assignmentsResult.data) setVehicleAssignments(assignmentsResult.data);
+
+      // Verificar vehículos en mantenimiento (in_progress) y bloquear su selección
+      try {
+        const vehicleIds = (assignmentsResult.data || [])
+          .map((a) => a.vehicle?.id || a.vehicles?.id || null)
+          .filter(Boolean);
+
+        if (vehicleIds.length > 0) {
+          const { data: maint } = await supabase
+            .from('maintenance_orders')
+            .select('vehicle_id')
+            .in('vehicle_id', vehicleIds)
+            .eq('status', 'in_progress');
+
+          const blocked = new Set((maint || []).map((m) => m.vehicle_id));
+          setBlockedVehicles(blocked);
+        } else {
+          setBlockedVehicles(new Set());
+        }
+      } catch (e) {
+        console.warn(
+          'No se pudo verificar mantenimiento de vehículos:',
+          e?.message || e
+        );
+      }
 
       // Configurar fecha por defecto (hoy)
       const now = new Date();
@@ -82,6 +109,11 @@ const AssignRoutePage = () => {
     return vehicle;
   };
 
+  const isVehicleBlocked = (vehicle) => {
+    if (!vehicle) return false;
+    return blockedVehicles.has(vehicle.id);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -93,6 +125,13 @@ const AssignRoutePage = () => {
     const vehicle = getDriverVehicle(selectedDriver);
     if (!vehicle) {
       alert('El conductor seleccionado no tiene un vehículo asignado');
+      return;
+    }
+
+    if (isVehicleBlocked(vehicle)) {
+      alert(
+        'El vehículo del conductor está en mantenimiento (in_progress). No se puede asignar ruta.'
+      );
       return;
     }
 
@@ -259,10 +298,12 @@ const AssignRoutePage = () => {
               <option value="">Seleccionar conductor</option>
               {drivers.map((driver) => {
                 const vehicle = getDriverVehicle(driver.id);
+                const blocked = isVehicleBlocked(vehicle);
                 return (
-                  <option key={driver.id} value={driver.id}>
+                  <option key={driver.id} value={driver.id} disabled={blocked}>
                     {driver.nombre} {driver.apellidos} - {driver.cedula}
                     {vehicle ? ` (${vehicle.placa})` : ' (Sin vehículo)'}
+                    {blocked ? ' [En mantenimiento]' : ''}
                   </option>
                 );
               })}
@@ -272,6 +313,14 @@ const AssignRoutePage = () => {
                 ⚠️ Este conductor no tiene vehículo asignado
               </p>
             )}
+            {selectedDriver &&
+              getDriverVehicle(selectedDriver) &&
+              isVehicleBlocked(getDriverVehicle(selectedDriver)) && (
+                <p className="text-sm text-red-600 mt-1">
+                  🚫 El vehículo asignado está en mantenimiento (in_progress).
+                  Selecciona otro conductor.
+                </p>
+              )}
           </div>
 
           {/* Vehículo (automático) */}
@@ -344,7 +393,10 @@ const AssignRoutePage = () => {
             <button
               type="submit"
               disabled={
-                saving || !selectedDriver || !getDriverVehicle(selectedDriver)
+                saving ||
+                !selectedDriver ||
+                !getDriverVehicle(selectedDriver) ||
+                isVehicleBlocked(getDriverVehicle(selectedDriver))
               }
               className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
             >
