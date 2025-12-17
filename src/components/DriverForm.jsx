@@ -39,27 +39,6 @@ export function validateDriverData(data) {
         errors.fecha_venc_licencia =
           'La fecha de vencimiento debe ser hoy o una fecha futura';
       }
-  // Fecha de vencimiento de licencia (opcional): validar solo si viene
-  // Soportar ambos nombres de campo: fecha_vencimiento_licencia (drivers) y fecha_venc_licencia (conductor)
-  const fechaVenc = data.fecha_vencimiento_licencia || data.fecha_venc_licencia;
-  if (fechaVenc) {
-    const parts = String(fechaVenc).split('-');
-    let fecha;
-    if (parts.length === 3) {
-      const [y, m, d] = parts.map((p) => parseInt(p, 10));
-      fecha = new Date(y, m - 1, d);
-    } else {
-      fecha = new Date(fechaVenc);
-    }
-
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (isNaN(fecha.getTime())) {
-      errors.fecha_vencimiento_licencia = 'Formato de fecha inválido';
-    } else if (fecha < hoy) {
-      errors.fecha_vencimiento_licencia =
-        'La fecha de vencimiento debe ser hoy o una fecha futura';
     }
   }
 
@@ -83,12 +62,7 @@ export function validateDriverData(data) {
  * Formulario de Conductor (Crear/Editar)
  * Componente reutilizable con validaciones
  */
-export default function DriverForm({
-  initialData = {},
-  onSubmit,
-  onCancel,
-  mode = 'create',
-}) {
+function DriverForm({ initialData = {}, onSubmit, onCancel, mode = 'create' }) {
   const [formData, setFormData] = useState({
     nombre_completo: initialData.nombre_completo || '',
     cedula: initialData.cedula || '',
@@ -509,3 +483,5 @@ export default function DriverForm({
     </form>
   );
 }
+
+export default DriverForm;
