@@ -212,24 +212,11 @@ const ReportIncident = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Conductor - Solo lectura si hay asignación */}
-            <div>
-              <label className="text-sm text-gray-600">Conductor</label>
-              {activeAssignment ? (
-                <input
-                  type="text"
-                  className="w-full border rounded p-2 bg-gray-50"
-                  value={
-                    drivers.find((d) => d.id == form.driver_id)
-                      ? `${drivers.find((d) => d.id == form.driver_id).nombre} ${
-                          drivers.find((d) => d.id == form.driver_id).apellidos
-                        }`
-                      : 'No disponible'
-                  }
-                  disabled
-                />
-              ) : (
+          {!activeAssignment && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* Conductor */}
+              <div>
+                <label className="text-sm text-gray-600">Conductor</label>
                 <select
                   className="w-full border rounded p-2"
                   value={form.driver_id}
@@ -243,26 +230,11 @@ const ReportIncident = () => {
                     </option>
                   ))}
                 </select>
-              )}
-            </div>
+              </div>
 
-            {/* Vehículo - Solo lectura si hay asignación */}
-            <div>
-              <label className="text-sm text-gray-600">Vehículo</label>
-              {activeAssignment ? (
-                <input
-                  type="text"
-                  className="w-full border rounded p-2 bg-gray-50"
-                  value={
-                    vehicles.find((v) => v.id == form.vehicle_id)?.placa
-                      ? `${vehicles.find((v) => v.id == form.vehicle_id).placa} - ${
-                          vehicles.find((v) => v.id == form.vehicle_id).marca
-                        } ${vehicles.find((v) => v.id == form.vehicle_id).modelo}`
-                      : 'No disponible'
-                  }
-                  disabled
-                />
-              ) : (
+              {/* Vehículo */}
+              <div>
+                <label className="text-sm text-gray-600">Vehículo</label>
                 <select
                   className="w-full border rounded p-2"
                   value={form.vehicle_id}
@@ -276,40 +248,40 @@ const ReportIncident = () => {
                     </option>
                   ))}
                 </select>
-              )}
+              </div>
             </div>
+          )}
 
-            {/* Tipo de incidente */}
-            <div>
-              <label className="text-sm text-gray-600">Tipo</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.type}
-                onChange={(e) => handleChange('type', e.target.value)}
-              >
-                {INCIDENT_TYPES.map((t) => (
-                  <option key={t} value={t}>
-                    {INCIDENT_TYPES_LABELS[t] || t}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Tipo de incidente */}
+          <div>
+            <label className="text-sm text-gray-600">Tipo</label>
+            <select
+              className="w-full border rounded p-2"
+              value={form.type}
+              onChange={(e) => handleChange('type', e.target.value)}
+            >
+              {INCIDENT_TYPES.map((t) => (
+                <option key={t} value={t}>
+                  {INCIDENT_TYPES_LABELS[t] || t}
+                </option>
+              ))}
+            </select>
+          </div>
 
-            {/* Severidad */}
-            <div>
-              <label className="text-sm text-gray-600">Severidad</label>
-              <select
-                className="w-full border rounded p-2"
-                value={form.severity}
-                onChange={(e) => handleChange('severity', e.target.value)}
-              >
-                {SEVERITIES.map((s) => (
-                  <option key={s} value={s}>
-                    {INCIDENT_SEVERITY_LABELS[s] || s}
-                  </option>
-                ))}
-              </select>
-            </div>
+          {/* Severidad */}
+          <div>
+            <label className="text-sm text-gray-600">Severidad</label>
+            <select
+              className="w-full border rounded p-2"
+              value={form.severity}
+              onChange={(e) => handleChange('severity', e.target.value)}
+            >
+              {SEVERITIES.map((s) => (
+                <option key={s} value={s}>
+                  {INCIDENT_SEVERITY_LABELS[s] || s}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Título */}

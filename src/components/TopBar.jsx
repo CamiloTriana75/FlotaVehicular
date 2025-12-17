@@ -1,21 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import {
-  Menu,
-  Bell,
-  Search,
-  User,
-  LogOut,
-  Settings,
-  ChevronDown,
-  Wifi,
-  WifiOff,
-  X,
-} from 'lucide-react';
+import { Menu, User, LogOut, ChevronDown, Wifi, WifiOff } from 'lucide-react';
 
 const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [searchFocus, setSearchFocus] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
 
   // Cargar usuario actual desde localStorage
@@ -32,26 +19,7 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
     }
   }, []);
 
-  const [notifications] = useState([
-    {
-      id: 1,
-      title: 'Vehículo ABC-123 necesita mantenimiento',
-      time: '5 min',
-      type: 'warning',
-    },
-    {
-      id: 2,
-      title: 'Nueva ruta optimizada disponible',
-      time: '15 min',
-      type: 'info',
-    },
-    {
-      id: 3,
-      title: 'Alerta: Exceso de velocidad detectado',
-      time: '1 hora',
-      type: 'alert',
-    },
-  ]);
+  const [notifications] = useState([]);
 
   const currentTime = new Date().toLocaleTimeString('es-ES', {
     hour: '2-digit',
@@ -95,8 +63,6 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (!e.target.closest('[data-menu="user"]')) setShowUserMenu(false);
-      if (!e.target.closest('[data-menu="notifications"]'))
-        setShowNotifications(false);
     };
     document.addEventListener('click', handleClickOutside);
     return () => document.removeEventListener('click', handleClickOutside);
@@ -122,22 +88,8 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
             </h2>
           </div>
 
-          {/* Center - Search (Responsive) */}
-          <div className={`flex-1 max-w-lg transition-all duration-200`}>
-            <div
-              className={`relative ${searchFocus ? 'shadow-md' : 'shadow-sm'}`}
-            >
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-              <input
-                type="text"
-                placeholder="Buscar..."
-                onFocus={() => setSearchFocus(true)}
-                onBlur={() => setSearchFocus(false)}
-                className="w-full pl-10 pr-4 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                aria-label="Buscar"
-              />
-            </div>
-          </div>
+          {/* Espacio flexible - Buscador eliminado */}
+          <div className="flex-1"></div>
 
           {/* Right side - Icons & User Menu */}
           <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
@@ -167,72 +119,6 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
             {/* Time - Hidden on small screens */}
             <div className="hidden lg:block text-xs text-gray-600 font-mono px-3 py-2 bg-gray-50 rounded-lg">
               {currentTime}
-            </div>
-
-            {/* Notifications */}
-            <div className="relative" data-menu="notifications">
-              <button
-                onClick={() => setShowNotifications(!showNotifications)}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors relative"
-                aria-label="Notificaciones"
-                aria-haspopup="menu"
-              >
-                <Bell className="w-5 h-5 text-gray-600" />
-                {notifications.length > 0 && (
-                  <span className="absolute top-1 right-1 w-4 h-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
-                    {notifications.length}
-                  </span>
-                )}
-              </button>
-
-              {/* Notifications Dropdown */}
-              {showNotifications && (
-                <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-xl border border-gray-200 overflow-hidden z-50">
-                  <div className="bg-gradient-to-r from-blue-50 to-purple-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                    <h3 className="font-semibold text-gray-900">
-                      Notificaciones
-                    </h3>
-                    <button
-                      onClick={() => setShowNotifications(false)}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="max-h-96 overflow-y-auto">
-                    {notifications.length > 0 ? (
-                      notifications.map((notif) => (
-                        <div
-                          key={notif.id}
-                          className={`px-4 py-3 border-b border-gray-100 hover:bg-gray-50 transition-colors cursor-pointer ${
-                            notif.type === 'alert' ? 'bg-red-50' : ''
-                          }`}
-                        >
-                          <div className="flex justify-between items-start gap-2">
-                            <p className="text-sm font-medium text-gray-900 flex-1">
-                              {notif.title}
-                            </p>
-                            <span className="text-xs text-gray-500 whitespace-nowrap">
-                              {notif.time}
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="px-4 py-6 text-center text-gray-500">
-                        Sin notificaciones
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="border-t border-gray-200 px-4 py-2 bg-gray-50">
-                    <button className="w-full text-sm text-blue-600 hover:text-blue-700 font-medium">
-                      Ver todas →
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* User Menu */}

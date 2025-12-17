@@ -86,6 +86,42 @@ Rol: conductor
 
 ---
 
+### 8. **ANALISTA**
+
+```
+Email: analista@flota.com
+Password: Analista2025!
+Rol: analista
+```
+
+**Permisos**: Visualización de reportes agregados. Acceso solo lectura; no modifica datos.
+
+---
+
+### 9. **MECÁNICO**
+
+```
+Email: mecanico@flota.com
+Password: Mecanico2025!
+Rol: mecanico
+```
+
+**Permisos**: Acceso al módulo de mantenimiento. Crear/actualizar órdenes de trabajo, registrar repuestos y ver alertas de mantenimiento.
+
+---
+
+### 10. **GERENTE**
+
+```
+Email: gerente@flota.com
+Password: Gerente2025!
+Rol: gerente
+```
+
+**Permisos**: Acceso a reportes estratégicos y al Centro de Control de Pánico (lectura y supervisión).
+
+---
+
 ## 🚗 Datos de Prueba
 
 ### Vehículos Disponibles:
@@ -138,6 +174,9 @@ VALUES (
 - `planificador` - Planificador de rutas
 - `operador` - Operador (solo lectura)
 - `conductor` - Conductor de vehículo
+- `analista` - Análisis y reportes (solo lectura)
+- `mecanico` - Mantenimiento y repuestos
+- `gerente` - Supervisión y reportes estratégicos
 
 ---
 
