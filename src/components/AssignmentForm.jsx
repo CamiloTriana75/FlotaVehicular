@@ -10,6 +10,22 @@ import {
   checkAssignmentConflicts,
 } from '../services/assignmentService';
 
+// Helper para verificar si una licencia está vencida
+const isLicenseExpired = (expirationDate) => {
+  if (!expirationDate) return false;
+  const expDate = new Date(expirationDate);
+  const today = new Date();
+  today.setHours(0, 0, 0, 0); // Resetear hora a 00:00:00
+  expDate.setHours(0, 0, 0, 0); // Resetear hora a 00:00:00
+  return expDate < today;
+};
+
+// Helper para formatea la fecha
+const formatDate = (dateString) => {
+  if (!dateString) return 'N/A';
+  return new Date(dateString).toLocaleDateString('es-CO');
+};
+
 const AssignmentForm = ({
   assignment = null,
   vehicles = [],
@@ -97,6 +113,17 @@ const AssignmentForm = ({
         !formData.endTime
       ) {
         throw new Error('Todos los campos son requeridos');
+      }
+
+      // Validar licencia del conductor
+      const selectedDriver = drivers.find((d) => d.id === formData.driverId);
+      if (
+        selectedDriver &&
+        isLicenseExpired(selectedDriver.fecha_vencimiento_licencia)
+      ) {
+        throw new Error(
+          `❌ Licencia del conductor vencida desde ${formatDate(selectedDriver.fecha_vencimiento_licencia)}. Solo un admin puede actualizar la fecha de vencimiento.`
+        );
       }
 
       const startTime = new Date(formData.startTime);
@@ -263,19 +290,46 @@ const AssignmentForm = ({
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
           >
             <option value="">Seleccione un conductor</option>
-            {drivers.map((driver) => (
-              <option key={driver.id} value={driver.id}>
-                {driver.nombre} {driver.apellidos} - Lic:{' '}
-                {driver.numero_licencia}
-              </option>
-            ))}
+            {drivers.map((driver) => {
+              const expired = isLicenseExpired(
+                driver.fecha_vencimiento_licencia
+              );
+              return (
+                <option key={driver.id} value={driver.id} disabled={expired}>
+                  {driver.nombre} {driver.apellidos} - Lic:{' '}
+                  {driver.numero_licencia}
+                  {expired ? ' (Licencia Vencida)' : ''}
+                </option>
+              );
+            })}
           </select>
           {getSelectedDriver() && (
-            <p className="mt-1 text-sm text-gray-500">
-              Estado:{' '}
-              <span className="font-medium">{getSelectedDriver().estado}</span>{' '}
-              | Cédula: {getSelectedDriver().cedula}
-            </p>
+            <div className="mt-1 text-sm text-gray-500">
+              <p>
+                Estado:{' '}
+                <span className="font-medium">
+                  {getSelectedDriver().estado}
+                </span>{' '}
+                | Cédula: {getSelectedDriver().cedula}
+              </p>
+              {isLicenseExpired(
+                getSelectedDriver().fecha_vencimiento_licencia
+              ) && (
+                <p className="text-red-600 font-semibold mt-1">
+                  ⚠️ Licencia vencida desde{' '}
+                  {formatDate(getSelectedDriver().fecha_vencimiento_licencia)}
+                </p>
+              )}
+              {!isLicenseExpired(
+                getSelectedDriver().fecha_vencimiento_licencia
+              ) &&
+                getSelectedDriver().fecha_vencimiento_licencia && (
+                  <p className="text-green-600 text-xs mt-1">
+                    ✓ Licencia vigente hasta{' '}
+                    {formatDate(getSelectedDriver().fecha_vencimiento_licencia)}
+                  </p>
+                )}
+            </div>
           )}
         </div>
 

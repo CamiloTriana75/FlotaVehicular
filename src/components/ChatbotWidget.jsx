@@ -11,7 +11,7 @@ export default function ChatbotWidget() {
       id: 'welcome',
       role: 'assistant',
       content:
-        '¡Hola! 👋 Soy Grok AI, tu asistente inteligente de FlotaVehicular. Puedo ayudarte con:\n\n📋 Preguntas sobre:\n• Arquitectura del sistema\n• Gestión de flota y conductores\n• Rutas y monitoreo\n• Roles y permisos\n• Características y funcionalidades\n\n¿En qué puedo ayudarte?',
+        '¡Hola! 👋 Soy tu asistente inteligente de FlotaVehicular. Puedo ayudarte con:\n\n📋 Preguntas sobre:\n• Arquitectura del sistema\n• Gestión de flota y conductores\n• Rutas y monitoreo\n• Roles y permisos\n• Características y funcionalidades\n\n¿En qué puedo ayudarte?',
     },
   ]);
 
@@ -81,7 +81,7 @@ export default function ChatbotWidget() {
             <div className="flex items-center gap-2">
               <span className="text-2xl">🧠</span>
               <div className="flex flex-col">
-                <span className="font-semibold">Grok AI</span>
+                <span className="font-semibold">Flota AI</span>
                 <span className="text-xs text-blue-100">
                   Asistente Inteligente
                 </span>
@@ -120,7 +120,7 @@ export default function ChatbotWidget() {
                   <div className="animate-pulse flex gap-1">
                     <span>🧠</span>
                   </div>
-                  <span>Grok está pensando...</span>
+                  <span>El asistente está pensando...</span>
                 </div>
               </div>
             )}
@@ -161,7 +161,7 @@ export default function ChatbotWidget() {
         onClick={() => setOpen((v) => !v)}
         className="w-14 h-14 rounded-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white shadow-2xl grid place-items-center text-2xl transition-all duration-200 hover:scale-110 border-2 border-white"
         aria-label="Abrir asistente"
-        title="Grok AI - Asistente Inteligente"
+        title="Flota AI - Asistente Inteligente"
       >
         {open ? '✕' : '🧠'}
       </button>

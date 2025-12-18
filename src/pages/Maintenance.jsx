@@ -11,11 +11,9 @@ import {
   Download,
   FileText,
   Filter,
-  Paperclip,
   Plus,
   Printer,
   Search,
-  Upload,
   Wrench,
 } from 'lucide-react';
 
@@ -55,12 +53,6 @@ const formatCurrency = (value = 0) =>
     maximumFractionDigits: 0,
   }).format(Number(value) || 0);
 
-const calculatePartsCost = (parts = []) =>
-  parts.reduce(
-    (acc, part) => acc + (part.quantity || 0) * (part.unitCost || 0),
-    0
-  );
-
 const calculateLaborCost = (hours, rate) =>
   (Number(hours) || 0) * (Number(rate) || 0);
 
@@ -85,8 +77,6 @@ const Maintenance = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
-  const [parts, setParts] = useState([{ name: '', quantity: 1, unitCost: 0 }]);
-  const [attachments, setAttachments] = useState([]);
 
   const stats = useMemo(() => {
     const totals = orders.reduce(
@@ -102,8 +92,6 @@ const Maintenance = () => {
 
   const resetForm = () => {
     setForm(emptyForm);
-    setParts([{ name: '', quantity: 1, unitCost: 0 }]);
-    setAttachments([]);
   };
 
   const handleCreate = async (event) => {
@@ -122,13 +110,10 @@ const Maintenance = () => {
       return;
     }
 
-    const cleanParts = parts.filter((p) => p.name.trim() !== '');
     const orderPayload = {
       ...form,
       vehicleId,
       vehiclePlate: vehicle?.placa || vehicle?.plate || form.vehiclePlate,
-      parts: cleanParts,
-      attachments,
       laborHours: Number(form.laborHours) || 0,
       laborRate: Number(form.laborRate) || 0,
       otherCosts: Number(form.otherCosts) || 0,
@@ -147,40 +132,8 @@ const Maintenance = () => {
     }
   };
 
-  const handleAttachment = async (event) => {
-    const files = Array.from(event.target.files || []);
-    if (!files.length) return;
-
-    const mapped = files.map((file) => ({
-      id: `att-${Date.now()}-${file.name}`,
-      name: file.name,
-      type: file.type,
-      size: file.size,
-      url: URL.createObjectURL(file),
-    }));
-    setAttachments((prev) => [...prev, ...mapped]);
-  };
-
-  const partsCost = calculatePartsCost(parts);
   const laborCost = calculateLaborCost(form.laborHours, form.laborRate);
-  const totalCost = partsCost + laborCost + (Number(form.otherCosts) || 0);
-
-  const updatePart = (index, field, value) => {
-    setParts((prev) =>
-      prev.map((part, idx) =>
-        idx === index
-          ? { ...part, [field]: field === 'name' ? value : Number(value) || 0 }
-          : part
-      )
-    );
-  };
-
-  const addPartRow = () =>
-    setParts((prev) => [...prev, { name: '', quantity: 1, unitCost: 0 }]);
-  const removePartRow = (index) =>
-    setParts((prev) =>
-      prev.length === 1 ? prev : prev.filter((_, idx) => idx !== index)
-    );
+  const totalCost = laborCost + (Number(form.otherCosts) || 0);
 
   const updateStatus = async (orderId, status) => {
     const result = await updateOrder(orderId, { status });
@@ -380,33 +333,7 @@ const Maintenance = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
-              <div className="border rounded-lg p-4 border-gray-100 bg-gray-50">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Wrench className="w-4 h-4" /> Repuestos
-                </h4>
-                <ul className="text-sm text-gray-700 space-y-1">
-                  {order.parts?.map((part) => (
-                    <li
-                      key={part.id || part.name}
-                      className="flex justify-between"
-                    >
-                      <span>
-                        {part.name} ({part.quantity} u)
-                      </span>
-                      <span className="text-gray-900">
-                        {formatCurrency(
-                          (part.quantity || 0) * (part.unitCost || 0)
-                        )}
-                      </span>
-                    </li>
-                  ))}
-                  {!order.parts?.length && (
-                    <li className="text-gray-500">Sin repuestos</li>
-                  )}
-                </ul>
-              </div>
-
+            <div className="grid grid-cols-1 gap-4 mt-4">
               <div className="border rounded-lg p-4 border-gray-100 bg-gray-50">
                 <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
                   <FileText className="w-4 h-4" /> Mano de obra
@@ -430,29 +357,6 @@ const Maintenance = () => {
                 <p className="text-xs text-gray-500 mt-1">
                   Notas: {order.notes || 'N/A'}
                 </p>
-              </div>
-
-              <div className="border rounded-lg p-4 border-gray-100 bg-gray-50">
-                <h4 className="text-sm font-semibold text-gray-800 mb-2 flex items-center gap-2">
-                  <Paperclip className="w-4 h-4" /> Facturas e imágenes
-                </h4>
-                <ul className="text-sm text-blue-600 space-y-1">
-                  {order.attachments?.map((file) => (
-                    <li key={file.id}>
-                      <a
-                        className="hover:underline"
-                        href={file.url}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        {file.name}
-                      </a>
-                    </li>
-                  ))}
-                  {!order.attachments?.length && (
-                    <li className="text-gray-500">Sin adjuntos</li>
-                  )}
-                </ul>
               </div>
             </div>
           </Card>
@@ -621,64 +525,6 @@ const Maintenance = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <h4 className="text-sm font-semibold text-gray-800">
-                    Repuestos
-                  </h4>
-                  <button
-                    type="button"
-                    onClick={addPartRow}
-                    className="text-sm text-blue-600 hover:underline"
-                  >
-                    Añadir repuesto
-                  </button>
-                </div>
-                <div className="space-y-2">
-                  {parts.map((part, index) => (
-                    <div
-                      key={index}
-                      className="grid grid-cols-1 md:grid-cols-6 gap-2 items-center"
-                    >
-                      <input
-                        type="text"
-                        value={part.name}
-                        onChange={(e) =>
-                          updatePart(index, 'name', e.target.value)
-                        }
-                        placeholder="Repuesto"
-                        className="md:col-span-2 border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="number"
-                        value={part.quantity}
-                        onChange={(e) =>
-                          updatePart(index, 'quantity', e.target.value)
-                        }
-                        placeholder="Cantidad"
-                        className="border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                      />
-                      <input
-                        type="number"
-                        value={part.unitCost}
-                        onChange={(e) =>
-                          updatePart(index, 'unitCost', e.target.value)
-                        }
-                        placeholder="Costo unitario"
-                        className="md:col-span-2 border border-gray-200 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => removePartRow(index)}
-                        className="text-sm text-red-500 hover:underline"
-                      >
-                        Quitar
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div className="space-y-1">
                   <label className="text-sm text-gray-600">Horas</label>
@@ -718,12 +564,6 @@ const Maintenance = () => {
               <Card className="p-4 bg-gray-50 border border-gray-100">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
                   <p className="text-sm text-gray-700">
-                    Repuestos:{' '}
-                    <span className="font-semibold">
-                      {formatCurrency(partsCost)}
-                    </span>
-                  </p>
-                  <p className="text-sm text-gray-700">
                     Mano de obra:{' '}
                     <span className="font-semibold">
                       {formatCurrency(laborCost)}
@@ -734,29 +574,6 @@ const Maintenance = () => {
                   </p>
                 </div>
               </Card>
-
-              <div className="space-y-2">
-                <label className="text-sm text-gray-600 flex items-center gap-2">
-                  <Upload className="w-4 h-4" /> Adjuntar factura o imagen
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,.pdf,.jpg,.jpeg,.png"
-                  onChange={handleAttachment}
-                  className="w-full border border-dashed border-gray-300 rounded-lg px-3 py-2"
-                />
-                {attachments.length > 0 && (
-                  <ul className="text-sm text-gray-700 space-y-1">
-                    {attachments.map((file) => (
-                      <li key={file.id} className="flex items-center gap-2">
-                        <Paperclip className="w-4 h-4 text-gray-500" />{' '}
-                        {file.name}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
 
               <div className="flex items-center justify-end gap-3 pt-2">
                 <button
