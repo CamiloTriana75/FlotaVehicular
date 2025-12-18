@@ -1,6 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { Users as UsersIcon, Plus, Trash2, Edit2, Save, X } from 'lucide-react';
+import {
+  Users as UsersIcon,
+  Plus,
+  Trash2,
+  Edit2,
+  Save,
+  X,
+  AlertCircle,
+} from 'lucide-react';
 import { userService, ALLOWED_ROLES } from '../services/userService';
+import securityService from '../services/securityService';
 
 const ROLES = ALLOWED_ROLES.map((r) => ({ value: r, label: r.toUpperCase() }));
 
@@ -70,20 +79,53 @@ export default function UsersAdmin() {
     }
     setLoading(false);
   };
-  const removeUser = async (id) => {
-    if (!confirm('¿Eliminar usuario?')) return;
+  const removeUser = async (id, username) => {
+    const confirmMsg = username
+      ? `¿Eliminar usuario "${username}"?\n\nSi es un conductor, también se eliminará su acceso de autenticación.`
+      : '¿Eliminar usuario?';
+
+    if (!confirm(confirmMsg)) return;
+
     setLoading(true);
-    await userService.remove(id);
-    const { data: fresh } = await userService.list();
-    const mapped = (fresh || []).map((u) => ({
-      id: u.id_usuario,
-      name: u.username,
-      email: u.email,
-      role: u.rol,
-      createdAt: new Date().toISOString(),
-    }));
-    setList(mapped);
-    setLoading(false);
+    setError('');
+
+    try {
+      // Intentar eliminar desde seguridad (elimina usuario y su acceso)
+      const {
+        success,
+        message,
+        error: deleteError,
+      } = await securityService.deleteUser(id, username, 'conductor');
+
+      if (!success) {
+        // Si falla la eliminación desde seguridad, intentar con el método normal
+        console.warn(
+          'No se pudo eliminar desde seguridad, intentando método normal...'
+        );
+        const { error: normalError } = await userService.remove(id);
+        if (normalError) {
+          setError(normalError.message || 'Error al eliminar usuario');
+          setLoading(false);
+          return;
+        }
+      }
+
+      // Recargar lista
+      const { data: fresh } = await userService.list();
+      const mapped = (fresh || []).map((u) => ({
+        id: u.id_usuario,
+        name: u.username,
+        email: u.email,
+        role: u.rol,
+        createdAt: new Date().toISOString(),
+      }));
+      setList(mapped);
+      alert(message || 'Usuario eliminado exitosamente');
+    } catch (err) {
+      setError(err.message || 'Error inesperado al eliminar usuario');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const startEdit = (u) => {
@@ -319,7 +361,7 @@ export default function UsersAdmin() {
                           <Edit2 size={14} /> Editar
                         </button>
                         <button
-                          onClick={() => removeUser(u.id)}
+                          onClick={() => removeUser(u.id, u.name)}
                           className="px-2 py-1 bg-red-600 text-white rounded flex items-center gap-1"
                         >
                           <Trash2 size={14} /> Eliminar
@@ -334,10 +376,62 @@ export default function UsersAdmin() {
         </table>
       </div>
 
+      {/* Información de error global */}
+      {error && (
+        <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
+          <AlertCircle
+            size={20}
+            className="text-red-600 flex-shrink-0 mt-0.5"
+          />
+          <div>
+            <p className="text-red-800 font-semibold">Error</p>
+            <p className="text-red-700 text-sm">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Sección: Gestión de Conductores desde Seguridad */}
+      <div className="mt-8 p-6 bg-orange-50 border-2 border-orange-200 rounded-lg">
+        <h3 className="text-lg font-semibold text-orange-900 mb-4 flex items-center gap-2">
+          <AlertCircle size={20} />
+          🔐 Gestión de Conductores desde Seguridad
+        </h3>
+        <p className="text-sm text-orange-800 mb-4">
+          Aquí puedes eliminar conductores y revocar su acceso de autenticación
+          de forma atómica. También verifica qué conductores están dados de alta
+          en el sistema.
+        </p>
+        <div className="mt-4 p-4 bg-white border border-orange-100 rounded text-xs text-gray-600">
+          <p className="font-semibold mb-2">📌 Notas importantes:</p>
+          <ul className="list-disc list-inside space-y-1">
+            <li>
+              Eliminar un conductor elimina tanto su registro como su usuario de
+              acceso
+            </li>
+            <li>Esta acción es irreversible - asegúrate de tener respaldos</li>
+            <li>
+              Los usuarios creados con cédula como username se eliminan
+              automáticamente
+            </li>
+            <li>
+              Usa el script CLEAN_DRIVERS_AND_USERS.sql para limpiar toda la
+              tabla de una vez
+            </li>
+          </ul>
+        </div>
+      </div>
+
       {/* Ayuda */}
-      <div className="text-xs text-gray-500">
-        Nota: La creación usa una contraseña temporal en el servidor. Ajusta
-        políticas de seguridad/RLS en Supabase para producción.
+      <div className="mt-4 text-xs text-gray-500">
+        <p>
+          📝 Nota: La creación usa una contraseña temporal en el servidor.
+          Ajusta políticas de seguridad/RLS en Supabase para producción.
+        </p>
+        <p className="mt-2">
+          🔗 Ver también: Scripts en{' '}
+          <code>scripts/CLEAN_DRIVERS_AND_USERS.sql</code> y{' '}
+          <code>scripts/CREATE_RPC_DELETE_USER.sql</code>
+        </p>
       </div>
     </div>
   );
