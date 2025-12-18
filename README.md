@@ -156,8 +156,7 @@
                           ↕
          ┌──────────────────────────────┐
          │  Integraciones Externas      │
-         ├──────────────────────────────┤
-         │ • Google Maps API            │
+         ├──────────────────────────────┤            │
          │ • Mapbox API                 │
          │ • n8n Cloud (IA/Workflows)   │
          │ • OpenRouter (DeepSeek v3.1) │
