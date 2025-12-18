@@ -178,13 +178,6 @@ const Sidebar = ({ isOpen, onClose, align = 'left' }) => {
       ],
     },
     {
-      title: 'Combustible',
-      path: '/combustible',
-      icon: Fuel,
-      description: 'Control de combustible',
-      roles: ['superusuario', 'admin', 'operador'],
-    },
-    {
       title: 'Mantenimiento',
       path: '/mantenimiento',
       icon: Wrench,
@@ -205,14 +198,6 @@ const Sidebar = ({ isOpen, onClose, align = 'left' }) => {
       path: '/alertas/configuracion',
       icon: Settings,
       description: 'Configurar umbrales',
-      roles: ['superusuario', 'admin'],
-    },
-
-    {
-      title: 'Seguridad',
-      path: '/seguridad',
-      icon: Shield,
-      description: 'Roles y permisos',
       roles: ['superusuario', 'admin'],
     },
     {
@@ -364,7 +349,7 @@ const Sidebar = ({ isOpen, onClose, align = 'left' }) => {
         fixed inset-y-0 ${align === 'right' ? 'right-0' : 'left-0'} z-50 w-72 md:w-80 bg-white shadow-xl transform transition-all duration-300 ease-in-out
         flex flex-col border-r border-gray-200
         ${isOpen ? 'translate-x-0' : align === 'right' ? 'translate-x-full' : '-translate-x-full'}
-        lg:translate-x-0 lg:static lg:inset-0 lg:h-screen
+        lg:translate-x-0
       `}
       >
         {/* Header */}
