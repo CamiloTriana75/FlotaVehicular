@@ -35,7 +35,6 @@
 **Objetivos**:
 
 - ✅ Monitoreo GPS en tiempo real
-- ✅ Optimización de rutas con Google Maps API
 - ✅ Mantenimiento preventivo automático
 - ✅ Control integral de conductores con validación de licencias
 - ✅ Sistema de alertas inteligentes (5 tipos)
@@ -74,7 +73,7 @@
 ### 4. 🛣️ Planificación y Optimización de Rutas
 
 - Creación con waypoints y ventanas de tiempo (JSONB)
-- Optimización automática Google Maps API
+- Optimización automática MapBox
 - Asignación a conductor-vehículo disponibles
 - Check-ins automáticos en waypoints
 - Historial de rutas (route_assignments)
@@ -120,13 +119,6 @@
 - Historial de movimientos (geofence_events)
 - Visualización en mapa
 
-### 10. 💾 Combustible y Costos
-
-- Registro de recargas (fecha, cantidad, costo, km)
-- Cálculo de consumo por km
-- Detección de anomalías
-- Costos operativos por vehículo
-- Alertas de bajo combustible
 
 ---
 
