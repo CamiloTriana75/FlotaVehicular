@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/Card';
 import {
   Settings as SettingsIcon,
@@ -14,20 +14,139 @@ import {
   Save,
   Eye,
   EyeOff,
+  Plus,
+  Trash2,
+  Edit2,
+  X,
+  Download,
+  Upload,
+  AlertTriangle,
 } from 'lucide-react';
+import { userService, ALLOWED_ROLES } from '../services/userService';
 
 const Settings = () => {
   const [activeTab, setActiveTab] = useState('general');
   const [showPassword, setShowPassword] = useState(false);
+  const [companyData, setCompanyData] = useState({
+    name: 'FleetManager Colombia',
+    nit: '900.123.456-7',
+    address: 'Calle 123 #45-67, Bogotá',
+    phone: '+57 1 234 5678',
+  });
+
+  // Estados para gestión de usuarios - MOVIDOS AL NIVEL SUPERIOR
+  const [users, setUsers] = useState([]);
+  const [newUser, setNewUser] = useState({
+    name: '',
+    email: '',
+    role: 'supervisor',
+    password: '',
+  });
+  const [loading, setLoading] = useState(false);
+  const [editingId, setEditingId] = useState(null);
+  const [editing, setEditing] = useState({ name: '', email: '', role: '' });
 
   const tabs = [
     { id: 'general', name: 'General', icon: SettingsIcon },
     { id: 'users', name: 'Usuarios', icon: User },
-    { id: 'security', name: 'Seguridad', icon: Shield },
     { id: 'notifications', name: 'Notificaciones', icon: Bell },
     { id: 'integrations', name: 'Integraciones', icon: Globe },
     { id: 'system', name: 'Sistema', icon: Database },
   ];
+
+  const handleSaveCompanyData = () => {
+    localStorage.setItem('companyData', JSON.stringify(companyData));
+    // Disparar evento para actualizar TopBar
+    window.dispatchEvent(new Event('companyDataUpdated'));
+    alert('Información de la empresa guardada correctamente');
+  };
+
+  // Cargar datos de empresa
+  useEffect(() => {
+    const saved = localStorage.getItem('companyData');
+    if (saved) {
+      try {
+        setCompanyData(JSON.parse(saved));
+      } catch (e) {
+        console.error('Error al cargar datos de empresa:', e);
+      }
+    }
+  }, []);
+
+  // Cargar usuarios cuando se cambia a la pestaña de usuarios
+  useEffect(() => {
+    if (activeTab === 'users') {
+      loadUsers();
+    }
+  }, [activeTab]);
+
+  const loadUsers = async () => {
+    setLoading(true);
+    const { data, error } = await userService.list();
+    if (!error && data) {
+      const mapped = data.map((u) => ({
+        id: u.id_usuario,
+        name: u.username,
+        email: u.email,
+        role: u.rol,
+        status: u.activo ? 'Activo' : 'Inactivo',
+      }));
+      setUsers(mapped);
+    }
+    setLoading(false);
+  };
+
+  const handleAddUser = async (e) => {
+    e.preventDefault();
+    if (!newUser.name.trim() || !newUser.password.trim()) {
+      alert('Nombre y contraseña son obligatorios');
+      return;
+    }
+    setLoading(true);
+    const { data, error } = await userService.create({
+      username: newUser.name.trim(),
+      email: newUser.email.trim() || null,
+      rol: newUser.role,
+      password: newUser.password.trim(),
+    });
+    if (!error) {
+      await loadUsers();
+      setNewUser({ name: '', email: '', role: 'supervisor', password: '' });
+      alert('Usuario creado correctamente');
+    } else {
+      alert('Error al crear usuario: ' + (error.message || 'Desconocido'));
+    }
+    setLoading(false);
+  };
+
+  const handleDeleteUser = async (id) => {
+    if (!confirm('¿Eliminar este usuario?')) return;
+    setLoading(true);
+    await userService.remove(id);
+    await loadUsers();
+    setLoading(false);
+  };
+
+  const startEdit = (user) => {
+    setEditingId(user.id);
+    setEditing({ name: user.name, email: user.email, role: user.role });
+  };
+
+  const saveEdit = async (id) => {
+    if (!editing.name.trim()) {
+      alert('El nombre es obligatorio');
+      return;
+    }
+    setLoading(true);
+    await userService.updateProfile(id, {
+      username: editing.name.trim(),
+      email: editing.email.trim(),
+      rol: editing.role,
+    });
+    await loadUsers();
+    setEditingId(null);
+    setLoading(false);
+  };
 
   const renderGeneralSettings = () => (
     <div className="space-y-6">
@@ -42,7 +161,10 @@ const Settings = () => {
             </label>
             <input
               type="text"
-              defaultValue="FleetManager Colombia"
+              value={companyData.name}
+              onChange={(e) =>
+                setCompanyData({ ...companyData, name: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -52,7 +174,10 @@ const Settings = () => {
             </label>
             <input
               type="text"
-              defaultValue="900.123.456-7"
+              value={companyData.nit}
+              onChange={(e) =>
+                setCompanyData({ ...companyData, nit: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -62,7 +187,10 @@ const Settings = () => {
             </label>
             <input
               type="text"
-              defaultValue="Calle 123 #45-67, Bogotá"
+              value={companyData.address}
+              onChange={(e) =>
+                setCompanyData({ ...companyData, address: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -72,10 +200,22 @@ const Settings = () => {
             </label>
             <input
               type="text"
-              defaultValue="+57 1 234 5678"
+              value={companyData.phone}
+              onChange={(e) =>
+                setCompanyData({ ...companyData, phone: e.target.value })
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
+        </div>
+        <div className="mt-4 flex justify-end">
+          <button
+            onClick={handleSaveCompanyData}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+          >
+            <Save className="w-4 h-4" />
+            <span>Guardar Información</span>
+          </button>
         </div>
       </Card>
 
@@ -127,152 +267,214 @@ const Settings = () => {
     </div>
   );
 
-  const renderUserSettings = () => (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900">
-            Usuarios del Sistema
-          </h3>
-          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-            Agregar Usuario
-          </button>
-        </div>
-        <div className="space-y-4">
-          {[
-            {
-              name: 'Admin Usuario',
-              email: 'admin@fleetmanager.com',
-              role: 'Administrador',
-              status: 'Activo',
-            },
-            {
-              name: 'Supervisor 1',
-              email: 'supervisor1@fleetmanager.com',
-              role: 'Supervisor',
-              status: 'Activo',
-            },
-            {
-              name: 'Operador 1',
-              email: 'operador1@fleetmanager.com',
-              role: 'Operador',
-              status: 'Activo',
-            },
-            {
-              name: 'Conductor 1',
-              email: 'conductor1@fleetmanager.com',
-              role: 'Conductor',
-              status: 'Inactivo',
-            },
-          ].map((user, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-            >
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
-                  <User className="w-5 h-5 text-white" />
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900">{user.name}</p>
-                  <p className="text-sm text-gray-500">{user.email}</p>
-                </div>
+  const renderUserSettings = () => {
+    return (
+      <div className="space-y-6">
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">
+              Gestión de Usuarios
+            </h3>
+          </div>
+
+          {/* Formulario para agregar usuario */}
+          <form
+            onSubmit={handleAddUser}
+            className="mb-6 p-4 bg-gray-50 rounded-lg space-y-4"
+          >
+            <h4 className="font-medium text-gray-900">Agregar Nuevo Usuario</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre *
+                </label>
+                <input
+                  type="text"
+                  value={newUser.name}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, name: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Nombre del usuario"
+                  required
+                />
               </div>
-              <div className="flex items-center space-x-4">
-                <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                  {user.role}
-                </span>
-                <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${
-                    user.status === 'Activo'
-                      ? 'bg-green-100 text-green-800'
-                      : 'bg-red-100 text-red-800'
-                  }`}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email (opcional)
+                </label>
+                <input
+                  type="email"
+                  value={newUser.email}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, email: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="email@empresa.com"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Rol *
+                </label>
+                <select
+                  value={newUser.role}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, role: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  required
                 >
-                  {user.status}
-                </span>
-                <button className="text-blue-600 hover:text-blue-800 text-sm">
-                  Editar
-                </button>
+                  {ALLOWED_ROLES.map((role) => (
+                    <option key={role} value={role}>
+                      {role.toUpperCase()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Contraseña *
+                </label>
+                <input
+                  type="password"
+                  value={newUser.password}
+                  onChange={(e) =>
+                    setNewUser({ ...newUser, password: e.target.value })
+                  }
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                  placeholder="Mínimo 8 caracteres"
+                  minLength={8}
+                  required
+                />
               </div>
             </div>
-          ))}
-        </div>
-      </Card>
-    </div>
-  );
-
-  const renderSecuritySettings = () => (
-    <div className="space-y-6">
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Configuración de Seguridad
-        </h3>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contraseña Actual
-            </label>
-            <div className="relative">
-              <input
-                type={showPassword ? 'text' : 'password'}
-                className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                placeholder="Ingresa tu contraseña actual"
-              />
+            <div className="flex justify-end">
               <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                type="submit"
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400"
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4 text-gray-400" />
-                ) : (
-                  <Eye className="w-4 h-4 text-gray-400" />
-                )}
+                <Plus className="w-4 h-4" />
+                <span>Agregar Usuario</span>
               </button>
             </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Nueva Contraseña
-            </label>
-            <input
-              type="password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Ingresa tu nueva contraseña"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Confirmar Contraseña
-            </label>
-            <input
-              type="password"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Confirma tu nueva contraseña"
-            />
-          </div>
-        </div>
-      </Card>
+          </form>
 
-      <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Autenticación de Dos Factores
-        </h3>
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="font-medium text-gray-900">2FA Habilitado</p>
-            <p className="text-sm text-gray-500">
-              Protección adicional para tu cuenta
-            </p>
+          {/* Lista de usuarios */}
+          <div className="space-y-4">
+            {loading && <p className="text-sm text-gray-500">Cargando...</p>}
+            {!loading && users.length === 0 && (
+              <p className="text-sm text-gray-500">
+                No hay usuarios registrados
+              </p>
+            )}
+            {!loading &&
+              users.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                >
+                  {editingId === user.id ? (
+                    <>
+                      <div className="flex-1 grid grid-cols-3 gap-3">
+                        <input
+                          type="text"
+                          value={editing.name}
+                          onChange={(e) =>
+                            setEditing({ ...editing, name: e.target.value })
+                          }
+                          className="px-2 py-1 border rounded"
+                          placeholder="Nombre"
+                        />
+                        <input
+                          type="email"
+                          value={editing.email}
+                          onChange={(e) =>
+                            setEditing({ ...editing, email: e.target.value })
+                          }
+                          className="px-2 py-1 border rounded"
+                          placeholder="Email"
+                        />
+                        <select
+                          value={editing.role}
+                          onChange={(e) =>
+                            setEditing({ ...editing, role: e.target.value })
+                          }
+                          className="px-2 py-1 border rounded"
+                        >
+                          {ALLOWED_ROLES.map((role) => (
+                            <option key={role} value={role}>
+                              {role.toUpperCase()}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                      <div className="flex space-x-2 ml-4">
+                        <button
+                          onClick={() => saveEdit(user.id)}
+                          className="p-2 bg-green-600 text-white rounded hover:bg-green-700"
+                        >
+                          <Save className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setEditingId(null)}
+                          className="p-2 bg-gray-300 text-gray-700 rounded hover:bg-gray-400"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-500 rounded-full flex items-center justify-center">
+                          <User className="w-5 h-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">
+                            {user.name}
+                          </p>
+                          <p className="text-sm text-gray-500">
+                            {user.email || 'Sin email'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-4">
+                        <span className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                          {user.role.toUpperCase()}
+                        </span>
+                        <span
+                          className={`px-2 py-1 text-xs font-medium rounded-full ${
+                            user.status === 'Activo'
+                              ? 'bg-green-100 text-green-800'
+                              : 'bg-red-100 text-red-800'
+                          }`}
+                        >
+                          {user.status}
+                        </span>
+                        <button
+                          onClick={() => startEdit(user)}
+                          className="text-blue-600 hover:text-blue-800 text-sm"
+                        >
+                          <Edit2 className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteUser(user.id)}
+                          className="text-red-600 hover:text-red-800 text-sm"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
           </div>
-          <button className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
-            Configurar
-          </button>
-        </div>
-      </Card>
-    </div>
-  );
+        </Card>
+      </div>
+    );
+  };
 
   const renderNotifications = () => (
     <div className="space-y-6">
@@ -411,6 +613,113 @@ const Settings = () => {
     </div>
   );
 
+  const createBackup = async () => {
+    try {
+      setLoading(true);
+      const backup = {
+        version: '1.0',
+        timestamp: new Date().toISOString(),
+        data: {
+          companyData: JSON.parse(localStorage.getItem('companyData') || '{}'),
+          users: users,
+          systemSettings: {
+            updateFrequency: localStorage.getItem('updateFrequency') || '30s',
+            dataRetention: localStorage.getItem('dataRetention') || '1year',
+            speedThreshold: localStorage.getItem('speedThreshold') || '80',
+          },
+        },
+      };
+
+      // Crear archivo JSON para descargar
+      const blob = new Blob([JSON.stringify(backup, null, 2)], {
+        type: 'application/json',
+      });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `backup_flota_${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      // Guardar también en localStorage como último backup
+      localStorage.setItem('lastBackup', JSON.stringify(backup));
+      localStorage.setItem('lastBackupDate', new Date().toISOString());
+
+      alert('✅ Respaldo creado y descargado correctamente');
+      setLoading(false);
+    } catch (error) {
+      console.error('Error al crear respaldo:', error);
+      alert('❌ Error al crear respaldo: ' + error.message);
+      setLoading(false);
+    }
+  };
+
+  const restoreBackup = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setLoading(true);
+      const text = await file.text();
+      const backup = JSON.parse(text);
+
+      // Validar estructura del backup
+      if (!backup.version || !backup.data) {
+        throw new Error('Formato de respaldo inválido');
+      }
+
+      // Confirmar restauración
+      if (
+        !confirm(
+          `¿Restaurar respaldo del ${new Date(backup.timestamp).toLocaleString()}?\n\nEsto sobrescribirá los datos actuales.`
+        )
+      ) {
+        setLoading(false);
+        return;
+      }
+
+      // Restaurar datos de empresa
+      if (backup.data.companyData) {
+        localStorage.setItem(
+          'companyData',
+          JSON.stringify(backup.data.companyData)
+        );
+        setCompanyData(backup.data.companyData);
+        window.dispatchEvent(new Event('companyDataUpdated'));
+      }
+
+      // Restaurar configuraciones del sistema
+      if (backup.data.systemSettings) {
+        Object.entries(backup.data.systemSettings).forEach(([key, value]) => {
+          localStorage.setItem(key, value);
+        });
+      }
+
+      alert('✅ Respaldo restaurado correctamente. Recargando página...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error('Error al restaurar respaldo:', error);
+      alert('❌ Error al restaurar respaldo: ' + error.message);
+      setLoading(false);
+    }
+  };
+
+  const getLastBackupDate = () => {
+    const date = localStorage.getItem('lastBackupDate');
+    if (!date) return 'Nunca';
+    return new Date(date).toLocaleString('es-ES', {
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
   const renderSystemSettings = () => (
     <div className="space-y-6">
       <Card className="p-6">
@@ -422,22 +731,34 @@ const Settings = () => {
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Frecuencia de Actualización de Ubicación
             </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option>30 segundos</option>
-              <option>1 minuto</option>
-              <option>5 minutos</option>
-              <option>10 minutos</option>
+            <select
+              defaultValue={localStorage.getItem('updateFrequency') || '30s'}
+              onChange={(e) =>
+                localStorage.setItem('updateFrequency', e.target.value)
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="30s">30 segundos</option>
+              <option value="1m">1 minuto</option>
+              <option value="5m">5 minutos</option>
+              <option value="10m">10 minutos</option>
             </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Retención de Datos Históricos
             </label>
-            <select className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-              <option>6 meses</option>
-              <option>1 año</option>
-              <option>2 años</option>
-              <option>5 años</option>
+            <select
+              defaultValue={localStorage.getItem('dataRetention') || '1year'}
+              onChange={(e) =>
+                localStorage.setItem('dataRetention', e.target.value)
+              }
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="6months">6 meses</option>
+              <option value="1year">1 año</option>
+              <option value="2years">2 años</option>
+              <option value="5years">5 años</option>
             </select>
           </div>
           <div>
@@ -446,7 +767,10 @@ const Settings = () => {
             </label>
             <input
               type="number"
-              defaultValue="80"
+              defaultValue={localStorage.getItem('speedThreshold') || '80'}
+              onChange={(e) =>
+                localStorage.setItem('speedThreshold', e.target.value)
+              }
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
           </div>
@@ -454,33 +778,78 @@ const Settings = () => {
       </Card>
 
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
-          Respaldo y Recuperación
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
+          <Database className="w-5 h-5 text-blue-600" />
+          <span>Respaldo y Recuperación</span>
         </h3>
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div>
-              <p className="font-medium text-gray-900">Respaldo Automático</p>
-              <p className="text-sm text-gray-500">
-                Último respaldo: 15/01/2024 02:00
-              </p>
+          {/* Crear Respaldo */}
+          <div className="p-4 border border-gray-200 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900 flex items-center space-x-2">
+                  <Save className="w-4 h-4 text-blue-600" />
+                  <span>Crear Respaldo Manual</span>
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Último respaldo: {getLastBackupDate()}
+                </p>
+                <p className="text-xs text-gray-500 mt-2">
+                  Incluye: datos de empresa, configuraciones del sistema
+                </p>
+              </div>
+              <button
+                onClick={createBackup}
+                disabled={loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4" />
+                <span>{loading ? 'Creando...' : 'Crear Respaldo'}</span>
+              </button>
             </div>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              Crear Respaldo
-            </button>
           </div>
-          <div className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
-            <div>
-              <p className="font-medium text-gray-900">
-                Restaurar desde Respaldo
-              </p>
-              <p className="text-sm text-gray-500">
-                Selecciona un punto de restauración
-              </p>
+
+          {/* Restaurar Respaldo */}
+          <div className="p-4 border border-gray-200 rounded-lg bg-gradient-to-r from-green-50 to-emerald-50">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="font-medium text-gray-900 flex items-center space-x-2">
+                  <Database className="w-4 h-4 text-green-600" />
+                  <span>Restaurar desde Respaldo</span>
+                </p>
+                <p className="text-sm text-gray-600 mt-1">
+                  Selecciona un archivo de respaldo (.json)
+                </p>
+                <p className="text-xs text-red-500 mt-2">
+                  ⚠️ Advertencia: Esto sobrescribirá los datos actuales
+                </p>
+              </div>
+              <label className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer flex items-center space-x-2">
+                <input
+                  type="file"
+                  accept=".json"
+                  onChange={restoreBackup}
+                  className="hidden"
+                  disabled={loading}
+                />
+                <Upload className="w-4 h-4" />
+                <span>Seleccionar Archivo</span>
+              </label>
             </div>
-            <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
-              Restaurar
-            </button>
+          </div>
+
+          {/* Información adicional */}
+          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800 flex items-center space-x-2">
+              <AlertTriangle className="w-4 h-4" />
+              <span className="font-medium">Importante:</span>
+            </p>
+            <ul className="text-xs text-yellow-700 mt-2 ml-6 space-y-1 list-disc">
+              <li>Los respaldos se descargan como archivos JSON</li>
+              <li>Guarda los respaldos en un lugar seguro</li>
+              <li>Los respaldos NO incluyen datos de la base de datos</li>
+              <li>Para respaldo completo, consulta con tu administrador</li>
+            </ul>
           </div>
         </div>
       </Card>
@@ -493,8 +862,6 @@ const Settings = () => {
         return renderGeneralSettings();
       case 'users':
         return renderUserSettings();
-      case 'security':
-        return renderSecuritySettings();
       case 'notifications':
         return renderNotifications();
       case 'integrations':

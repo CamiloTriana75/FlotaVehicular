@@ -4,6 +4,7 @@ import { Menu, User, LogOut, ChevronDown, Wifi, WifiOff } from 'lucide-react';
 const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
+  const [companyName, setCompanyName] = useState('FleetManager 🚀');
 
   // Cargar usuario actual desde localStorage
   useEffect(() => {
@@ -17,6 +18,33 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
         console.error('Error al parsear usuario:', err);
       }
     }
+  }, []);
+
+  // Cargar nombre de la empresa desde localStorage
+  useEffect(() => {
+    const loadCompanyName = () => {
+      const saved = localStorage.getItem('companyData');
+      if (saved) {
+        try {
+          const data = JSON.parse(saved);
+          setCompanyName(data.name || 'FleetManager 🚀');
+        } catch (e) {
+          console.error('Error al cargar nombre de empresa:', e);
+        }
+      }
+    };
+
+    loadCompanyName();
+
+    // Escuchar cambios en el nombre de la empresa
+    const handleCompanyUpdate = () => {
+      loadCompanyName();
+    };
+
+    window.addEventListener('companyDataUpdated', handleCompanyUpdate);
+    return () => {
+      window.removeEventListener('companyDataUpdated', handleCompanyUpdate);
+    };
   }, []);
 
   const [notifications] = useState([]);
@@ -84,7 +112,7 @@ const TopBar = ({ onMenuClick, onLogout, isMockMode }) => {
           {/* Title - Hidden on mobile */}
           <div className="hidden md:block flex-shrink-0">
             <h2 className="text-xl lg:text-2xl font-bold text-gray-900 whitespace-nowrap">
-              FleetManager 🚀
+              {companyName}
             </h2>
           </div>
 

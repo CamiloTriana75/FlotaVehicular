@@ -126,6 +126,8 @@ function App() {
     }
   };
   const userRole = getUserRole();
+  const hasLeftSidebar = userRole !== 'analista';
+  const contentShiftClass = hasLeftSidebar ? 'lg:ml-80' : 'lg:mr-80';
 
   return (
     <Router>
@@ -136,7 +138,9 @@ function App() {
             onClose={() => setIsSidebarOpen(false)}
           />
         )}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        <div
+          className={`flex-1 flex flex-col min-w-0 overflow-hidden ${contentShiftClass}`}
+        >
           <TopBar
             onMenuClick={() => setIsSidebarOpen(true)}
             onLogout={handleLogout}
