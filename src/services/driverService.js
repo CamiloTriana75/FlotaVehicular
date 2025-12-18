@@ -203,13 +203,61 @@ export const driverService = {
   /** Eliminar driver */
   delete: async (id) => {
     try {
+      // 1. Obtener los datos del driver antes de eliminarlo (para obtener la cédula)
+      const { data: driverData, error: getError } = await supabase
+        .from('drivers')
+        .select('cedula, id')
+        .eq('id', id)
+        .single();
+
+      if (getError) throw getError;
+
+      // 2. Eliminar el registro del driver
       const { data, error } = await supabase
         .from('drivers')
         .delete()
         .eq('id', id)
         .select()
         .single();
+
       if (error) throw error;
+
+      // 3. Si el driver tenía cédula, eliminar el usuario asociado
+      if (driverData?.cedula) {
+        try {
+          // Intentar con RPC primero
+          const { data: rpcResult, error: rpcError } = await supabase.rpc(
+            'delete_user_by_username',
+            { p_username: driverData.cedula }
+          );
+
+          if (rpcError) {
+            // Si falla, intentar eliminación SQL directa
+            console.warn('RPC falló, intentando SQL directo:', rpcError);
+
+            const { error: sqlError } = await supabase
+              .from('usuario')
+              .delete()
+              .eq('username', driverData.cedula)
+              .eq('rol', 'conductor');
+
+            if (sqlError) {
+              console.warn(
+                'No se pudo eliminar usuario desde seguridad:',
+                sqlError
+              );
+            } else {
+              console.log('✅ Usuario eliminado con SQL directo');
+            }
+          } else if (rpcResult?.success) {
+            console.log('✅ Usuario eliminado con RPC:', rpcResult.message);
+          }
+        } catch (userDeleteErr) {
+          console.warn('Error al eliminar usuario:', userDeleteErr);
+          // No lanzar error - el driver ya fue eliminado exitosamente
+        }
+      }
+
       return { data, error: null };
     } catch (error) {
       console.error('Error al eliminar driver:', error);
